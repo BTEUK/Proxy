@@ -1,0 +1,5 @@
+main: me.bteuk.bungee.Bungee
+version: 1.0.0
+api-version: 1.18
+name: Bungee
+author: ELgamer
