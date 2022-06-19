@@ -24,7 +24,7 @@ public class ChatHandler extends Thread {
             out.writeUTF(message);
 
             for(ServerInfo server : Bungee.getInstance().getProxy().getServers().values()) {
-                if(!server.getPlayers().isEmpty()) {
+                if(!server.getName().equals(playerServer) && !server.getPlayers().isEmpty()) {
                     server.sendData("uknet:globalchat", stream.toByteArray());
                 }
             }
