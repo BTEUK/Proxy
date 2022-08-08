@@ -1,10 +1,10 @@
-package me.bteuk.bungee;
+package me.bteuk.chatsocket;
 
-import net.md_5.bungee.api.config.ServerInfo;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.proxy.server.ServerInfo;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.logging.Level;
 
 public class ChatHandler extends Thread {
     protected final Socket socket;
@@ -23,9 +23,10 @@ public class ChatHandler extends Thread {
             DataOutputStream out = new DataOutputStream(stream);
             out.writeUTF(message);
 
-            for(ServerInfo server : Bungee.getInstance().getProxy().getServers().values()) {
-                if(!server.getName().equals(playerServer) && !server.getPlayers().isEmpty()) {
-                    server.sendData("uknet:globalchat", stream.toByteArray());
+            for(RegisteredServer server : ChatSocket.getInstance().getServer().getAllServers()) {
+                ServerInfo serverInfo = server.getServerInfo();
+                if(!serverInfo.getName().equals(playerServer) && !server.getPlayersConnected().isEmpty()) {
+                    server.sendPluginMessage(ChatSocket.getInstance().getChannel(), stream.toByteArray());
                 }
             }
 
@@ -33,7 +34,7 @@ public class ChatHandler extends Thread {
             out.close();
             socket.close();
         } catch (Exception ex) {
-            Bungee.getInstance().getLogger().log(Level.SEVERE, "Could not handle socket message from server!", ex);
+            ChatSocket.getInstance().getLogger().warn("Could not handle socket message from server!");
         }
     }
 }
