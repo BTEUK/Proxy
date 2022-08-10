@@ -1,4 +1,4 @@
-package me.bteuk.chatsocket;
+package me.bteuk.proxy;
 
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
@@ -23,10 +23,10 @@ public class ChatHandler extends Thread {
             DataOutputStream out = new DataOutputStream(stream);
             out.writeUTF(message);
 
-            for(RegisteredServer server : ChatSocket.getInstance().getServer().getAllServers()) {
+            for(RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
                 ServerInfo serverInfo = server.getServerInfo();
                 if(!serverInfo.getName().equals(playerServer) && !server.getPlayersConnected().isEmpty()) {
-                    server.sendPluginMessage(ChatSocket.getInstance().getChannel(), stream.toByteArray());
+                    server.sendPluginMessage(Proxy.getInstance().getChannel(), stream.toByteArray());
                 }
             }
 
@@ -34,7 +34,7 @@ public class ChatHandler extends Thread {
             out.close();
             socket.close();
         } catch (Exception ex) {
-            ChatSocket.getInstance().getLogger().warn("Could not handle socket message from server!");
+            Proxy.getInstance().getLogger().warn("Could not handle socket message from server!");
         }
     }
 }
