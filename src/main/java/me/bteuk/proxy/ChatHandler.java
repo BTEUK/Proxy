@@ -18,7 +18,6 @@ public class ChatHandler extends Thread {
         try (InputStream input = socket.getInputStream()) {
             ObjectInputStream objectInput = new ObjectInputStream(input);
             String message = (String) objectInput.readObject();
-            String playerServer = (String) objectInput.readObject();
             String channelName = (String) objectInput.readObject();
 
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -26,8 +25,7 @@ public class ChatHandler extends Thread {
             out.writeUTF(message);
 
             for(RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
-                ServerInfo serverInfo = server.getServerInfo();
-                if(!serverInfo.getName().equals(playerServer) && !server.getPlayersConnected().isEmpty()) {
+                if(!server.getPlayersConnected().isEmpty()) {
                     server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName), stream.toByteArray());
                 }
             }
