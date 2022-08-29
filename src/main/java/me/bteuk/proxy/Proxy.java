@@ -9,8 +9,6 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
-import com.velocitypowered.api.proxy.messages.ChannelIdentifier;
-import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import org.slf4j.Logger;
 
@@ -31,8 +29,6 @@ public class Proxy {
     private static Proxy instance;
     private static ServerSocket serverSocket;
 
-    private ChannelIdentifier channel;
-
     private File dataFolder;
 
     @Inject
@@ -40,13 +36,11 @@ public class Proxy {
         this.server = server;
         this.logger = logger;
 
-        this.instance = this;
+        instance = this;
     }
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-
-        this.channel = MinecraftChannelIdentifier.create("uknet","globalchat");
 
         CompletableFuture.runAsync(() -> {
             try {
@@ -108,10 +102,6 @@ public class Proxy {
 
     public ProxyServer getServer() {
         return server;
-    }
-
-    public ChannelIdentifier getChannel() {
-        return channel;
     }
 
     public Logger getLogger() {
