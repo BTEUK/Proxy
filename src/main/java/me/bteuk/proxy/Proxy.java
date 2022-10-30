@@ -6,10 +6,12 @@ import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
+import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import me.bteuk.proxy.config.Config;
 import org.slf4j.Logger;
 
 import java.io.*;
@@ -19,8 +21,8 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.1.0",
-        url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin for UKnet, deals with the chat socket and chooses server for reconnecting.", authors = {"ELgamer"})
+@Plugin(id = "proxy", name = "Proxy", version = "1.3.0",
+        url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin for UKnet, deals with the chat and server selection.", authors = {"ELgamer"})
 public class Proxy {
 
     private final ProxyServer server;
@@ -29,7 +31,11 @@ public class Proxy {
     private static Proxy instance;
     private static ServerSocket serverSocket;
 
+    private Config config;
+
     private File dataFolder;
+
+    private Discord discord;
 
     @Inject
     public Proxy(ProxyServer server, Logger logger) {
@@ -37,10 +43,19 @@ public class Proxy {
         this.logger = logger;
 
         instance = this;
+
+        try {
+            config = new Config();
+        } catch (IOException e) {
+            getLogger().warn("An error occurred while loading the config.");
+            e.printStackTrace();
+        }
     }
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+
+        discord = new Discord();
 
         CompletableFuture.runAsync(() -> {
             try {
@@ -66,11 +81,23 @@ public class Proxy {
                 logger.warn("Could not unbind port from socket!");
             }
         }
+
+        if (discord.getJda() != null) {
+            discord.getJda().shutdownNow();
+        }
     }
 
     @Subscribe
     public void choose(PlayerChooseInitialServerEvent e) {
+
         Player player = e.getPlayer();
+
+        //Set players protocol version in the database.
+        //This will allow other servers to check and notify the player is using a suboptimal version.
+        ProtocolVersion version = player.getProtocolVersion();
+        version.getProtocol();
+        //TODO set protocol version in database.
+
         String prev = getLastServer(player.getUniqueId().toString());
         RegisteredServer server;
         //Not null check
@@ -163,5 +190,13 @@ public class Proxy {
         } else {
             return dataFolder;
         }
+    }
+
+    public Config getConfig() {
+        return config;
+    }
+
+    public Discord getDiscord() {
+        return discord;
     }
 }

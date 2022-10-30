@@ -6,7 +6,7 @@
 
     <groupId>me.bteuk</groupId>
     <artifactId>Proxy</artifactId>
-    <version>1.2.0</version>
+    <version>1.3.0</version>
 
     <name>Proxy</name>
 
@@ -55,6 +55,10 @@
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
+        <repository>
+            <id>scarsz</id>
+            <url>https://nexus.scarsz.me/content/groups/public/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -62,6 +66,53 @@
             <groupId>com.velocitypowered</groupId>
             <artifactId>velocity-api</artifactId>
             <version>3.1.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- jda -->
+        <dependency>
+            <groupId>net.dv8tion</groupId>
+            <artifactId>JDA</artifactId>
+            <!-- Custom fork of v4 (https://github.com/DiscordSRV/JDA)
+                    due to JDA not supporting v4 anymore,
+                    and v5 still receiving frequent breaking changes -->
+            <version>4.4.0_352.fix-2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>club.minnced</groupId>
+                    <artifactId>opus-java</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- jda dependencies (required to relocate them) -->
+        <dependency>
+            <groupId>com.neovisionaries</groupId>
+            <artifactId>nv-websocket-client</artifactId>
+            <version>2.14</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.trove4j</groupId>
+            <artifactId>trove4j</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.33</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <!-- MC <  1.12 = 2.0-beta9 -->
+            <!-- MC >= 1.12 = 2.1 -->
+            <!--suppress MavenPackageUpdate -->
+            <version>2.0-beta9</version>
+            <!-- PLEASE NOTE: Log4J is NOT included in DiscordSRV and is only used for compilation.
+                               This means that DiscordSRV is NOT vulnerable to CVE-2021-44228 -->
             <scope>provided</scope>
         </dependency>
     </dependencies>

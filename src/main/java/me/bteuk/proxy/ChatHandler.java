@@ -2,7 +2,6 @@ package me.bteuk.proxy;
 
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.proxy.server.ServerInfo;
 
 import java.io.*;
 import java.net.Socket;
@@ -26,7 +25,7 @@ public class ChatHandler extends Thread {
 
             for(RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
                 if(!server.getPlayersConnected().isEmpty()) {
-                    server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName), stream.toByteArray());
+                    server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName.split(":")[1]), stream.toByteArray());
                 }
             }
 
