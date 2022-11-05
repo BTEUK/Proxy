@@ -42,19 +42,17 @@ public class DiscordChatListener extends ListenerAdapter {
             return;
         }
 
-
         //TODO: Check for commands.
 
         //Send message
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(stream);
         try {
-            out.writeUTF((event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
+            String hex = String.format("#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
+            out.writeUTF(("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        Proxy.getInstance().getLogger().info("Send Message");
 
         for(RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
             if(!server.getPlayersConnected().isEmpty()) {

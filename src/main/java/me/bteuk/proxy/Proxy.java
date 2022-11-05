@@ -12,14 +12,15 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.config.Config;
+import net.dv8tion.jda.api.events.ShutdownEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.util.Properties;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.*;
 
 @Plugin(id = "proxy", name = "Proxy", version = "1.3.0",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin for UKnet, deals with the chat and server selection.", authors = {"ELgamer"})
@@ -82,8 +83,13 @@ public class Proxy {
             }
         }
 
+        // Clear JDA listeners
+        if (discord.getJda() != null) discord.getJda().getEventManager().getRegisteredListeners().forEach(listener -> discord.getJda().getEventManager().unregister(listener));
+
+        // try to shut down jda gracefully
         if (discord.getJda() != null) {
             discord.getJda().shutdownNow();
+            discord.setJda(null);
         }
     }
 

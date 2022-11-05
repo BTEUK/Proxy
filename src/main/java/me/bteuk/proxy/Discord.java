@@ -1,19 +1,24 @@
 package me.bteuk.proxy;
 
-import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
-import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
+import java.awt.*;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Discord {
 
@@ -22,6 +27,8 @@ public class Discord {
     private String chat_channel;
 
     private JdaFilter jdaFilter;
+
+    private TextChannel chat;
 
     public Discord() {
 
@@ -59,6 +66,8 @@ public class Discord {
         try {
             jda = builder.build();
             jda.awaitReady();
+
+            chat = jda.getTextChannelById(chat_channel);
         } catch (LoginException e) {
             e.printStackTrace();
             return;
@@ -67,7 +76,45 @@ public class Discord {
         }
     }
 
+    public void SendMessage(String channel, byte[] message) throws IOException {
+
+        DataInputStream in = new DataInputStream(new ByteArrayInputStream(message));
+        String sMessage = in.readUTF();
+
+        Pattern pattern = Pattern.compile("#[a-fA-F0-9]{6}|&[a-fA-F0-9]|&k|&l|&m|&n|&o|&r");
+
+        Matcher matcher = pattern.matcher(sMessage);
+        sMessage = matcher.replaceAll("");
+
+        //TODO: could consider applying bold, italic and other formatting to discord messages if used in Minecraft.
+
+        //If chat channel is global send it.
+        if (channel.equalsIgnoreCase("uknet:globalchat")) {
+
+            chat.sendMessage(sMessage).queue();
+
+        } else if (channel.equalsIgnoreCase("uknet:connect")) {
+            //If channel is connect send connect message using embed.
+            EmbedBuilder eb = new EmbedBuilder();
+            eb.setTitle(sMessage, null);
+            eb.setColor(Color.GREEN);
+            chat.sendMessage(eb.build()).queue();
+
+        } else if (channel.equalsIgnoreCase("uknet:disconnect")) {
+            //If channel is connect send disconnect message using embed.
+            EmbedBuilder eb = new EmbedBuilder();
+            eb.setTitle(sMessage, null);
+            eb.setColor(Color.RED);
+            chat.sendMessage(eb.build()).queue();
+        }
+
+    }
+
     public JDA getJda() {
         return jda;
+    }
+
+    public void setJda(JDA jda) {
+        this.jda = jda;
     }
 }
