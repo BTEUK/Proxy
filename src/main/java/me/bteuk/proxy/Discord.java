@@ -24,29 +24,29 @@ public class Discord {
 
     private JDA jda;
 
-    private String chat_channel;
-
     private JdaFilter jdaFilter;
 
     private TextChannel chat;
+    private TextChannel staff;
+    private TextChannel reviewer;
 
     public Discord() {
 
         // add log4j filter for JDA messages
-        if (jdaFilter == null) {
-            try {
-                Class<?> jdaFilterClass = Class.forName("me.bteuk.proxy.log4j.JdaFilter");
-                jdaFilter = (JdaFilter) jdaFilterClass.newInstance();
-                ((org.apache.logging.log4j.core.Logger) org.apache.logging.log4j.LogManager.getRootLogger()).addFilter((org.apache.logging.log4j.core.Filter) jdaFilter);
-                Proxy.getInstance().getLogger().debug("JdaFilter applied");
-            } catch (Exception e) {
-                Proxy.getInstance().getLogger().error("Failed to attach JDA message filter to root logger", e);
-            }
+        try {
+            Class<?> jdaFilterClass = Class.forName("me.bteuk.proxy.log4j.JdaFilter");
+            jdaFilter = (JdaFilter) jdaFilterClass.newInstance();
+            ((org.apache.logging.log4j.core.Logger) org.apache.logging.log4j.LogManager.getRootLogger()).addFilter(jdaFilter);
+            Proxy.getInstance().getLogger().debug("JdaFilter applied");
+        } catch (Exception e) {
+            Proxy.getInstance().getLogger().error("Failed to attach JDA message filter to root logger", e);
         }
 
         //Get token from config.
         String token = Proxy.getInstance().getConfig().getString("token");
-        chat_channel = Proxy.getInstance().getConfig().getString("chat_channel");
+        String chat_channel = Proxy.getInstance().getConfig().getString("chat.global");
+        String reviewer_channel = Proxy.getInstance().getConfig().getString("chat.reviewer");
+        String staff_channel = Proxy.getInstance().getConfig().getString("chat.staff");
 
         //Create JDABuilder.
         JDABuilder builder = JDABuilder.createDefault(token);
@@ -68,10 +68,10 @@ public class Discord {
             jda.awaitReady();
 
             chat = jda.getTextChannelById(chat_channel);
-        } catch (LoginException e) {
-            e.printStackTrace();
-            return;
-        } catch (InterruptedException e) {
+            reviewer = jda.getTextChannelById(reviewer_channel);
+            staff = jda.getTextChannelById(staff_channel);
+
+        } catch (LoginException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -96,16 +96,27 @@ public class Discord {
         } else if (channel.equalsIgnoreCase("uknet:connect")) {
             //If channel is connect send connect message using embed.
             EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle(sMessage, null);
+            eb.setDescription("**" + sMessage + "**");
             eb.setColor(Color.GREEN);
             chat.sendMessage(eb.build()).queue();
 
         } else if (channel.equalsIgnoreCase("uknet:disconnect")) {
             //If channel is connect send disconnect message using embed.
             EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle(sMessage, null);
+            eb.setDescription("**" + sMessage + "**");
             eb.setColor(Color.RED);
             chat.sendMessage(eb.build()).queue();
+        } else if (channel.equalsIgnoreCase("uknet:reviewer")) {
+
+            //If plot is submitted, update the channel description.
+            if ("plot submitted message".equalsIgnoreCase(sMessage)) {
+                chat.getManager().setTopic("Updated channel topic!");
+            }
+
+
+        } else if (channel.equalsIgnoreCase("uknet:staff")) {
+            //Send message to staff channel.
+            staff.sendMessage(sMessage).queue();
         }
 
     }
