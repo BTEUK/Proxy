@@ -13,9 +13,9 @@ import java.io.IOException;
 
 public class DiscordChatListener extends ListenerAdapter {
 
-    private String chat_channel;
-    private String reviewer_channel;
-    private String staff_channel;
+    private final String chat_channel;
+    private final String reviewer_channel;
+    private final String staff_channel;
 
     public DiscordChatListener(String chat_channel, String reviewer_channel, String staff_channel) {
         this.chat_channel = chat_channel;
@@ -69,7 +69,7 @@ public class DiscordChatListener extends ListenerAdapter {
             DataOutputStream out = new DataOutputStream(stream);
             try {
                 String hex = String.format("#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
-                out.writeUTF(("&8[Discord]&c[Staff] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
+                out.writeUTF(("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
             } catch (IOException e) {
                 e.printStackTrace();
             }
