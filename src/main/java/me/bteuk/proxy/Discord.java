@@ -61,7 +61,7 @@ public class Discord {
 
         builder.setActivity(Activity.playing("BTE UK"));
 
-        builder.addEventListeners(new DiscordChatListener(chat_channel));
+        builder.addEventListeners(new DiscordChatListener(chat_channel, reviewer_channel, staff_channel));
 
         try {
             jda = builder.build();

@@ -14,9 +14,13 @@ import java.io.IOException;
 public class DiscordChatListener extends ListenerAdapter {
 
     private String chat_channel;
+    private String reviewer_channel;
+    private String staff_channel;
 
-    public DiscordChatListener(String chat_channel) {
+    public DiscordChatListener(String chat_channel, String reviewer_channel, String staff_channel) {
         this.chat_channel = chat_channel;
+        this.reviewer_channel = reviewer_channel;
+        this.staff_channel = staff_channel;
         Proxy.getInstance().getLogger().info("Enabling Discord Chat Listener");
     }
 
@@ -33,32 +37,52 @@ public class DiscordChatListener extends ListenerAdapter {
             return;
         }
 
-        //Block from all channels except linked.
-        if (!event.getChannel().getId().equals(chat_channel)) {
-            return;
-        }
-
         if (StringUtils.isBlank(event.getMessage().getContentRaw())) {
             return;
         }
 
-        //TODO: Check for commands.
+        //Block from all channels except linked.
+        if (event.getChannel().getId().equals(chat_channel)) {
 
-        //Send message
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        DataOutputStream out = new DataOutputStream(stream);
-        try {
-            String hex = String.format("#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
-            out.writeUTF(("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        for(RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
-            if(!server.getPlayersConnected().isEmpty()) {
-                server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "globalchat"), stream.toByteArray());
+            //Send message
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            DataOutputStream out = new DataOutputStream(stream);
+            try {
+                String hex = String.format("#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
+                out.writeUTF(("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+
+            for(RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
+                if(!server.getPlayersConnected().isEmpty()) {
+                    server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "globalchat"), stream.toByteArray());
+                }
+            }
+
+        } else if (event.getChannel().getId().equals(reviewer_channel)) {
+
+        } else if (event.getChannel().getId().equals(staff_channel)) {
+
+            //Send message
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            DataOutputStream out = new DataOutputStream(stream);
+            try {
+                String hex = String.format("#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
+                out.writeUTF(("&8[Discord]&c[Staff] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            for(RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
+                if(!server.getPlayersConnected().isEmpty()) {
+                    server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "staff"), stream.toByteArray());
+                }
+            }
+
         }
+
+        //TODO: Check for commands.
 
     }
 }
