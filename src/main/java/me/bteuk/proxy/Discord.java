@@ -1,12 +1,12 @@
 package me.bteuk.proxy;
 
+import me.bteuk.proxy.events.BotChatListener;
 import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
@@ -62,6 +62,7 @@ public class Discord {
         builder.setActivity(Activity.playing("BTE UK"));
 
         builder.addEventListeners(new DiscordChatListener(chat_channel, reviewer_channel, staff_channel));
+        builder.addEventListeners(new BotChatListener());
 
         try {
             jda = builder.build();
@@ -76,7 +77,7 @@ public class Discord {
         }
     }
 
-    public void SendMessage(String channel, byte[] message) throws IOException {
+    public void sendMessage(String channel, byte[] message) throws IOException {
 
         DataInputStream in = new DataInputStream(new ByteArrayInputStream(message));
         String sMessage = in.readUTF();
@@ -119,6 +120,23 @@ public class Discord {
             staff.sendMessage(sMessage).queue();
         }
 
+    }
+
+    public void addRole(long user_id, long role_id) {
+        try {
+            //Get role.
+            chat.getGuild().addRoleToMember(user_id, chat.getGuild().getRoleById(role_id));
+        } catch (Exception e) {
+            //An error occurred, the user or role is null, this is not necessarily a problem, but is being caught to prevent console spam.
+        }
+    }
+
+    public void removeRole(long user_id, long role_id) {
+        try {
+            chat.getGuild().removeRoleFromMember(user_id, chat.getGuild().getRoleById(role_id));
+        } catch (Exception e) {
+            //An error occurred, the user or role is null, this is not necessarily a problem, but is being caught to prevent console spam.
+        }
     }
 
     public JDA getJda() {

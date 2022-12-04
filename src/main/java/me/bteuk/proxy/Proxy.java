@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 
 import java.io.*;
 import java.net.ServerSocket;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.*;
 
@@ -37,6 +38,8 @@ public class Proxy {
     private File dataFolder;
 
     private Discord discord;
+
+    private ArrayList<Linked> linking;
 
     @Inject
     public Proxy(ProxyServer server, Logger logger) {
@@ -57,6 +60,8 @@ public class Proxy {
     public void onProxyInitialization(ProxyInitializeEvent event) {
 
         discord = new Discord();
+
+        linking = new ArrayList<>();
 
         CompletableFuture.runAsync(() -> {
             try {
@@ -204,5 +209,9 @@ public class Proxy {
 
     public Discord getDiscord() {
         return discord;
+    }
+
+    public ArrayList<Linked> getLinking() {
+        return linking;
     }
 }
