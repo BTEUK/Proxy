@@ -12,13 +12,13 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.config.Config;
-import net.dv8tion.jda.api.events.ShutdownEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import org.jetbrains.annotations.NotNull;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
 import java.io.*;
 import java.net.ServerSocket;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.*;
@@ -40,6 +40,8 @@ public class Proxy {
     private Discord discord;
 
     private ArrayList<Linked> linking;
+
+    public GlobalSQL globalSQL;
 
     @Inject
     public Proxy(ProxyServer server, Logger logger) {
@@ -73,6 +75,20 @@ public class Proxy {
         });
 
         this.dataFolder = getDataFolder();
+
+        //Setup MySQL
+        try {
+
+            //Global Database
+            String global_database = config.getString("database.global");
+            BasicDataSource global_dataSource = mysqlSetup(global_database);
+            globalSQL = new GlobalSQL(global_dataSource);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            getLogger().error("Failed to connect to the database, please check that you have set the config values correctly.");
+            return;
+        }
 
         logger.info("Loading Proxy");
 
@@ -200,6 +216,33 @@ public class Proxy {
             }
         } else {
             return dataFolder;
+        }
+    }
+
+    //Creates the mysql connection.
+    private BasicDataSource mysqlSetup(String database) throws SQLException {
+
+        String host = config.getString("host");
+        int port = config.getInt("port");
+        String username = config.getString("username");
+        String password = config.getString("password");
+
+        BasicDataSource dataSource = new BasicDataSource();
+
+        dataSource.setUrl("jdbc:mysql://" + host + ":" + port + "/" + database + "?&useSSL=false&");
+        dataSource.setUsername(username);
+        dataSource.setPassword(password);
+
+        testDataSource(dataSource);
+        return dataSource;
+
+    }
+
+    public void testDataSource(BasicDataSource dataSource) throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            if (!connection.isValid(1000)) {
+                throw new SQLException("Could not establish database connection.");
+            }
         }
     }
 

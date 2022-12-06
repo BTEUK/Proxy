@@ -1,5 +1,6 @@
 package me.bteuk.proxy;
 
+import me.bteuk.proxy.commands.Playerlist;
 import me.bteuk.proxy.events.BotChatListener;
 import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
@@ -63,9 +64,11 @@ public class Discord {
 
         builder.addEventListeners(new DiscordChatListener(chat_channel, reviewer_channel, staff_channel));
         builder.addEventListeners(new BotChatListener());
+        builder.addEventListeners(new Playerlist());
 
         try {
             jda = builder.build();
+            jda.upsertCommand("playerlist", "List all online players on the Minecraft server.").queue();
             jda.awaitReady();
 
             chat = jda.getTextChannelById(chat_channel);

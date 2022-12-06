@@ -16,4 +16,8 @@ public class Config {
     public String getString(String path) {
         return config.getString(path);
     }
+
+    public int getInt(String path) {
+        return config.getInt(path);
+    }
 }

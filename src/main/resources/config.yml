@@ -6,3 +6,13 @@ chat:
   global:
   reviewer:
   staff:
+
+#Database login
+host: localhost
+port: 3306
+username: root
+password: password
+
+#Database names (doesn't require adjusting)
+database:
+  global: uknet_global

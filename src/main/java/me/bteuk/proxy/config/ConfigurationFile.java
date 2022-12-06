@@ -93,6 +93,16 @@ public abstract class ConfigurationFile {
         return String.valueOf(value);
     }
 
+    public int getInt(String path) {
+        return getInt(path, 0);
+    }
+
+    public int getInt(String path, int defaultValue) {
+        Object value = getObject(path, defaultValue);
+        if (value == null) return defaultValue;
+        return (int) value;
+    }
+
     public void set(String path, Object value) {
         set(values, path, value);
         save();
