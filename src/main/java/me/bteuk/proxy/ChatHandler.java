@@ -24,12 +24,6 @@ public class ChatHandler extends Thread {
             DataOutputStream out = new DataOutputStream(stream);
             out.writeUTF(message);
 
-            for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
-                if (!server.getPlayersConnected().isEmpty()) {
-                    server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName.split(":")[1]), stream.toByteArray());
-                }
-            }
-
             //Check if the chat channel is not meant to be sent back.
             if (channelName.equalsIgnoreCase("uknet:discord")) {
                 //Split message.
@@ -70,6 +64,13 @@ public class ChatHandler extends Thread {
                 }
 
             } else {
+
+                for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
+                    if (!server.getPlayersConnected().isEmpty()) {
+                        server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName.split(":")[1]), stream.toByteArray());
+                    }
+                }
+
                 //Send a message to discord.
                 Proxy.getInstance().getDiscord().sendMessage(channelName, stream.toByteArray());
             }
@@ -77,8 +78,9 @@ public class ChatHandler extends Thread {
             stream.close();
             out.close();
             socket.close();
-        } catch (
-                Exception ex) {
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
             Proxy.getInstance().getLogger().warn("Could not handle socket message from server!");
         }
     }

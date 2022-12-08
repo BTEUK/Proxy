@@ -8,12 +8,12 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
-import javax.security.auth.login.LoginException;
 import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -52,6 +52,11 @@ public class Discord {
         //Create JDABuilder.
         JDABuilder builder = JDABuilder.createDefault(token);
 
+        builder.enableIntents(GatewayIntent.MESSAGE_CONTENT);
+        builder.enableIntents(GatewayIntent.GUILD_MEMBERS);
+        builder.enableIntents(GatewayIntent.DIRECT_MESSAGES);
+        builder.enableIntents(GatewayIntent.GUILD_MESSAGES);
+
         builder.setMemberCachePolicy(MemberCachePolicy.VOICE.or(MemberCachePolicy.OWNER));
         builder.setChunkingFilter(ChunkingFilter.NONE);
         builder.disableCache(CacheFlag.ACTIVITY);
@@ -68,14 +73,13 @@ public class Discord {
 
         try {
             jda = builder.build();
-            jda.upsertCommand("playerlist", "List all online players on the Minecraft server.").queue();
             jda.awaitReady();
 
             chat = jda.getTextChannelById(chat_channel);
             reviewer = jda.getTextChannelById(reviewer_channel);
             staff = jda.getTextChannelById(staff_channel);
 
-        } catch (LoginException | InterruptedException e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -98,18 +102,20 @@ public class Discord {
             chat.sendMessage(sMessage).queue();
 
         } else if (channel.equalsIgnoreCase("uknet:connect")) {
+
             //If channel is connect send connect message using embed.
             EmbedBuilder eb = new EmbedBuilder();
             eb.setDescription("**" + sMessage + "**");
             eb.setColor(Color.GREEN);
-            chat.sendMessage(eb.build()).queue();
+            chat.sendMessageEmbeds(eb.build()).queue();
 
         } else if (channel.equalsIgnoreCase("uknet:disconnect")) {
+
             //If channel is connect send disconnect message using embed.
             EmbedBuilder eb = new EmbedBuilder();
             eb.setDescription("**" + sMessage + "**");
             eb.setColor(Color.RED);
-            chat.sendMessage(eb.build()).queue();
+            chat.sendMessageEmbeds(eb.build()).queue();
         } else if (channel.equalsIgnoreCase("uknet:reviewer")) {
 
             //If plot is submitted, update the channel description.
@@ -119,6 +125,7 @@ public class Discord {
 
 
         } else if (channel.equalsIgnoreCase("uknet:staff")) {
+
             //Send message to staff channel.
             staff.sendMessage(sMessage).queue();
         }
@@ -128,7 +135,7 @@ public class Discord {
     public void addRole(long user_id, long role_id) {
         try {
             //Get role.
-            chat.getGuild().addRoleToMember(user_id, chat.getGuild().getRoleById(role_id));
+            chat.getGuild().addRoleToMember(UserSnowflake.fromId(user_id), chat.getGuild().getRoleById(role_id)).queue();
         } catch (Exception e) {
             //An error occurred, the user or role is null, this is not necessarily a problem, but is being caught to prevent console spam.
         }
@@ -136,7 +143,7 @@ public class Discord {
 
     public void removeRole(long user_id, long role_id) {
         try {
-            chat.getGuild().removeRoleFromMember(user_id, chat.getGuild().getRoleById(role_id));
+            chat.getGuild().removeRoleFromMember(UserSnowflake.fromId(user_id), chat.getGuild().getRoleById(role_id)).queue();
         } catch (Exception e) {
             //An error occurred, the user or role is null, this is not necessarily a problem, but is being caught to prevent console spam.
         }

@@ -3,7 +3,7 @@ package me.bteuk.proxy.events;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.Proxy;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,7 +25,7 @@ public class DiscordChatListener extends ListenerAdapter {
     }
 
     @Override
-    public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
+    public void onMessageReceived(MessageReceivedEvent event) {
 
         //Block messages from bot and null author.
         if ((event.getMember() == null && !event.isWebhookMessage()) || Proxy.getInstance().getDiscord() == null || event.getAuthor().equals(Proxy.getInstance().getDiscord().getJda().getSelfUser())) {
@@ -81,8 +81,5 @@ public class DiscordChatListener extends ListenerAdapter {
             }
 
         }
-
-        //TODO: Check for commands.
-
     }
 }

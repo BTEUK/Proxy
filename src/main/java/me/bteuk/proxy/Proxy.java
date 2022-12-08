@@ -84,7 +84,7 @@ public class Proxy {
             BasicDataSource global_dataSource = mysqlSetup(global_database);
             globalSQL = new GlobalSQL(global_dataSource);
 
-        } catch (SQLException e) {
+        } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             getLogger().error("Failed to connect to the database, please check that you have set the config values correctly.");
             return;
@@ -105,12 +105,18 @@ public class Proxy {
         }
 
         // Clear JDA listeners
-        if (discord.getJda() != null) discord.getJda().getEventManager().getRegisteredListeners().forEach(listener -> discord.getJda().getEventManager().unregister(listener));
+        if (discord.getJda() != null) {
+            //Unregister listners.
+            discord.getJda().getEventManager().getRegisteredListeners().forEach(listener -> discord.getJda().getEventManager().unregister(listener));
+        }
 
         // try to shut down jda gracefully
         if (discord.getJda() != null) {
-            discord.getJda().shutdownNow();
-            discord.setJda(null);
+            try {
+                discord.getJda().shutdownNow();
+                discord.setJda(null);
+            } catch (NoClassDefFoundError e) {
+            }
         }
     }
 
@@ -220,7 +226,9 @@ public class Proxy {
     }
 
     //Creates the mysql connection.
-    private BasicDataSource mysqlSetup(String database) throws SQLException {
+    private BasicDataSource mysqlSetup(String database) throws SQLException, ClassNotFoundException {
+
+        Class.forName("com.mysql.cj.jdbc.Driver");
 
         String host = config.getString("host");
         int port = config.getInt("port");
