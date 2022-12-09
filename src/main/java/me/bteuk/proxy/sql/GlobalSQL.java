@@ -1,4 +1,4 @@
-package me.bteuk.proxy;
+package me.bteuk.proxy.sql;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 

@@ -1,6 +1,6 @@
 package me.bteuk.proxy.commands;
 
-import me.bteuk.proxy.GlobalSQL;
+import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;

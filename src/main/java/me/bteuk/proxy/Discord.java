@@ -118,10 +118,17 @@ public class Discord {
             chat.sendMessageEmbeds(eb.build()).queue();
         } else if (channel.equalsIgnoreCase("uknet:reviewer")) {
 
-            //If plot is submitted, update the channel description.
-            if ("plot submitted message".equalsIgnoreCase(sMessage)) {
-                chat.getManager().setTopic("Updated channel topic!");
+            //When a message is sent in the reviewer channel update the channel topic to the number of submitted plots.
+            int plot_count = Proxy.getInstance().plotSQL.getInt("SELECT count(id) FROM plot_data WHERE status='submitted';");
+            String topic = "";
+
+            if (plot_count == 1) {
+                topic = "There is 1 plot waiting to be reviewed!";
+            } else {
+                topic = "There are " + plot_count + " plots waiting to be reviewed!";
             }
+
+            chat.getManager().setTopic(topic);
 
 
         } else if (channel.equalsIgnoreCase("uknet:staff")) {

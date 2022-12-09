@@ -12,6 +12,8 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.config.Config;
+import me.bteuk.proxy.sql.GlobalSQL;
+import me.bteuk.proxy.sql.PlotSQL;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
@@ -20,7 +22,9 @@ import java.net.ServerSocket;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 @Plugin(id = "proxy", name = "Proxy", version = "1.3.0",
@@ -42,6 +46,9 @@ public class Proxy {
     private ArrayList<Linked> linking;
 
     public GlobalSQL globalSQL;
+    public PlotSQL plotSQL;
+
+    private HashMap<UUID, Integer> protocol_version;
 
     @Inject
     public Proxy(ProxyServer server, Logger logger) {
@@ -65,6 +72,8 @@ public class Proxy {
 
         linking = new ArrayList<>();
 
+        protocol_version = new HashMap<>();
+
         CompletableFuture.runAsync(() -> {
             try {
                 serverSocket = new ServerSocket(30589);
@@ -83,6 +92,11 @@ public class Proxy {
             String global_database = config.getString("database.global");
             BasicDataSource global_dataSource = mysqlSetup(global_database);
             globalSQL = new GlobalSQL(global_dataSource);
+
+            //Plot Database
+            String plot_database = config.getString("database.plot");
+            BasicDataSource plot_dataSource = mysqlSetup(plot_database);
+            plotSQL = new PlotSQL(plot_dataSource);
 
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -125,11 +139,17 @@ public class Proxy {
 
         Player player = e.getPlayer();
 
-        //Set players protocol version in the database.
+        //Get the protocol version of the player.
         //This will allow other servers to check and notify the player is using a suboptimal version.
         ProtocolVersion version = player.getProtocolVersion();
-        version.getProtocol();
-        //TODO set protocol version in database.
+
+        //Store the protocol version in a map.
+        if (protocol_version.containsKey(player.getUniqueId())) {
+            //Update protocol version.
+            protocol_version.replace(player.getUniqueId(), version.getProtocol());
+        } else {
+            protocol_version.put(player.getUniqueId(), version.getProtocol());
+        }
 
         String prev = getLastServer(player.getUniqueId().toString());
         RegisteredServer server;
