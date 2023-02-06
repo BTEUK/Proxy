@@ -89,7 +89,7 @@ public class Discord {
         DataInputStream in = new DataInputStream(new ByteArrayInputStream(message));
         String sMessage = in.readUTF();
 
-        Pattern pattern = Pattern.compile("#[a-fA-F0-9]{6}|&[a-fA-F0-9]|&k|&l|&m|&n|&o|&r");
+        Pattern pattern = Pattern.compile("#[a-fA-F0-9]{6}|&[a-fA-F0-9]|&k|&l|&m|&n|&o|&r|§[a-fA-F0-9]|§k|§l|§m|§n|§o|§r");
 
         Matcher matcher = pattern.matcher(sMessage);
         sMessage = matcher.replaceAll("");
@@ -120,7 +120,7 @@ public class Discord {
 
             //When a message is sent in the reviewer channel update the channel topic to the number of submitted plots.
             int plot_count = Proxy.getInstance().plotSQL.getInt("SELECT count(id) FROM plot_data WHERE status='submitted';");
-            String topic = "";
+            String topic;
 
             if (plot_count == 1) {
                 topic = "There is 1 plot waiting to be reviewed!";
