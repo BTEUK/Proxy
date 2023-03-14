@@ -11,6 +11,8 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.api.scheduler.ScheduledTask;
+import com.velocitypowered.api.scheduler.Scheduler;
 import me.bteuk.proxy.config.Config;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
@@ -103,6 +105,24 @@ public class Proxy {
             getLogger().error("Failed to connect to the database, please check that you have set the config values correctly.");
             return;
         }
+
+        getServer().getScheduler()
+                .buildTask(this, () -> {
+
+                    getServer().getAllPlayers().forEach(player -> {
+
+                        String uuid = player.getUniqueId().toString();
+
+                        if (globalSQL.hasRow("SELECT uuid FROM online_users WHERE uuid='" + uuid + "';")) {
+
+                            //Update last ping.
+                            globalSQL.update("UPDATE online_users SET last_ping=" + System.currentTimeMillis() + " WHERE uuid='" + uuid + "';");
+
+                        }
+                    });
+                })
+                .repeat(1L, TimeUnit.MINUTES)
+                .schedule();
 
         logger.info("Loading Proxy");
 

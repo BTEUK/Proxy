@@ -1,5 +1,6 @@
 package me.bteuk.proxy;
 
+import com.velocitypowered.api.util.GameProfile;
 import me.bteuk.proxy.commands.Playerlist;
 import me.bteuk.proxy.events.BotChatListener;
 import me.bteuk.proxy.events.DiscordChatListener;
@@ -18,6 +19,7 @@ import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -84,36 +86,44 @@ public class Discord {
         }
     }
 
-    public void sendMessage(String channel, byte[] message) throws IOException {
-
-        DataInputStream in = new DataInputStream(new ByteArrayInputStream(message));
-        String sMessage = in.readUTF();
+    public void sendMessage(String channel, String message) throws IOException {
 
         Pattern pattern = Pattern.compile("#[a-fA-F0-9]{6}|&[a-fA-F0-9]|&k|&l|&m|&n|&o|&r|§[a-fA-F0-9]|§k|§l|§m|§n|§o|§r");
 
-        Matcher matcher = pattern.matcher(sMessage);
-        sMessage = matcher.replaceAll("");
+        Matcher matcher = pattern.matcher(message);
+        message = matcher.replaceAll("");
 
         //TODO: could consider applying bold, italic and other formatting to discord messages if used in Minecraft.
 
         //If chat channel is global send it.
         if (channel.equalsIgnoreCase("uknet:globalchat")) {
 
-            chat.sendMessage(sMessage).queue();
+            chat.sendMessage(message).queue();
 
         } else if (channel.equalsIgnoreCase("uknet:connect")) {
 
+            String[] aMessage = message.split(" ");
+            String url = aMessage[0];
+            String chatMessage = String.join(" ",Arrays.copyOfRange(aMessage, 1, aMessage.length));
+
             //If channel is connect send connect message using embed.
             EmbedBuilder eb = new EmbedBuilder();
-            eb.setDescription("**" + sMessage + "**");
+
+            eb.setAuthor(chatMessage, null, url);
+            //eb.setDescription("**" + chatMessage + "**");
             eb.setColor(Color.GREEN);
             chat.sendMessageEmbeds(eb.build()).queue();
 
         } else if (channel.equalsIgnoreCase("uknet:disconnect")) {
 
+            String[] aMessage = message.split(" ");
+            String url = aMessage[0];
+            String chatMessage = String.join(" ",Arrays.copyOfRange(aMessage, 1, aMessage.length));
+
             //If channel is connect send disconnect message using embed.
             EmbedBuilder eb = new EmbedBuilder();
-            eb.setDescription("**" + sMessage + "**");
+            eb.setAuthor(chatMessage, null, url);
+            //eb.setDescription("**" + chatMessage + "**");
             eb.setColor(Color.RED);
             chat.sendMessageEmbeds(eb.build()).queue();
         } else if (channel.equalsIgnoreCase("uknet:reviewer")) {
@@ -134,7 +144,7 @@ public class Discord {
         } else if (channel.equalsIgnoreCase("uknet:staff")) {
 
             //Send message to staff channel.
-            staff.sendMessage(sMessage).queue();
+            staff.sendMessage(message).queue();
         }
 
     }

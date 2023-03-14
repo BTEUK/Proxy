@@ -16,3 +16,4 @@ password: password
 #Database names (doesn't require adjusting)
 database:
   global: uknet_global
+  plot: uknet_plots

@@ -5,6 +5,7 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Arrays;
 
 public class ChatHandler extends Thread {
     protected final Socket socket;
@@ -18,10 +19,6 @@ public class ChatHandler extends Thread {
             ObjectInputStream objectInput = new ObjectInputStream(input);
             String message = (String) objectInput.readObject();
             String channelName = (String) objectInput.readObject();
-
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(stream);
-            out.writeUTF(message);
 
             //Check if the chat channel is not meant to be sent back.
             if (channelName.equalsIgnoreCase("uknet:discord")) {
@@ -64,18 +61,44 @@ public class ChatHandler extends Thread {
 
             } else {
 
-                for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
-                    if (!server.getPlayersConnected().isEmpty()) {
-                        server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName.split(":")[1]), stream.toByteArray());
+                if (channelName.equals("uknet:connect") || channelName.equals("uknet:disconnect")) {
+
+                    String[] aMessage = message.split(" ");
+                    String chatMessage = String.join(" ", Arrays.copyOfRange(aMessage, 1, aMessage.length));
+
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    DataOutputStream out = new DataOutputStream(stream);
+                    out.writeUTF(chatMessage);
+
+                    for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
+                        if (!server.getPlayersConnected().isEmpty()) {
+                            server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName.split(":")[1]), stream.toByteArray());
+                        }
                     }
+
+                    stream.close();
+                    out.close();
+
+                } else {
+
+                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                    DataOutputStream out = new DataOutputStream(stream);
+                    out.writeUTF(message);
+
+                    for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
+                        if (!server.getPlayersConnected().isEmpty()) {
+                            server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName.split(":")[1]), stream.toByteArray());
+                        }
+                    }
+
+                    stream.close();
+                    out.close();
                 }
 
                 //Send a message to discord.
-                Proxy.getInstance().getDiscord().sendMessage(channelName, stream.toByteArray());
+                Proxy.getInstance().getDiscord().sendMessage(channelName, message);
             }
 
-            stream.close();
-            out.close();
             socket.close();
 
         } catch (Exception ex) {
