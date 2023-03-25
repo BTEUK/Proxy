@@ -11,8 +11,6 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.api.scheduler.ScheduledTask;
-import com.velocitypowered.api.scheduler.Scheduler;
 import me.bteuk.proxy.config.Config;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
@@ -23,10 +21,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.*;
 
 @Plugin(id = "proxy", name = "Proxy", version = "1.3.0",
@@ -52,6 +47,8 @@ public class Proxy {
 
     private HashMap<UUID, Integer> protocol_version;
 
+    private HashMap<UUID, String> last_server;
+
     @Inject
     public Proxy(ProxyServer server, Logger logger) {
         this.server = server;
@@ -75,6 +72,9 @@ public class Proxy {
         linking = new ArrayList<>();
 
         protocol_version = new HashMap<>();
+
+        last_server = new HashMap<>();
+        loadLastServer();
 
         CompletableFuture.runAsync(() -> {
             try {
@@ -130,6 +130,10 @@ public class Proxy {
 
     @Subscribe
     public void onProxyShutDown(ProxyShutdownEvent event) {
+
+        //Store the last server players are connected to.
+        updateLastServer();
+
         if (serverSocket != null && !serverSocket.isClosed()) {
             try {
                 serverSocket.close();
@@ -171,7 +175,7 @@ public class Proxy {
             protocol_version.put(player.getUniqueId(), version.getProtocol());
         }
 
-        String prev = getLastServer(player.getUniqueId().toString());
+        String prev = getLastServer(player.getUniqueId());
         RegisteredServer server;
         //Not null check
         if (prev != null) {
@@ -193,7 +197,7 @@ public class Proxy {
     @Subscribe
     public void change(ServerConnectedEvent e) {
         //Store server as last server.
-        setLastServer(e.getPlayer().getUniqueId().toString(), e.getServer().getServerInfo().getName());
+        setLastServer(e.getPlayer().getUniqueId(), e.getServer().getServerInfo().getName());
     }
 
     public static Proxy getInstance() {
@@ -217,35 +221,46 @@ public class Proxy {
         return null;
     }
 
-    public void setLastServer(String uuid, String servername) {
+    private void setLastServer(UUID uuid, String serverName) {
+        last_server.put(uuid, serverName);
+    }
 
-        try (OutputStream output = new FileOutputStream(dataFolder + "/config.properties")) {
+    private String getLastServer(UUID uuid) {
+        return last_server.get(uuid);
+    }
+
+    //Store the last server data in the properties file when the server closes.
+    private void updateLastServer() {
+
+        try (OutputStream output = new FileOutputStream(dataFolder + "/last_server.properties")) {
 
             Properties prop = new Properties();
 
-            prop.setProperty(uuid, servername);
+            //Store all entries of the array.
+            for (Map.Entry<UUID, String> entry : last_server.entrySet()) {
+                prop.setProperty(entry.getKey().toString(), entry.getValue());
+            }
 
             prop.store(output, null);
 
         } catch (IOException io) {
             io.printStackTrace();
         }
-
     }
 
-    public String getLastServer(String uuid) {
+    //Sets the hashmap with entries from the properties file on server load.
+    private void loadLastServer() {
 
-        try (InputStream input = new FileInputStream(dataFolder + "/config.properties")) {
+        try (InputStream input = new FileInputStream(dataFolder + "/last_server.properties")) {
 
             Properties prop = new Properties();
 
             // load a properties file
             prop.load(input);
 
-            return prop.getProperty(uuid);
+            prop.forEach((uuid, server) -> last_server.put(UUID.fromString((String) uuid), (String) server));
 
-        } catch (IOException e) {
-            return null;
+        } catch (IOException ignored) {
         }
     }
 
