@@ -71,9 +71,7 @@ public class ChatHandler extends Thread {
                     out.writeUTF(chatMessage);
 
                     for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
-                        if (!server.getPlayersConnected().isEmpty()) {
-                            server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName.split(":")[1]), stream.toByteArray());
-                        }
+                        server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName.split(":")[1]), stream.toByteArray());
                     }
 
                     stream.close();
@@ -86,9 +84,7 @@ public class ChatHandler extends Thread {
                     out.writeUTF(message);
 
                     for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
-                        if (!server.getPlayersConnected().isEmpty()) {
-                            server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName.split(":")[1]), stream.toByteArray());
-                        }
+                        server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", channelName.split(":")[1]), stream.toByteArray());
                     }
 
                     stream.close();
