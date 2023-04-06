@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ReviewStatus {
 
-    private long messageID;
+    private String messageID;
     private TextChannel reviewerChannel;
 
     private ScheduledTask task;
@@ -26,13 +26,14 @@ public class ReviewStatus {
         reviewerChannel = Proxy.getInstance().getDiscord().getReviewerChannel();
 
         //Try to get the message ID from config, if it does not exist, create a new message id.
-        int id = Proxy.getInstance().getConfig().getInt("message.reviewer");
+        messageID = Proxy.getInstance().getConfig().getString("message.reviewer");
+        Proxy.getInstance().getLogger().info(messageID);
 
         //Create scheduler to update the message frequently.
         //Run a delayed task to remove this from the list.
         task = Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), () -> {
 
-                    if (id == 0) {
+                    if (messageID == null) {
 
                         //Create new message.
                         createMessage();
@@ -53,8 +54,9 @@ public class ReviewStatus {
     private void createMessage() {
 
         reviewerChannel.sendMessageEmbeds(getEmbed()).queue((message) -> {
+
             //Set message id for next time.
-            messageID = message.getIdLong();
+            messageID = message.getId();
         });
 
     }
@@ -77,11 +79,22 @@ public class ReviewStatus {
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Reviewing Status");
-        MessageEmbed.Field plots = new MessageEmbed.Field("Plot Submissions", "There are currently 0 submitted plots.", false);
-        MessageEmbed.Field navigation = new MessageEmbed.Field("Navigation Submissions", "There are currently 0 navigation submission.", false);
-        eb.setFooter("Last updated: " + Time.getDateTime(Time.currentTime()));
+
+        int plot_count = Proxy.getInstance().plotSQL.getInt("SELECT count(id) FROM plot_data WHERE status='submitted';");
+        String plot_message;
+
+        if (plot_count == 1) {
+            plot_message = "There is 1 plot waiting to be reviewed!";
+        } else {
+            plot_message = "There are " + plot_count + " plots waiting to be reviewed!";
+        }
+
+        MessageEmbed.Field plots = new MessageEmbed.Field("Plot Submissions", plot_message, false);
         eb.addField(plots);
-        eb.addField(navigation);
+
+        //MessageEmbed.Field navigation = new MessageEmbed.Field("Navigation Submissions", "There are currently 0 navigation submission.", false);
+        eb.setFooter("Last updated: " + Time.getDateTime(Time.currentTime()));
+        //eb.addField(navigation);
         //eb.setDescription("**" + chatMessage + "**");
         eb.setColor(Color.RED);
         return eb.build();

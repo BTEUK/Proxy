@@ -106,6 +106,9 @@ public class Proxy {
             return;
         }
 
+        //Setup review status message.
+        new ReviewStatus();
+
         getServer().getScheduler()
                 .buildTask(this, () -> {
 
