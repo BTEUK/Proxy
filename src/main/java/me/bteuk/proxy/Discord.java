@@ -173,4 +173,8 @@ public class Discord {
     public void setJda(JDA jda) {
         this.jda = jda;
     }
+
+    public TextChannel getReviewerChannel() {
+        return reviewer;
+    }
 }

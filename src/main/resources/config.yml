@@ -7,6 +7,10 @@ chat:
   reviewer:
   staff:
 
+#Message ID in discord.
+message:
+  reviewer:
+
 #Database login
 host: localhost
 port: 3306
