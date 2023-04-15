@@ -5,6 +5,9 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -49,10 +52,20 @@ public class DiscordChatListener extends ListenerAdapter {
             DataOutputStream out = new DataOutputStream(stream);
             try {
                 if (event.getMember().getRoles().isEmpty()) {
-                    out.writeUTF(("&8[Discord] &r" + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
+
+                    Component component = LegacyComponentSerializer.legacyAmpersand().deserialize("&8[Discord] &r" + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw());
+                    String json = GsonComponentSerializer.gson().serialize(component);
+
+                    out.writeUTF(json);
+
                 } else {
-                    String hex = String.format("#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
-                    out.writeUTF(("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
+
+                    String hex = String.format("&#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
+
+                    Component component = LegacyComponentSerializer.legacyAmpersand().deserialize("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw());
+                    String json = GsonComponentSerializer.gson().serialize(component);
+
+                    out.writeUTF(json);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -72,8 +85,14 @@ public class DiscordChatListener extends ListenerAdapter {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(stream);
             try {
-                String hex = String.format("#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
-                out.writeUTF(("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
+
+                String hex = String.format("&#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
+
+                Component component = LegacyComponentSerializer.legacyAmpersand().deserialize("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw());
+                String json = GsonComponentSerializer.gson().serialize(component);
+
+                out.writeUTF(json);
+
             } catch (IOException e) {
                 e.printStackTrace();
             }

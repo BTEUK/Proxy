@@ -1,6 +1,5 @@
 package me.bteuk.proxy;
 
-import com.velocitypowered.api.util.GameProfile;
 import me.bteuk.proxy.commands.Playerlist;
 import me.bteuk.proxy.events.BotChatListener;
 import me.bteuk.proxy.events.DiscordChatListener;
@@ -16,12 +15,7 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import java.awt.*;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Discord {
 
@@ -86,66 +80,51 @@ public class Discord {
         }
     }
 
-    public void sendMessage(String channel, String message) throws IOException {
+    public void sendConnectDisconnectMessage(String message, boolean connect) {
 
-        Pattern pattern = Pattern.compile("#[a-fA-F0-9]{6}|&[a-fA-F0-9]|&k|&l|&m|&n|&o|&r|§[a-fA-F0-9]|§k|§l|§m|§n|§o|§r");
+        String[] aMessage = message.split(" ");
+        String url = aMessage[0];
+        String chatMessage = String.join(" ", Arrays.copyOfRange(aMessage, 1, aMessage.length));
 
-        Matcher matcher = pattern.matcher(message);
-        message = matcher.replaceAll("");
+        //If channel is connect send connect message using embed.
+        EmbedBuilder eb = new EmbedBuilder();
+
+        eb.setAuthor(chatMessage, null, url);
+        //eb.setDescription("**" + chatMessage + "**");
+        eb = (connect) ? eb.setColor(Color.GREEN) : eb.setColor(Color.RED);
+        chat.sendMessageEmbeds(eb.build()).queue();
+
+    }
+
+    public void updateReviewerChannel() {
+
+        //When a message is sent in the reviewer channel update the channel topic to the number of submitted plots.
+        int plot_count = Proxy.getInstance().plotSQL.getInt("SELECT count(id) FROM plot_data WHERE status='submitted';");
+        String topic;
+
+        if (plot_count == 1) {
+            topic = "There is 1 plot waiting to be reviewed!";
+        } else {
+            topic = "There are " + plot_count + " plots waiting to be reviewed!";
+        }
+
+        chat.getManager().setTopic(topic);
+
+    }
+
+    public void sendMessage(String message) {
 
         //TODO: could consider applying bold, italic and other formatting to discord messages if used in Minecraft.
 
         //If chat channel is global send it.
-        if (channel.equalsIgnoreCase("uknet:globalchat")) {
+        chat.sendMessage(message).queue();
 
-            chat.sendMessage(message).queue();
+    }
 
-        } else if (channel.equalsIgnoreCase("uknet:connect")) {
+    public void sendStaffMessage(String message) {
 
-            String[] aMessage = message.split(" ");
-            String url = aMessage[0];
-            String chatMessage = String.join(" ",Arrays.copyOfRange(aMessage, 1, aMessage.length));
-
-            //If channel is connect send connect message using embed.
-            EmbedBuilder eb = new EmbedBuilder();
-
-            eb.setAuthor(chatMessage, null, url);
-            //eb.setDescription("**" + chatMessage + "**");
-            eb.setColor(Color.GREEN);
-            chat.sendMessageEmbeds(eb.build()).queue();
-
-        } else if (channel.equalsIgnoreCase("uknet:disconnect")) {
-
-            String[] aMessage = message.split(" ");
-            String url = aMessage[0];
-            String chatMessage = String.join(" ",Arrays.copyOfRange(aMessage, 1, aMessage.length));
-
-            //If channel is connect send disconnect message using embed.
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setAuthor(chatMessage, null, url);
-            //eb.setDescription("**" + chatMessage + "**");
-            eb.setColor(Color.RED);
-            chat.sendMessageEmbeds(eb.build()).queue();
-        } else if (channel.equalsIgnoreCase("uknet:reviewer")) {
-
-            //When a message is sent in the reviewer channel update the channel topic to the number of submitted plots.
-            int plot_count = Proxy.getInstance().plotSQL.getInt("SELECT count(id) FROM plot_data WHERE status='submitted';");
-            String topic;
-
-            if (plot_count == 1) {
-                topic = "There is 1 plot waiting to be reviewed!";
-            } else {
-                topic = "There are " + plot_count + " plots waiting to be reviewed!";
-            }
-
-            chat.getManager().setTopic(topic);
-
-
-        } else if (channel.equalsIgnoreCase("uknet:staff")) {
-
-            //Send message to staff channel.
-            staff.sendMessage(message).queue();
-        }
+        //Send message to staff channel.
+        staff.sendMessage(message).queue();
 
     }
 

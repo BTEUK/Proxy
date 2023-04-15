@@ -7,6 +7,9 @@ import me.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -48,7 +51,11 @@ public class BotChatListener extends ListenerAdapter {
                     //Link accounts.
                     ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     DataOutputStream out = new DataOutputStream(stream);
-                    out.writeUTF("link " + linked.uuid + " " + event.getAuthor().getId());
+
+                    Component component = PlainTextComponentSerializer.plainText().deserialize("link " + linked.uuid + " " + event.getAuthor().getId());
+                    String json = GsonComponentSerializer.gson().serialize(component);
+
+                    out.writeUTF(json);
 
                     for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
                         if (!server.getPlayersConnected().isEmpty()) {
