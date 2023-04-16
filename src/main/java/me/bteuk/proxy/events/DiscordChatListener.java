@@ -48,7 +48,7 @@ public class DiscordChatListener extends ListenerAdapter {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(stream);
             try {
-                if (event.getMember().getRoles().isEmpty()) {
+                if (event.getMember().getRoles().isEmpty() || event.getMember().getColor() == null) {
                     out.writeUTF(("&8[Discord] &r" + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
                 } else {
                     String hex = String.format("#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
