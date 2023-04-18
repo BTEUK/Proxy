@@ -7,6 +7,9 @@ chat:
   reviewer:
   staff:
 
+#Chat Socket Port
+socket_port: 30589
+
 #Message ID in discord.
 message:
   reviewer:
