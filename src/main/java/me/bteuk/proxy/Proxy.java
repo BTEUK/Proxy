@@ -76,9 +76,11 @@ public class Proxy {
         last_server = new HashMap<>();
         loadLastServer();
 
+        int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
+
         CompletableFuture.runAsync(() -> {
             try {
-                serverSocket = new ServerSocket(30589);
+                serverSocket = new ServerSocket(socket_port);
                 while (true) new ChatHandler(serverSocket.accept()).start();
             } catch (IOException ex) {
                 if (serverSocket == null) logger.warn("Could not bind port to socket!");

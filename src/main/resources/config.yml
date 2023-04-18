@@ -10,6 +10,9 @@ chat:
   reviewer:
   staff:
 
+#Chat socket port.
+socket_port: 30589
+
 #Message ID in discord.
 message:
   reviewer:
