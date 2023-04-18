@@ -42,7 +42,7 @@ public class DiscordChatListener extends ListenerAdapter {
         }
 
         //Block from all channels except linked.
-        if (event.getChannel().getId().equals(chat_channel)) {
+        if (event.getChannel().getId().equals(chat_channel) || event.getChannel().getId().equals(staff_channel)) {
 
             //Send message
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -60,30 +60,16 @@ public class DiscordChatListener extends ListenerAdapter {
 
             for(RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
                 if(!server.getPlayersConnected().isEmpty()) {
-                    server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "globalchat"), stream.toByteArray());
+                    if (event.getChannel().getId().equals(staff_channel)) {
+                        server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "staff"), stream.toByteArray());
+                    } else {
+                        server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "globalchat"), stream.toByteArray());
+                    }
                 }
             }
 
-        } else if (event.getChannel().getId().equals(reviewer_channel)) {
+        } /*else if (event.getChannel().getId().equals(reviewer_channel)) {
 
-        } else if (event.getChannel().getId().equals(staff_channel)) {
-
-            //Send message
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(stream);
-            try {
-                String hex = String.format("#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
-                out.writeUTF(("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            for(RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
-                if(!server.getPlayersConnected().isEmpty()) {
-                    server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "staff"), stream.toByteArray());
-                }
-            }
-
-        }
+        }*/
     }
 }
