@@ -12,6 +12,7 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.config.Config;
+import me.bteuk.proxy.events.CommandListener;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -75,6 +76,9 @@ public class Proxy {
 
         last_server = new HashMap<>();
         loadLastServer();
+
+        //Load command listener to forward /server to the servers.
+        new CommandListener(server, this);
 
         int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
 

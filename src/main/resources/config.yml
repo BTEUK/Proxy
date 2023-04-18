@@ -1,3 +1,6 @@
+#Config version (do not update)
+version: "1.0.0"
+
 #Bot token
 token: "insert token here"
 
