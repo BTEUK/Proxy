@@ -2,7 +2,6 @@ package me.bteuk.proxy;
 
 //This class manages the embedded message in the support-info channel, this will tell reviewers the status of submitted plots, and other reviewing related information.
 
-import com.velocitypowered.api.scheduler.ScheduledTask;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -15,9 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class ReviewStatus {
 
     private String messageID;
-    private TextChannel reviewerChannel;
-
-    private ScheduledTask task;
+    private final TextChannel reviewerChannel;
 
     //Build embed.
     public ReviewStatus() {
@@ -27,11 +24,12 @@ public class ReviewStatus {
 
         //Try to get the message ID from config, if it does not exist, create a new message id.
         messageID = Proxy.getInstance().getConfig().getString("message.reviewer");
-        Proxy.getInstance().getLogger().info(messageID);
 
         //Create scheduler to update the message frequently.
         //Run a delayed task to remove this from the list.
-        task = Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), () -> {
+        //Create new message.
+        //Update message.
+        Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), () -> {
 
                     if (messageID == null) {
 
@@ -66,11 +64,7 @@ public class ReviewStatus {
         reviewerChannel.retrieveMessageById(messageID).queue((message) -> {
             // use the message here, its an async callback
             message.editMessageEmbeds(getEmbed()).queue();
-        }, new ErrorHandler().handle(ErrorResponse.UNKNOWN_MESSAGE, (e) -> {
-
-            reviewerChannel.sendMessage("The message with id " + messageID + " does not exist!").queue();
-
-        }));
+        }, new ErrorHandler().handle(ErrorResponse.UNKNOWN_MESSAGE, (e) -> reviewerChannel.sendMessage("The message with id " + messageID + " does not exist!").queue()));
 
 
     }

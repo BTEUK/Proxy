@@ -46,8 +46,6 @@ public class Proxy {
     public GlobalSQL globalSQL;
     public PlotSQL plotSQL;
 
-    private HashMap<UUID, Integer> protocol_version;
-
     private HashMap<UUID, String> last_server;
 
     @Inject
@@ -72,10 +70,7 @@ public class Proxy {
 
         linking = new ArrayList<>();
 
-        protocol_version = new HashMap<>();
-
         last_server = new HashMap<>();
-        loadLastServer();
 
         //Load command listener to forward /server to the servers.
         new CommandListener(server, this);
@@ -92,6 +87,8 @@ public class Proxy {
         });
 
         this.dataFolder = getDataFolder();
+
+        loadLastServer();
 
         //Setup MySQL
         try {
@@ -133,7 +130,7 @@ public class Proxy {
                 .repeat(1L, TimeUnit.MINUTES)
                 .schedule();
 
-        logger.info("Loading Proxy");
+        logger.info("Loaded Proxy");
 
     }
 
@@ -172,20 +169,9 @@ public class Proxy {
 
         Player player = e.getPlayer();
 
-        //Get the protocol version of the player.
-        //This will allow other servers to check and notify the player is using a suboptimal version.
-        ProtocolVersion version = player.getProtocolVersion();
-
-        //Store the protocol version in a map.
-        if (protocol_version.containsKey(player.getUniqueId())) {
-            //Update protocol version.
-            protocol_version.replace(player.getUniqueId(), version.getProtocol());
-        } else {
-            protocol_version.put(player.getUniqueId(), version.getProtocol());
-        }
-
         String prev = getLastServer(player.getUniqueId());
         RegisteredServer server;
+        logger.info(prev);
         //Not null check
         if (prev != null) {
             //Get the RegisteredServer
@@ -198,6 +184,7 @@ public class Proxy {
                 } catch (CancellationException | CompletionException exception) {
                     return;
                 }
+                logger.info(server.getServerInfo().getName());
                 e.setInitialServer(server);
             }
         }
@@ -205,6 +192,7 @@ public class Proxy {
 
     @Subscribe
     public void change(ServerConnectedEvent e) {
+        getLogger().info("Switching server: " + e.getServer().getServerInfo().getName());
         //Store server as last server.
         setLastServer(e.getPlayer().getUniqueId(), e.getServer().getServerInfo().getName());
     }
@@ -268,8 +256,10 @@ public class Proxy {
             prop.load(input);
 
             prop.forEach((uuid, server) -> last_server.put(UUID.fromString((String) uuid), (String) server));
+            logger.info("Loaded last_server.properties with " + last_server.size() + " entries.");
 
         } catch (IOException ignored) {
+            logger.info("last_server.properties does not exist, if this is the first time loading the plugin this is normal behaviour.");
         }
     }
 
