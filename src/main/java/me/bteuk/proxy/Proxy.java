@@ -6,7 +6,6 @@ import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
-import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -113,20 +112,17 @@ public class Proxy {
         new ReviewStatus();
 
         getServer().getScheduler()
-                .buildTask(this, () -> {
+                .buildTask(this, () -> getServer().getAllPlayers().forEach(player -> {
 
-                    getServer().getAllPlayers().forEach(player -> {
+                    String uuid = player.getUniqueId().toString();
 
-                        String uuid = player.getUniqueId().toString();
+                    if (globalSQL.hasRow("SELECT uuid FROM online_users WHERE uuid='" + uuid + "';")) {
 
-                        if (globalSQL.hasRow("SELECT uuid FROM online_users WHERE uuid='" + uuid + "';")) {
+                        //Update last ping.
+                        globalSQL.update("UPDATE online_users SET last_ping=" + System.currentTimeMillis() + " WHERE uuid='" + uuid + "';");
 
-                            //Update last ping.
-                            globalSQL.update("UPDATE online_users SET last_ping=" + System.currentTimeMillis() + " WHERE uuid='" + uuid + "';");
-
-                        }
-                    });
-                })
+                    }
+                }))
                 .repeat(1L, TimeUnit.MINUTES)
                 .schedule();
 
@@ -171,7 +167,6 @@ public class Proxy {
 
         String prev = getLastServer(player.getUniqueId());
         RegisteredServer server;
-        logger.info(prev);
         //Not null check
         if (prev != null) {
             //Get the RegisteredServer
@@ -184,15 +179,55 @@ public class Proxy {
                 } catch (CancellationException | CompletionException exception) {
                     return;
                 }
-                logger.info(server.getServerInfo().getName());
                 e.setInitialServer(server);
             }
+        } else {
+
+            //Try default server.
+            String default_server = config.getString("default_server");
+
+            //Try to set the default server.
+            if (default_server != null) {
+
+                RegisteredServer registeredServer = getServer(default_server);
+
+                if (registeredServer != null) {
+
+                    //Set the default server.
+                    e.setInitialServer(registeredServer);
+                    return;
+
+                }
+            }
+
+            RegisteredServer random_server = getRandomOnlineServer();
+
+            //Check if any server exists.
+            if (random_server == null) {
+                return;
+            }
+
+            //Set the server.
+            e.setInitialServer(getRandomOnlineServer());
+
         }
+    }
+
+    private RegisteredServer getRandomOnlineServer() {
+
+        Collection<RegisteredServer> servers = this.getServer().getAllServers();
+
+        if (servers.size() > 0) {
+            return servers.iterator().next();
+        }
+
+        //Return null if no servers can be found.
+        return null;
+
     }
 
     @Subscribe
     public void change(ServerConnectedEvent e) {
-        getLogger().info("Switching server: " + e.getServer().getServerInfo().getName());
         //Store server as last server.
         setLastServer(e.getPlayer().getUniqueId(), e.getServer().getServerInfo().getName());
     }
