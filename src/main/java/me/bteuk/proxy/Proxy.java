@@ -165,6 +165,7 @@ public class Proxy {
 
         Player player = e.getPlayer();
 
+
         String prev = getLastServer(player.getUniqueId());
         RegisteredServer server;
         //Not null check
@@ -173,52 +174,57 @@ public class Proxy {
             server = getServer(prev);
             //Not null check
             if (server != null) {
-                try {
-                    //Make sure they can join
-                    server.ping();
-                } catch (CancellationException | CompletionException exception) {
+                //Check if server is online.
+                if (globalSQL.hasRow("SELECT name FROM server_data WHERE name='" + server.getServerInfo().getName() + "' AND online=1;")) {
+                    e.setInitialServer(server);
                     return;
                 }
-                e.setInitialServer(server);
             }
-        } else {
+        }
 
-            //Try default server.
-            String default_server = config.getString("default_server");
+        //Try default server.
+        String default_server = config.getString("default_server");
 
-            //Try to set the default server.
-            if (default_server != null) {
+        //Try to set the default server.
+        if (default_server != null) {
 
-                RegisteredServer registeredServer = getServer(default_server);
+            RegisteredServer registeredServer = getServer(default_server);
 
-                if (registeredServer != null) {
+            if (registeredServer != null) {
 
-                    //Set the default server.
+                //Set the default server.
+                //Check if server is online.
+                if (globalSQL.hasRow("SELECT name FROM server_data WHERE name='" + registeredServer.getServerInfo().getName() + "' AND online=1;")) {
                     e.setInitialServer(registeredServer);
                     return;
-
                 }
             }
-
-            RegisteredServer random_server = getRandomOnlineServer();
-
-            //Check if any server exists.
-            if (random_server == null) {
-                return;
-            }
-
-            //Set the server.
-            e.setInitialServer(getRandomOnlineServer());
-
         }
+
+        RegisteredServer random_server = getRandomOnlineServer();
+
+        //Check if any server exists.
+        if (random_server == null) {
+            return;
+        }
+
+        //Set the server.
+        e.setInitialServer(random_server);
+
     }
 
     private RegisteredServer getRandomOnlineServer() {
 
-        Collection<RegisteredServer> servers = this.getServer().getAllServers();
+        Collection<RegisteredServer> servers = getServer().getAllServers();
 
-        if (servers.size() > 0) {
-            return servers.iterator().next();
+        Iterator<RegisteredServer> itr = servers.iterator();
+        while (itr.hasNext()) {
+            RegisteredServer server = itr.next();
+
+            //Check if server is online.
+            if (globalSQL.hasRow("SELECT name FROM server_data WHERE name='" + server.getServerInfo().getName() + "' AND online=1;")) {
+                return server;
+            }
         }
 
         //Return null if no servers can be found.
