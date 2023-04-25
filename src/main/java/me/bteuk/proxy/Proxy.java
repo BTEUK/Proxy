@@ -155,7 +155,7 @@ public class Proxy {
             try {
                 discord.getJda().shutdownNow();
                 discord.setJda(null);
-            } catch (NoClassDefFoundError e) {
+            } catch (NoClassDefFoundError ignored) {
             }
         }
     }
@@ -217,10 +217,7 @@ public class Proxy {
 
         Collection<RegisteredServer> servers = getServer().getAllServers();
 
-        Iterator<RegisteredServer> itr = servers.iterator();
-        while (itr.hasNext()) {
-            RegisteredServer server = itr.next();
-
+        for (RegisteredServer server : servers) {
             //Check if server is online.
             if (globalSQL.hasRow("SELECT name FROM server_data WHERE name='" + server.getServerInfo().getName() + "' AND online=1;")) {
                 return server;

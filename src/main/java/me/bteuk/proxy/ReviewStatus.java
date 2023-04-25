@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 public class ReviewStatus {
@@ -72,25 +73,56 @@ public class ReviewStatus {
     private MessageEmbed getEmbed() {
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle("Reviewing Status");
+        eb.setTitle("Support Information");
 
-        int plot_count = Proxy.getInstance().plotSQL.getInt("SELECT count(id) FROM plot_data WHERE status='submitted';");
-        String plot_message;
+        //Submitted plots, show up to 5 in a list.
+        ArrayList<Integer> plots = Proxy.getInstance().plotSQL.getIntList("SELECT id FROM plot_data WHERE status='submitted';");
+        StringBuilder plot_message = new StringBuilder();
 
-        if (plot_count == 1) {
-            plot_message = "There is 1 plot waiting to be reviewed!";
+        if (plots.size() == 0) {
+            plot_message = new StringBuilder("There are 0 plots waiting to be reviewed!");
         } else {
-            plot_message = "There are " + plot_count + " plots waiting to be reviewed!";
+
+            //Add up to 5 plots to the list.
+            int counter = 0;
+            for (int plot : plots) {
+                if (counter > 5) {
+                    break;
+                }
+
+                plot_message.append("Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
+                        Proxy.getInstance().plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"));
+
+                counter++;
+
+                if (counter < 5) {
+                    plot_message.append("\n");
+                }
+            }
+
+            if (plots.size() > 5) {
+                plot_message.append("\nand ").append(plots.size() - 5).append(" more...");
+            }
         }
 
-        MessageEmbed.Field plots = new MessageEmbed.Field("Plot Submissions", plot_message, false);
-        eb.addField(plots);
+        MessageEmbed.Field plot_submissions = new MessageEmbed.Field("Plot Submissions", plot_message.toString(), false);
+
+        //Plot availability, list number of unclaimed plots for each difficulty.
+        String plots_per_difficulty = "Easy: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=1;") +
+                "\nNormal: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=2;") +
+                "\nHard: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=3;");
+
+        MessageEmbed.Field plot_availability = new MessageEmbed.Field("Plots Available", plots_per_difficulty, false);
+
+
+        eb.addField(plot_submissions);
+        eb.addField(plot_availability);
 
         //MessageEmbed.Field navigation = new MessageEmbed.Field("Navigation Submissions", "There are currently 0 navigation submission.", false);
         eb.setFooter("Last updated: " + Time.getDateTime(Time.currentTime()));
         //eb.addField(navigation);
         //eb.setDescription("**" + chatMessage + "**");
-        eb.setColor(Color.RED);
+        eb.setColor(Color.CYAN);
         return eb.build();
 
     }
