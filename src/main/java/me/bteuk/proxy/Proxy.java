@@ -14,6 +14,7 @@ import me.bteuk.proxy.config.Config;
 import me.bteuk.proxy.events.CommandListener;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
+import me.bteuk.proxy.sql.RegionSQL;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
@@ -44,6 +45,7 @@ public class Proxy {
 
     public GlobalSQL globalSQL;
     public PlotSQL plotSQL;
+    public RegionSQL regionSQL;
 
     private HashMap<UUID, String> last_server;
 
@@ -101,6 +103,11 @@ public class Proxy {
             String plot_database = config.getString("database.plot");
             BasicDataSource plot_dataSource = mysqlSetup(plot_database);
             plotSQL = new PlotSQL(plot_dataSource);
+
+            //Region Database
+            String region_database = config.getString("database.region");
+            BasicDataSource region_dataSource = mysqlSetup(region_database);
+            regionSQL = new RegionSQL(region_dataSource);
 
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();

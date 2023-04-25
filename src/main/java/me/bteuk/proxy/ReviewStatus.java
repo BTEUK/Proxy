@@ -86,39 +86,107 @@ public class ReviewStatus {
             //Add up to 5 plots to the list.
             int counter = 0;
             for (int plot : plots) {
-                if (counter > 5) {
-                    break;
-                }
 
-                plot_message.append("Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
+                plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
                         Proxy.getInstance().plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"));
 
                 counter++;
 
-                if (counter < 5) {
+                if (plots.size() > counter) {
                     plot_message.append("\n");
+                }
+
+                if (counter > 5) {
+                    break;
                 }
             }
 
             if (plots.size() > 5) {
-                plot_message.append("\nand ").append(plots.size() - 5).append(" more...");
+                plot_message.append("*and ").append(plots.size() - 5).append(" more...*");
             }
         }
 
+        //Number of available plots in the plotsystem.
         MessageEmbed.Field plot_submissions = new MessageEmbed.Field("Plot Submissions", plot_message.toString(), false);
 
         //Plot availability, list number of unclaimed plots for each difficulty.
-        String plots_per_difficulty = "Easy: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=1;") +
-                "\nNormal: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=2;") +
-                "\nHard: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=3;");
+        String plots_per_difficulty = "• Easy: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=1;") +
+                "\n• Normal: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=2;") +
+                "\n• Hard: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=3;");
 
         MessageEmbed.Field plot_availability = new MessageEmbed.Field("Plots Available", plots_per_difficulty, false);
 
+        //Number of navigation requests.
+        //Submitted plots, show up to 5 in a list.
+        ArrayList<String> locations = Proxy.getInstance().globalSQL.getStringList("SELECT location FROM location_requests;");
+        StringBuilder navigation_message = new StringBuilder();
+
+        if (locations.size() == 0) {
+            navigation_message = new StringBuilder("There are 0 navigation requests waiting to be reviewed!");
+        } else {
+
+            //Add up to 5 plots to the list.
+            int counter = 0;
+            for (String location : locations) {
+
+                navigation_message.append("• Location ").append(location).append(" requested");
+
+                counter++;
+
+                if (locations.size() > counter) {
+                    navigation_message.append("\n");
+                }
+
+                if (counter > 5) {
+                    break;
+                }
+            }
+
+            if (locations.size() > 5) {
+                navigation_message.append("*and ").append(locations.size() - 5).append(" more...*");
+            }
+        }
+
+        MessageEmbed.Field navigation_requests = new MessageEmbed.Field("Navigation Requests", navigation_message.toString(), false);
+
+        //Number of region requests.
+        ArrayList<String[]> regions = Proxy.getInstance().regionSQL.getStringArrayList("SELECT region,uuid FROM region_requests WHERE staff_accept=0;");
+        StringBuilder region_message = new StringBuilder();
+
+        if (regions.size() == 0) {
+            region_message = new StringBuilder("There are 0 region requests waiting to be reviewed!");
+        } else {
+
+            //Add up to 5 plots to the list.
+            int counter = 0;
+            for (String[] region : regions) {
+
+                region_message.append("• Region ").append(region[0]).append(" requested by ")
+                        .append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" + region[1] + "';"));
+
+                counter++;
+
+                if (regions.size() > counter) {
+                    region_message.append("\n");
+                }
+
+                if (counter > 5) {
+                    break;
+                }
+            }
+
+            if (regions.size() > 5) {
+                region_message.append("*and ").append(locations.size() - 5).append(" more...*");
+            }
+        }
+
+        MessageEmbed.Field region_requests = new MessageEmbed.Field("Region Requests", region_message.toString(), false);
 
         eb.addField(plot_submissions);
         eb.addField(plot_availability);
+        eb.addField(navigation_requests);
+        eb.addField(region_requests);
 
-        //MessageEmbed.Field navigation = new MessageEmbed.Field("Navigation Submissions", "There are currently 0 navigation submission.", false);
         eb.setFooter("Last updated: " + Time.getDateTime(Time.currentTime()));
         //eb.addField(navigation);
         //eb.setDescription("**" + chatMessage + "**");

@@ -30,3 +30,4 @@ password: password
 database:
   global: uknet_global
   plot: uknet_plots
+  region: uknet_regions;
