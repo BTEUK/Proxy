@@ -6,14 +6,15 @@ import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
-import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.config.Config;
+import me.bteuk.proxy.events.CommandListener;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
+import me.bteuk.proxy.sql.RegionSQL;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
@@ -44,8 +45,7 @@ public class Proxy {
 
     public GlobalSQL globalSQL;
     public PlotSQL plotSQL;
-
-    private HashMap<UUID, Integer> protocol_version;
+    public RegionSQL regionSQL;
 
     private HashMap<UUID, String> last_server;
 
@@ -71,10 +71,12 @@ public class Proxy {
 
         linking = new ArrayList<>();
 
-        protocol_version = new HashMap<>();
-
         last_server = new HashMap<>();
-        loadLastServer();
+
+        //Load command listener to forward /server to the servers.
+        new CommandListener(server, this);
+
+        int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
 
         int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
 
@@ -89,6 +91,8 @@ public class Proxy {
 
         this.dataFolder = getDataFolder();
 
+        loadLastServer();
+
         //Setup MySQL
         try {
 
@@ -102,6 +106,11 @@ public class Proxy {
             BasicDataSource plot_dataSource = mysqlSetup(plot_database);
             plotSQL = new PlotSQL(plot_dataSource);
 
+            //Region Database
+            String region_database = config.getString("database.region");
+            BasicDataSource region_dataSource = mysqlSetup(region_database);
+            regionSQL = new RegionSQL(region_dataSource);
+
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
             getLogger().error("Failed to connect to the database, please check that you have set the config values correctly.");
@@ -112,24 +121,21 @@ public class Proxy {
         new ReviewStatus();
 
         getServer().getScheduler()
-                .buildTask(this, () -> {
+                .buildTask(this, () -> getServer().getAllPlayers().forEach(player -> {
 
-                    getServer().getAllPlayers().forEach(player -> {
+                    String uuid = player.getUniqueId().toString();
 
-                        String uuid = player.getUniqueId().toString();
+                    if (globalSQL.hasRow("SELECT uuid FROM online_users WHERE uuid='" + uuid + "';")) {
 
-                        if (globalSQL.hasRow("SELECT uuid FROM online_users WHERE uuid='" + uuid + "';")) {
+                        //Update last ping.
+                        globalSQL.update("UPDATE online_users SET last_ping=" + System.currentTimeMillis() + " WHERE uuid='" + uuid + "';");
 
-                            //Update last ping.
-                            globalSQL.update("UPDATE online_users SET last_ping=" + System.currentTimeMillis() + " WHERE uuid='" + uuid + "';");
-
-                        }
-                    });
-                })
+                    }
+                }))
                 .repeat(1L, TimeUnit.MINUTES)
                 .schedule();
 
-        logger.info("Loading Proxy");
+        logger.info("Loaded Proxy");
 
     }
 
@@ -158,7 +164,7 @@ public class Proxy {
             try {
                 discord.getJda().shutdownNow();
                 discord.setJda(null);
-            } catch (NoClassDefFoundError e) {
+            } catch (NoClassDefFoundError ignored) {
             }
         }
     }
@@ -168,17 +174,6 @@ public class Proxy {
 
         Player player = e.getPlayer();
 
-        //Get the protocol version of the player.
-        //This will allow other servers to check and notify the player is using a suboptimal version.
-        ProtocolVersion version = player.getProtocolVersion();
-
-        //Store the protocol version in a map.
-        if (protocol_version.containsKey(player.getUniqueId())) {
-            //Update protocol version.
-            protocol_version.replace(player.getUniqueId(), version.getProtocol());
-        } else {
-            protocol_version.put(player.getUniqueId(), version.getProtocol());
-        }
 
         String prev = getLastServer(player.getUniqueId());
         RegisteredServer server;
@@ -188,15 +183,59 @@ public class Proxy {
             server = getServer(prev);
             //Not null check
             if (server != null) {
-                try {
-                    //Make sure they can join
-                    server.ping();
-                } catch (CancellationException | CompletionException exception) {
+                //Check if server is online.
+                if (globalSQL.hasRow("SELECT name FROM server_data WHERE name='" + server.getServerInfo().getName() + "' AND online=1;")) {
+                    e.setInitialServer(server);
                     return;
                 }
-                e.setInitialServer(server);
             }
         }
+
+        //Try default server.
+        String default_server = config.getString("default_server");
+
+        //Try to set the default server.
+        if (default_server != null) {
+
+            RegisteredServer registeredServer = getServer(default_server);
+
+            if (registeredServer != null) {
+
+                //Set the default server.
+                //Check if server is online.
+                if (globalSQL.hasRow("SELECT name FROM server_data WHERE name='" + registeredServer.getServerInfo().getName() + "' AND online=1;")) {
+                    e.setInitialServer(registeredServer);
+                    return;
+                }
+            }
+        }
+
+        RegisteredServer random_server = getRandomOnlineServer();
+
+        //Check if any server exists.
+        if (random_server == null) {
+            return;
+        }
+
+        //Set the server.
+        e.setInitialServer(random_server);
+
+    }
+
+    private RegisteredServer getRandomOnlineServer() {
+
+        Collection<RegisteredServer> servers = getServer().getAllServers();
+
+        for (RegisteredServer server : servers) {
+            //Check if server is online.
+            if (globalSQL.hasRow("SELECT name FROM server_data WHERE name='" + server.getServerInfo().getName() + "' AND online=1;")) {
+                return server;
+            }
+        }
+
+        //Return null if no servers can be found.
+        return null;
+
     }
 
     @Subscribe
@@ -264,8 +303,10 @@ public class Proxy {
             prop.load(input);
 
             prop.forEach((uuid, server) -> last_server.put(UUID.fromString((String) uuid), (String) server));
+            logger.info("Loaded last_server.properties with " + last_server.size() + " entries.");
 
         } catch (IOException ignored) {
+            logger.info("last_server.properties does not exist, if this is the first time loading the plugin this is normal behaviour.");
         }
     }
 

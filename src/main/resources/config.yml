@@ -1,8 +1,11 @@
-#Config version (do not change!)
-version: 1.0.0
+#Config version (do not update)
+version: "1.1.0"
 
 #Bot token
 token: "insert token here"
+
+#Default server
+default_server: "lobby"
 
 #Channels IDS in discord for the following chat channels.
 chat:
@@ -10,7 +13,7 @@ chat:
   reviewer:
   staff:
 
-#Chat socket port.
+#Chat Socket Port
 socket_port: 30589
 
 #Message ID in discord.
@@ -27,3 +30,4 @@ password: password
 database:
   global: uknet_global
   plot: uknet_plots
+  region: uknet_regions
