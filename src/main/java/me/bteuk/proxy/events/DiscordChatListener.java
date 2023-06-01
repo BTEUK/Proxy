@@ -10,6 +10,7 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.apache.commons.lang3.StringUtils;
 
+import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -51,7 +52,10 @@ public class DiscordChatListener extends ListenerAdapter {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
             DataOutputStream out = new DataOutputStream(stream);
             try {
-                if (event.getMember().getRoles().isEmpty()) {
+
+                Color color = event.getMember().getColor();
+
+                if (color == null) {
 
                     Component component = LegacyComponentSerializer.legacyAmpersand().deserialize("&8[Discord] &r" + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw());
                     String json = GsonComponentSerializer.gson().serialize(component);
@@ -60,7 +64,7 @@ public class DiscordChatListener extends ListenerAdapter {
 
                 } else {
 
-                    String hex = String.format("&#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
+                    String hex = String.format("&#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
 
                     Component component = LegacyComponentSerializer.legacyAmpersand().deserialize("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw());
                     String json = GsonComponentSerializer.gson().serialize(component);
@@ -90,16 +94,29 @@ public class DiscordChatListener extends ListenerAdapter {
             DataOutputStream out = new DataOutputStream(stream);
             try {
 
-                String hex = String.format("&#%02x%02x%02x", event.getMember().getColor().getRed(), event.getMember().getColor().getGreen(), event.getMember().getColor().getBlue());
+                Color color = event.getMember().getColor();
 
-                Component component = LegacyComponentSerializer.legacyAmpersand().deserialize("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw());
-                String json = GsonComponentSerializer.gson().serialize(component);
+                if (color == null) {
 
-                out.writeUTF(json);
+                    Component component = LegacyComponentSerializer.legacyAmpersand().deserialize("&8[Discord] &r" + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw());
+                    String json = GsonComponentSerializer.gson().serialize(component);
+
+                    out.writeUTF(json);
+
+                } else {
+
+                    String hex = String.format("&#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+
+                    Component component = LegacyComponentSerializer.legacyAmpersand().deserialize("&8[Discord] &r" + hex + event.getMember().getEffectiveName() + " &7&l> &r&f" + event.getMessage().getContentRaw());
+                    String json = GsonComponentSerializer.gson().serialize(component);
+
+                    out.writeUTF(json);
+                }
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
 
             for(RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
                 if(!server.getPlayersConnected().isEmpty()) {

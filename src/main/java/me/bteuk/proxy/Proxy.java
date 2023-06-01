@@ -78,8 +78,6 @@ public class Proxy {
 
         int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
 
-        int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
-
         CompletableFuture.runAsync(() -> {
             try {
                 serverSocket = new ServerSocket(socket_port);

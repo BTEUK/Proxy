@@ -96,7 +96,7 @@ public class ReviewStatus {
                     plot_message.append("\n");
                 }
 
-                if (counter > 5) {
+                if (counter > 4) {
                     break;
                 }
             }
@@ -137,7 +137,7 @@ public class ReviewStatus {
                     navigation_message.append("\n");
                 }
 
-                if (counter > 5) {
+                if (counter > 4) {
                     break;
                 }
             }
@@ -170,7 +170,7 @@ public class ReviewStatus {
                     region_message.append("\n");
                 }
 
-                if (counter > 5) {
+                if (counter > 4) {
                     break;
                 }
             }
