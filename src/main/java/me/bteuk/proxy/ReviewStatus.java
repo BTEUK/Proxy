@@ -76,7 +76,8 @@ public class ReviewStatus {
         eb.setTitle("Support Information");
 
         //Submitted plots, show up to 5 in a list.
-        ArrayList<Integer> plots = Proxy.getInstance().plotSQL.getIntList("SELECT id FROM plot_data WHERE status='submitted';");
+        //Order by submit time ascending, as the oldest plots get reviewed first, this way it is always clear to see if plots are currently being reviewed.
+        ArrayList<Integer> plots = Proxy.getInstance().plotSQL.getIntList("SELECT id FROM plot_submissions ORDER BY submit_time ASC;");
         StringBuilder plot_message = new StringBuilder();
 
         if (plots.size() == 0) {
@@ -87,8 +88,14 @@ public class ReviewStatus {
             int counter = 0;
             for (int plot : plots) {
 
-                plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
-                        Proxy.getInstance().plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"));
+                //If plot status is 'reviewing', then add additional info that the plot is currently under review.
+                if (Proxy.getInstance().plotSQL.hasRow("SELECT if FROM plot_data WHERE id=" + plot + " AND status='reviewing';")) {
+                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
+                            Proxy.getInstance().plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"));
+                } else {
+                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
+                            Proxy.getInstance().plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';")).append(" (under review)");
+                }
 
                 counter++;
 
