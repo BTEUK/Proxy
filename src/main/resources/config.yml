@@ -16,6 +16,12 @@ chat:
 #Chat Socket Port
 socket_port: 30589
 
+#Network messages
+#%player% is a placeholder for the player name.
+custom_messages:
+  enabled: true
+  leave: '%player% has left UKnet'
+
 #Message ID in discord.
 message:
   reviewer:

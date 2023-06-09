@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Discord {
 
@@ -95,6 +96,26 @@ public class Discord {
         chat.sendMessageEmbeds(eb.build()).queue();
 
     }
+
+    public void sendDisconnectBlockingMessage(String message, AtomicInteger users) {
+
+        String[] aMessage = message.split(" ");
+        String url = aMessage[0];
+        String chatMessage = String.join(" ", Arrays.copyOfRange(aMessage, 1, aMessage.length));
+
+        //If channel is connect send connect message using embed.
+        EmbedBuilder eb = new EmbedBuilder();
+
+        eb.setAuthor(chatMessage, null, url);
+        //eb.setDescription("**" + chatMessage + "**");
+        eb.setColor(Color.RED);
+
+        chat.sendMessageEmbeds(eb.build()).queue((reply) -> {
+            users.decrementAndGet();
+        });
+
+    }
+
 
     public void updateReviewerChannel() {
 
