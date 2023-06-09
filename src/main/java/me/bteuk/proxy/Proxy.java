@@ -118,21 +118,6 @@ public class Proxy {
         //Setup review status message.
         new ReviewStatus();
 
-        getServer().getScheduler()
-                .buildTask(this, () -> getServer().getAllPlayers().forEach(player -> {
-
-                    String uuid = player.getUniqueId().toString();
-
-                    if (globalSQL.hasRow("SELECT uuid FROM online_users WHERE uuid='" + uuid + "';")) {
-
-                        //Update last ping.
-                        globalSQL.update("UPDATE online_users SET last_ping=" + System.currentTimeMillis() + " WHERE uuid='" + uuid + "';");
-
-                    }
-                }))
-                .repeat(1L, TimeUnit.MINUTES)
-                .schedule();
-
         logger.info("Loaded Proxy");
 
     }
