@@ -15,13 +15,19 @@ import java.util.concurrent.TimeUnit;
 public class ReviewStatus {
 
     private String messageID;
-    private final TextChannel reviewerChannel;
+    private final TextChannel supportInfoChannel;
+    private final TextChannel supportChatChannel;
+
+    private ArrayList<Integer> plots;
+
+    private final long day = 24L * 60L * 60L * 1000L;
 
     //Build embed.
     public ReviewStatus() {
 
         //Get channel.
-        reviewerChannel = Proxy.getInstance().getDiscord().getReviewerChannel();
+        supportInfoChannel = Proxy.getInstance().getDiscord().getSupportInfoChannel();
+        supportChatChannel = Proxy.getInstance().getDiscord().getSupportChatChannel();
 
         //Try to get the message ID from config, if it does not exist, create a new message id.
         messageID = Proxy.getInstance().getConfig().getString("message.reviewer");
@@ -44,6 +50,38 @@ public class ReviewStatus {
 
                     }
 
+                    //Check for plots that have not been queried within a certain amount of time.
+                    long time = Time.currentTime();
+
+                    //Get all plots that have not been reviewed in the last 24 hours, and have not already been queried.
+                    plots = Proxy.getInstance().plotSQL.getIntList("SELECT id FROM plot_submissions WHERE last_query<" + (time - day) + ";");
+
+                    //Update the last query time for the same plots.
+                    Proxy.getInstance().plotSQL.update("UPDATE plot_submissions SET last_query=" + time + " WHERE last_query<" + (time - day) + ";");
+
+                    //For each plot post in the support-chat how long they've not been reviewed.
+                    //If longer that 3 days ping reviewers.
+                    for (int id : plots) {
+
+                        //Get time since submission.
+                        long submit_time = Proxy.getInstance().plotSQL.getLong("SELECT submit_time FROM plot_submissions WHERE id=" + id + ";");
+                        int days = (int) ((time - submit_time) / 1000L / 60L / 60L);
+
+                        if (time - (3 * day) > submit_time) {
+
+                            supportChatChannel.sendMessage("@Reviewer Plot " + id + " has been submitted for " + days + " days, please review it as soon as possible!").queue();
+
+                        } else if (days == 1) {
+
+                            supportChatChannel.sendMessage("Plot " + id + " has been submitted for " + days + " day, please review it soon.").queue();
+
+                        } else {
+
+                            supportChatChannel.sendMessage("Plot " + id + " has been submitted for " + days + " days, please review it soon.").queue();
+
+                        }
+                    }
+
                 })
                 .repeat(1L, TimeUnit.MINUTES)
                 .schedule();
@@ -52,7 +90,7 @@ public class ReviewStatus {
 
     private void createMessage() {
 
-        reviewerChannel.sendMessageEmbeds(getEmbed()).queue((message) -> {
+        supportInfoChannel.sendMessageEmbeds(getEmbed()).queue((message) -> {
 
             //Set message id for next time.
             messageID = message.getId();
@@ -62,10 +100,10 @@ public class ReviewStatus {
 
     private void updateMessage() {
 
-        reviewerChannel.retrieveMessageById(messageID).queue((message) -> {
+        supportInfoChannel.retrieveMessageById(messageID).queue((message) -> {
             // use the message here, its an async callback
             message.editMessageEmbeds(getEmbed()).queue();
-        }, new ErrorHandler().handle(ErrorResponse.UNKNOWN_MESSAGE, (e) -> reviewerChannel.sendMessage("The message with id " + messageID + " does not exist!").queue()));
+        }, new ErrorHandler().handle(ErrorResponse.UNKNOWN_MESSAGE, (e) -> supportInfoChannel.sendMessage("The message with id " + messageID + " does not exist!").queue()));
 
 
     }

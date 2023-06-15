@@ -10,7 +10,9 @@ default_server: "lobby"
 #Channels IDS in discord for the following chat channels.
 chat:
   global:
-  reviewer:
+  support:
+    info:
+    chat:
   staff:
 
 #Chat Socket Port

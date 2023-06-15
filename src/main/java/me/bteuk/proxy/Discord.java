@@ -26,7 +26,8 @@ public class Discord {
 
     private TextChannel chat;
     private TextChannel staff;
-    private TextChannel reviewer;
+    private TextChannel supportInfo;
+    private TextChannel supportChat;
 
     public Discord() {
 
@@ -43,7 +44,8 @@ public class Discord {
         //Get token from config.
         String token = Proxy.getInstance().getConfig().getString("token");
         String chat_channel = Proxy.getInstance().getConfig().getString("chat.global");
-        String reviewer_channel = Proxy.getInstance().getConfig().getString("chat.reviewer");
+        String support_info = Proxy.getInstance().getConfig().getString("chat.support.info");
+        String support_chat = Proxy.getInstance().getConfig().getString("chat.support.chat");
         String staff_channel = Proxy.getInstance().getConfig().getString("chat.staff");
 
         //Create JDABuilder.
@@ -64,7 +66,7 @@ public class Discord {
 
         builder.setActivity(Activity.playing("BTE UK"));
 
-        builder.addEventListeners(new DiscordChatListener(chat_channel, reviewer_channel, staff_channel));
+        builder.addEventListeners(new DiscordChatListener(chat_channel, support_chat, staff_channel));
         builder.addEventListeners(new BotChatListener());
         builder.addEventListeners(new Playerlist());
 
@@ -73,7 +75,8 @@ public class Discord {
             jda.awaitReady();
 
             chat = jda.getTextChannelById(chat_channel);
-            reviewer = jda.getTextChannelById(reviewer_channel);
+            supportInfo = jda.getTextChannelById(support_info);
+            supportChat = jda.getTextChannelById(support_chat);
             staff = jda.getTextChannelById(staff_channel);
 
         } catch (InterruptedException e) {
@@ -174,7 +177,11 @@ public class Discord {
         this.jda = jda;
     }
 
-    public TextChannel getReviewerChannel() {
-        return reviewer;
+    public TextChannel getSupportInfoChannel() {
+        return supportInfo;
+    }
+
+    public TextChannel getSupportChatChannel() {
+        return supportChat;
     }
 }
