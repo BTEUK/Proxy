@@ -28,6 +28,10 @@ custom_messages:
 message:
   reviewer:
 
+#Reviewer role id.
+role:
+  reviewer:
+
 #Database login
 host: localhost
 port: 3306

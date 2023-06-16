@@ -29,6 +29,8 @@ public class Discord {
     private TextChannel supportInfo;
     private TextChannel supportChat;
 
+    private final String reviewer;
+
     public Discord() {
 
         // add log4j filter for JDA messages
@@ -47,6 +49,8 @@ public class Discord {
         String support_info = Proxy.getInstance().getConfig().getString("chat.support.info");
         String support_chat = Proxy.getInstance().getConfig().getString("chat.support.chat");
         String staff_channel = Proxy.getInstance().getConfig().getString("chat.staff");
+
+        reviewer = Proxy.getInstance().getConfig().getString("role.reviewer");
 
         //Create JDABuilder.
         JDABuilder builder = JDABuilder.createDefault(token);
@@ -183,5 +187,9 @@ public class Discord {
 
     public TextChannel getSupportChatChannel() {
         return supportChat;
+    }
+
+    public String getReviewerRoleID() {
+        return reviewer;
     }
 }

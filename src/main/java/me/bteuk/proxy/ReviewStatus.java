@@ -65,11 +65,11 @@ public class ReviewStatus {
 
                         //Get time since submission.
                         long submit_time = Proxy.getInstance().plotSQL.getLong("SELECT submit_time FROM plot_submissions WHERE id=" + id + ";");
-                        int days = (int) ((time - submit_time) / 1000L / 60L / 60L);
+                        int days = (int) ((time - submit_time) / 1000L / 60L / 60L / 24L);
 
                         if (time - (3 * day) > submit_time) {
 
-                            supportChatChannel.sendMessage("@Reviewer Plot " + id + " has been submitted for " + days + " days, please review it as soon as possible!").queue();
+                            supportChatChannel.sendMessage("<@&" + Proxy.getInstance().getDiscord().getReviewerRoleID() + "> Plot " + id + " has been submitted for " + days + " days, please review it as soon as possible!").queue();
 
                         } else if (days == 1) {
 
@@ -127,12 +127,12 @@ public class ReviewStatus {
             for (int plot : plots) {
 
                 //If plot status is 'reviewing', then add additional info that the plot is currently under review.
-                if (Proxy.getInstance().plotSQL.hasRow("SELECT if FROM plot_data WHERE id=" + plot + " AND status='reviewing';")) {
-                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
-                            Proxy.getInstance().plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"));
-                } else {
+                if (Proxy.getInstance().plotSQL.hasRow("SELECT id FROM plot_data WHERE id=" + plot + " AND status='reviewing';")) {
                     plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
                             Proxy.getInstance().plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';")).append(" (under review)");
+                } else {
+                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
+                            Proxy.getInstance().plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"));
                 }
 
                 counter++;
