@@ -15,6 +15,7 @@ import me.bteuk.proxy.events.CommandListener;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
 import me.bteuk.proxy.sql.RegionSQL;
+import net.kyori.adventure.text.Component;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
@@ -24,8 +25,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.3.0",
+@Plugin(id = "proxy", name = "Proxy", version = "1.4.0",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin for UKnet, deals with the chat and server selection.", authors = {"ELgamer"})
 public class Proxy {
 
@@ -118,27 +120,15 @@ public class Proxy {
         //Setup review status message.
         new ReviewStatus();
 
-        getServer().getScheduler()
-                .buildTask(this, () -> getServer().getAllPlayers().forEach(player -> {
-
-                    String uuid = player.getUniqueId().toString();
-
-                    if (globalSQL.hasRow("SELECT uuid FROM online_users WHERE uuid='" + uuid + "';")) {
-
-                        //Update last ping.
-                        globalSQL.update("UPDATE online_users SET last_ping=" + System.currentTimeMillis() + " WHERE uuid='" + uuid + "';");
-
-                    }
-                }))
-                .repeat(1L, TimeUnit.MINUTES)
-                .schedule();
-
         logger.info("Loaded Proxy");
 
     }
 
     @Subscribe
     public void onProxyShutDown(ProxyShutdownEvent event) {
+
+        ArrayList<String> online_users = globalSQL.getStringList("SELECT uuid FROM online_users;");
+        AtomicInteger users = new AtomicInteger(online_users.size());
 
         //Store the last server players are connected to.
         updateLastServer();
@@ -149,6 +139,34 @@ public class Proxy {
             } catch (IOException ex) {
                 logger.warn("Could not unbind port from socket!");
             }
+        }
+
+        //Set leave message.
+        String leaveMessage = "%player% has left the game.";
+        if (config.getBoolean("custom_messages.enabled")) {
+            leaveMessage = config.getString("custom_messages.leave");
+        }
+
+
+        //Show disconnect message for all players in discord.
+        for (String uuid : online_users) {
+
+            String player_skin = globalSQL.getString("SELECT player_skin FROM player_data WHERE uuid='" + uuid + "';");
+
+            //Get player name from database.
+            String message = getAvatarUrl(uuid, player_skin) + " " +
+                    leaveMessage.replace("%player%", globalSQL.getString("SELECT name FROM player_data WHERE uuid='" + uuid + "';"));
+            discord.sendDisconnectBlockingMessage(message, users);
+
+        }
+
+        //TODO: Add timeout if it takes too long.
+        while (users.get() > 0) {
+            //wait
+        }
+
+        if (online_users.size() > 0) {
+            getLogger().info("Sent disconnect message to online users!");
         }
 
         // Clear JDA listeners
@@ -363,5 +381,21 @@ public class Proxy {
 
     public ArrayList<Linked> getLinking() {
         return linking;
+    }
+
+    public String getAvatarUrl(String uuid, String texture) {
+        return constructAvatarUrl(uuid, texture);
+    }
+
+    private String constructAvatarUrl(String uuid, String texture) {
+
+        String defaultUrl = "https://crafatar.com/avatars/{uuid-nodashes}.png?size={size}&overlay#{texture}";
+
+        defaultUrl = defaultUrl
+                .replace("{texture}", texture != null ? texture : "")
+                .replace("{uuid-nodashes}", Objects.requireNonNull(uuid).replace("-", ""))
+                .replace("{size}", "128");
+
+        return defaultUrl;
     }
 }

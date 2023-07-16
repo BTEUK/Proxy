@@ -20,4 +20,8 @@ public class Config {
     public int getInt(String path) {
         return config.getInt(path);
     }
+
+    public boolean getBoolean(String path) {
+        return config.getBoolean(path);
+    }
 }
