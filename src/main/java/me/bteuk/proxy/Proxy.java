@@ -27,7 +27,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.4.0",
+@Plugin(id = "proxy", name = "Proxy", version = "1.5.0",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin for UKnet, deals with the chat and server selection.", authors = {"ELgamer"})
 public class Proxy {
 
