@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Discord {
 
@@ -25,7 +26,10 @@ public class Discord {
 
     private TextChannel chat;
     private TextChannel staff;
-    private TextChannel reviewer;
+    private TextChannel supportInfo;
+    private TextChannel supportChat;
+
+    private final String reviewer;
 
     public Discord() {
 
@@ -42,8 +46,11 @@ public class Discord {
         //Get token from config.
         String token = Proxy.getInstance().getConfig().getString("token");
         String chat_channel = Proxy.getInstance().getConfig().getString("chat.global");
-        String reviewer_channel = Proxy.getInstance().getConfig().getString("chat.reviewer");
+        String support_info = Proxy.getInstance().getConfig().getString("chat.support.info");
+        String support_chat = Proxy.getInstance().getConfig().getString("chat.support.chat");
         String staff_channel = Proxy.getInstance().getConfig().getString("chat.staff");
+
+        reviewer = Proxy.getInstance().getConfig().getString("role.reviewer");
 
         //Create JDABuilder.
         JDABuilder builder = JDABuilder.createDefault(token);
@@ -63,7 +70,7 @@ public class Discord {
 
         builder.setActivity(Activity.playing("BTE UK"));
 
-        builder.addEventListeners(new DiscordChatListener(chat_channel, reviewer_channel, staff_channel));
+        builder.addEventListeners(new DiscordChatListener(chat_channel, support_chat, staff_channel));
         builder.addEventListeners(new BotChatListener());
         builder.addEventListeners(new Playerlist());
 
@@ -72,7 +79,8 @@ public class Discord {
             jda.awaitReady();
 
             chat = jda.getTextChannelById(chat_channel);
-            reviewer = jda.getTextChannelById(reviewer_channel);
+            supportInfo = jda.getTextChannelById(support_info);
+            supportChat = jda.getTextChannelById(support_chat);
             staff = jda.getTextChannelById(staff_channel);
 
         } catch (InterruptedException e) {
@@ -95,6 +103,26 @@ public class Discord {
         chat.sendMessageEmbeds(eb.build()).queue();
 
     }
+
+    public void sendDisconnectBlockingMessage(String message, AtomicInteger users) {
+
+        String[] aMessage = message.split(" ");
+        String url = aMessage[0];
+        String chatMessage = String.join(" ", Arrays.copyOfRange(aMessage, 1, aMessage.length));
+
+        //If channel is connect send connect message using embed.
+        EmbedBuilder eb = new EmbedBuilder();
+
+        eb.setAuthor(chatMessage, null, url);
+        //eb.setDescription("**" + chatMessage + "**");
+        eb.setColor(Color.RED);
+
+        chat.sendMessageEmbeds(eb.build()).queue((reply) -> {
+            users.decrementAndGet();
+        });
+
+    }
+
 
     public void updateReviewerChannel() {
 
@@ -153,7 +181,15 @@ public class Discord {
         this.jda = jda;
     }
 
-    public TextChannel getReviewerChannel() {
+    public TextChannel getSupportInfoChannel() {
+        return supportInfo;
+    }
+
+    public TextChannel getSupportChatChannel() {
+        return supportChat;
+    }
+
+    public String getReviewerRoleID() {
         return reviewer;
     }
 }

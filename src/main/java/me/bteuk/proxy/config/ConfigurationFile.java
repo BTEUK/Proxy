@@ -103,6 +103,16 @@ public abstract class ConfigurationFile {
         return (int) value;
     }
 
+    public boolean getBoolean(String path) {
+        return getBoolean(path, false);
+    }
+
+    public boolean getBoolean(String path, boolean defaultValue) {
+        Object value = getObject(path, defaultValue);
+        if (value == null) return defaultValue;
+        return (boolean) value;
+    }
+
     public void set(String path, Object value) {
         set(values, path, value);
         save();
