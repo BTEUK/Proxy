@@ -1,5 +1,6 @@
 package me.bteuk.proxy;
 
+import me.bteuk.proxy.commands.CommandManager;
 import me.bteuk.proxy.commands.Playerlist;
 import me.bteuk.proxy.events.BotChatListener;
 import me.bteuk.proxy.events.DiscordChatListener;
@@ -72,7 +73,7 @@ public class Discord {
 
         builder.addEventListeners(new DiscordChatListener(chat_channel, support_chat, staff_channel));
         builder.addEventListeners(new BotChatListener());
-        builder.addEventListeners(new Playerlist());
+        builder.addEventListeners(new CommandManager());
 
         try {
             jda = builder.build();
