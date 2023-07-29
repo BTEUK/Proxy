@@ -2,6 +2,8 @@ package me.bteuk.proxy.commands;
 
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.Proxy;
+import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 
 import java.util.ArrayList;
@@ -60,7 +62,7 @@ public class Playerlist extends AbstractCommand {
 
         }
 
-        event.getHook().sendMessage(playerListMessage).queue();
+        event.reply(playerListMessage).queue();
 
     }
 }

@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildReadyEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -54,6 +55,25 @@ public class CommandManager extends ListenerAdapter {
 
         registerCommands(event.getGuild());
 
+    }
+
+    @Override
+    public void onButtonInteraction(ButtonInteractionEvent event) {
+
+        //See if the component fits our format.
+        String[] args = event.getComponentId().split(",");
+
+        if (args.length == 2) {
+
+            //Search for the command.
+            for (Command command : commands) {
+                if (args[0].equals(command.getName())) {
+                    command.onButtonInteraction(event, Integer.parseInt(args[1]));
+                    break;
+                }
+            }
+
+        }
     }
 
     /**

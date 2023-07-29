@@ -1,8 +1,6 @@
 package me.bteuk.proxy.commands;
 
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-
-public class ClaimedPlots extends AbstractCommand {
+public class ClaimedPlots extends PlotListCommand {
 
     /**
      * Constructor, saved the name and description of the command.
@@ -12,11 +10,7 @@ public class ClaimedPlots extends AbstractCommand {
      * @param description Description of the command
      */
     public ClaimedPlots(String name, String description) {
-        super(name, description);
+        super(name, description, "Claimed Plots", "", "There are currently no claimed plots.");
     }
 
-    @Override
-    public void onCommand(SlashCommandInteractionEvent event) {
-
-    }
 }

@@ -1,5 +1,7 @@
 package me.bteuk.proxy.commands;
 
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+
 public abstract class AbstractCommand implements Command {
 
     private final String name;
@@ -24,4 +26,6 @@ public abstract class AbstractCommand implements Command {
     public String getDescription() {
         return description;
     }
+
+    public void onButtonInteraction(ButtonInteractionEvent event, int page) {}
 }
