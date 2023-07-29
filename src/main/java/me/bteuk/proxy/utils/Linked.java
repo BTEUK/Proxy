@@ -1,6 +1,7 @@
-package me.bteuk.proxy;
+package me.bteuk.proxy.utils;
 
 import com.velocitypowered.api.scheduler.ScheduledTask;
+import me.bteuk.proxy.Proxy;
 
 import java.util.concurrent.TimeUnit;
 

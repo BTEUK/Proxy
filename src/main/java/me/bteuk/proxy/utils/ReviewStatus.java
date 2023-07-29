@@ -1,7 +1,9 @@
-package me.bteuk.proxy;
+package me.bteuk.proxy.utils;
 
-//This class manages the embedded message in the support-info channel, this will tell reviewers the status of submitted plots, and other reviewing related information.
-
+import me.bteuk.proxy.Proxy;
+import me.bteuk.proxy.sql.GlobalSQL;
+import me.bteuk.proxy.sql.PlotSQL;
+import me.bteuk.proxy.sql.RegionSQL;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -12,6 +14,9 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This class manages the embedded message in the support-info channel, this will tell reviewers the status of submitted plots, and other reviewing related information.
+ */
 public class ReviewStatus {
 
     private String messageID;
@@ -20,10 +25,18 @@ public class ReviewStatus {
 
     private ArrayList<Integer> plots;
 
+    private final PlotSQL plotSQL;
+    private final GlobalSQL globalSQL;
+    private final RegionSQL regionSQL;
+
     private final long day = 24L * 60L * 60L * 1000L;
 
     //Build embed.
     public ReviewStatus() {
+
+        plotSQL = Proxy.getInstance().getPlotSQL();
+        globalSQL = Proxy.getInstance().getGlobalSQL();
+        regionSQL = Proxy.getInstance().getRegionSQL();
 
         //Get channel.
         supportInfoChannel = Proxy.getInstance().getDiscord().getSupportInfoChannel();
@@ -54,17 +67,17 @@ public class ReviewStatus {
                     long time = Time.currentTime();
 
                     //Get all plots that have not been reviewed in the last 24 hours, and have not already been queried.
-                    plots = Proxy.getInstance().plotSQL.getIntList("SELECT id FROM plot_submissions WHERE last_query<" + (time - day) + ";");
+                    plots = plotSQL.getIntList("SELECT id FROM plot_submissions WHERE last_query<" + (time - day) + ";");
 
                     //Update the last query time for the same plots.
-                    Proxy.getInstance().plotSQL.update("UPDATE plot_submissions SET last_query=" + time + " WHERE last_query<" + (time - day) + ";");
+                    plotSQL.update("UPDATE plot_submissions SET last_query=" + time + " WHERE last_query<" + (time - day) + ";");
 
                     //For each plot post in the support-chat how long they've not been reviewed.
                     //If longer that 3 days ping reviewers.
                     for (int id : plots) {
 
                         //Get time since submission.
-                        long submit_time = Proxy.getInstance().plotSQL.getLong("SELECT submit_time FROM plot_submissions WHERE id=" + id + ";");
+                        long submit_time = plotSQL.getLong("SELECT submit_time FROM plot_submissions WHERE id=" + id + ";");
                         int days = (int) ((time - submit_time) / 1000L / 60L / 60L / 24L);
 
                         if (time - (3 * day) > submit_time) {
@@ -115,10 +128,10 @@ public class ReviewStatus {
 
         //Submitted plots, show up to 5 in a list.
         //Order by submit time ascending, as the oldest plots get reviewed first, this way it is always clear to see if plots are currently being reviewed.
-        ArrayList<Integer> plots = Proxy.getInstance().plotSQL.getIntList("SELECT id FROM plot_submissions ORDER BY submit_time ASC;");
+        ArrayList<Integer> plots = plotSQL.getIntList("SELECT id FROM plot_submissions ORDER BY submit_time ASC;");
         StringBuilder plot_message = new StringBuilder();
 
-        if (plots.size() == 0) {
+        if (plots.isEmpty()) {
             plot_message = new StringBuilder("There are 0 plots waiting to be reviewed!");
         } else {
 
@@ -127,12 +140,12 @@ public class ReviewStatus {
             for (int plot : plots) {
 
                 //If plot status is 'reviewing', then add additional info that the plot is currently under review.
-                if (Proxy.getInstance().plotSQL.hasRow("SELECT id FROM plot_data WHERE id=" + plot + " AND status='reviewing';")) {
-                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
-                            Proxy.getInstance().plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';")).append(" (under review)");
+                if (plotSQL.hasRow("SELECT id FROM plot_data WHERE id=" + plot + " AND status='reviewing';")) {
+                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
+                            plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';")).append(" (under review)");
                 } else {
-                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
-                            Proxy.getInstance().plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"));
+                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
+                            plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"));
                 }
 
                 counter++;
@@ -155,18 +168,18 @@ public class ReviewStatus {
         MessageEmbed.Field plot_submissions = new MessageEmbed.Field("Plot Submissions", plot_message.toString(), false);
 
         //Plot availability, list number of unclaimed plots for each difficulty.
-        String plots_per_difficulty = "• Easy: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=1;") +
-                "\n• Normal: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=2;") +
-                "\n• Hard: " + Proxy.getInstance().plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=3;");
+        String plots_per_difficulty = "• Easy: " + plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=1;") +
+                "\n• Normal: " + plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=2;") +
+                "\n• Hard: " + plotSQL.getInt("SELECT COUNT(id) FROM plot_data WHERE status='unclaimed' AND difficulty=3;");
 
         MessageEmbed.Field plot_availability = new MessageEmbed.Field("Plots Available", plots_per_difficulty, false);
 
         //Number of navigation requests.
         //Submitted plots, show up to 5 in a list.
-        ArrayList<String> locations = Proxy.getInstance().globalSQL.getStringList("SELECT location FROM location_requests;");
+        ArrayList<String> locations = globalSQL.getStringList("SELECT location FROM location_requests;");
         StringBuilder navigation_message = new StringBuilder();
 
-        if (locations.size() == 0) {
+        if (locations.isEmpty()) {
             navigation_message = new StringBuilder("There are 0 navigation requests waiting to be reviewed!");
         } else {
 
@@ -195,10 +208,10 @@ public class ReviewStatus {
         MessageEmbed.Field navigation_requests = new MessageEmbed.Field("Navigation Requests", navigation_message.toString(), false);
 
         //Number of region requests.
-        ArrayList<String[]> regions = Proxy.getInstance().regionSQL.getStringArrayList("SELECT region,uuid FROM region_requests WHERE staff_accept=0;");
+        ArrayList<String[]> regions = regionSQL.getStringArrayList("SELECT region,uuid FROM region_requests WHERE staff_accept=0;");
         StringBuilder region_message = new StringBuilder();
 
-        if (regions.size() == 0) {
+        if (regions.isEmpty()) {
             region_message = new StringBuilder("There are 0 region requests waiting to be reviewed!");
         } else {
 
@@ -207,7 +220,7 @@ public class ReviewStatus {
             for (String[] region : regions) {
 
                 region_message.append("• Region ").append(region[0]).append(" requested by ")
-                        .append(Proxy.getInstance().globalSQL.getString("SELECT name FROM player_data WHERE uuid='" + region[1] + "';"));
+                        .append(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" + region[1] + "';"));
 
                 counter++;
 

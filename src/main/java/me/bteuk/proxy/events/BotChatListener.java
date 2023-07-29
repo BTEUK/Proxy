@@ -2,7 +2,7 @@ package me.bteuk.proxy.events;
 
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import me.bteuk.proxy.Linked;
+import me.bteuk.proxy.utils.Linked;
 import me.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -15,7 +15,6 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class BotChatListener extends ListenerAdapter {
 

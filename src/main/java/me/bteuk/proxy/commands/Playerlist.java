@@ -25,7 +25,7 @@ public class Playerlist extends AbstractCommand {
         event.deferReply().setEphemeral(true).queue();
 
         String playerListMessage;
-        GlobalSQL globalSQL = Proxy.getInstance().globalSQL;
+        GlobalSQL globalSQL = Proxy.getInstance().getGlobalSQL();
 
         //Create list of players.
         ArrayList<String> players = globalSQL.getStringList("SELECT uuid FROM online_users;");

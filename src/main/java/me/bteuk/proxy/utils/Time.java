@@ -1,4 +1,4 @@
-package me.bteuk.proxy;
+package me.bteuk.proxy.utils;
 
 import java.sql.Date;
 import java.text.SimpleDateFormat;
