@@ -28,6 +28,7 @@ public abstract class PlotListCommand extends AbstractCommand {
 
         ReplyCallbackAction reply = event.replyEmbeds(message.createList());
         message.addButtons(reply);
+        reply = reply.setEphemeral(true);
         reply.queue();
 
     }
@@ -37,7 +38,7 @@ public abstract class PlotListCommand extends AbstractCommand {
 
         PlotListMessage message = new PlotListMessage(TYPE, TITLE, QUERY, EMPTY, page);
 
-        MessageEditCallbackAction edit = event.editMessageEmbeds();
+        MessageEditCallbackAction edit = event.editMessageEmbeds(message.createList());
         message.addButtons(edit);
         edit.queue();
 

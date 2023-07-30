@@ -84,6 +84,11 @@ public class CommandManager extends ListenerAdapter {
         //Create commands.
         commands.add(new Playerlist("playerlist", "List all online players on the Minecraft server."));
 
+        commands.add(new ClaimedPlots("claimedplots", "List all plots that are currently claimed."));
+        commands.add(new SubmittedPlots("submittedplots", "List all plots that are currently submitted."));
+        commands.add(new ActivePlots("activeplots", "List all plots that are currently claimed or submitted."));
+        commands.add(new CompletedPlots("completedplots", "List all completed plots."));
+
         List<CommandData> commandData = new ArrayList<>();
 
         //Add the command data for each command.

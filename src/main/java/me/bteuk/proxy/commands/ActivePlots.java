@@ -1,8 +1,6 @@
 package me.bteuk.proxy.commands;
 
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-
-public class ActivePlots extends AbstractCommand {
+public class ActivePlots extends PlotListCommand {
 
     /**
      * Constructor, saved the name and description of the command.
@@ -12,11 +10,6 @@ public class ActivePlots extends AbstractCommand {
      * @param description Description of the command
      */
     public ActivePlots(String name, String description) {
-        super(name, description);
-    }
-
-    @Override
-    public void onCommand(SlashCommandInteractionEvent event) {
-
+        super(name, description, "Active Plots (Claimed/Submitted)", "SELECT id FROM plot_data WHERE status='claimed' OR status='submitted' OR status='reviewing';", "There are currently no active plots.");
     }
 }

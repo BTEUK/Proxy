@@ -4,10 +4,7 @@ import me.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.requests.restaction.interactions.InteractionCallbackAction;
-import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.messages.MessageRequest;
 
 import java.awt.*;
@@ -39,7 +36,7 @@ public class PlotListMessage {
         plots = Proxy.getInstance().getPlotSQL().getIntList(query);
 
         //Calculate maximum number of pages.
-        maxPages = (int) Math.ceil(page / 10d);
+        maxPages = (int) Math.ceil(plots.size() / 10d);
 
         //If the list has less plots than the current page number.
         //For example if there are 10 plots per page, and there are 17 plots then any page above 2 would be too much.
@@ -54,7 +51,10 @@ public class PlotListMessage {
     /**
      * Adds buttons to the event reply.
      */
-    public void addButtons(MessageRequest message) {
+    public void addButtons(MessageRequest<?> message) {
+
+        //Clear the components of the message.
+        message.setComponents();
 
         Collection<Button> components = new ArrayList<>();
 
@@ -62,7 +62,7 @@ public class PlotListMessage {
         if (page > 1) {
 
             //Set the id to the slash command.
-            components.add(Button.primary(type, Emoji.fromFormatted(":arrow_left")));
+            components.add(Button.primary(type + "," + (page - 1), "◀"));
 
         }
 
@@ -70,12 +70,14 @@ public class PlotListMessage {
         if (plots.size() > page * 10) {
 
             //Set the id to the slash command.
-            components.add(Button.primary(type, Emoji.fromFormatted(":arrow_right")));
+            components.add(Button.primary(type + "," + (page + 1), "▶"));
 
         }
 
         //Add the buttons to the reply.
-        message.setActionRow(components);
+        if (!components.isEmpty()) {
+            message.setActionRow(components);
+        }
 
     }
 
@@ -107,6 +109,23 @@ public class PlotListMessage {
             //Add message for the plot.
             plot_message.append("• Plot ").append(plots.get(index));
 
+            //If the plot has an owner, add their name.
+            if (Proxy.getInstance().getPlotSQL().hasRow("SELECT id FROM plot_members WHERE id=" + plots.get(index) + " AND is_owner=1;")) {
+                plot_message.append(" - claimed by: ").append(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
+                        Proxy.getInstance().getPlotSQL().getString("SELECT uuid FROM plot_members WHERE id=" + plots.get(index) + " AND is_owner=1;") + "';"));
+            }
+
+            //If the plot is completed, add the builder.
+            if (Proxy.getInstance().getPlotSQL().hasRow("SELECT id FROM plot_data WHERE id=" + plots.get(index) + " AND status='completed'")) {
+                plot_message.append(" - completed by: ").append(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
+                        Proxy.getInstance().getPlotSQL().getString("SELECT uuid FROM accept_data WHERE id=" + plots.get(index) + ";") + "';"));
+            }
+
+            //If the plot is currently being reviewed add that.
+            if (Proxy.getInstance().getPlotSQL().hasRow("SELECT id FROM plot_data WHERE id=" + plots.get(index) + " AND status='reviewing';")) {
+                plot_message.append(" (under review)");
+            }
+
             //Increment index.
             index++;
 
@@ -115,7 +134,7 @@ public class PlotListMessage {
                 plot_message.append("\n");
             }
 
-        } while (index % 10 != 0);
+        } while (index % 10 != 0 && plots.size() > index);
 
         eb.setDescription(plot_message.toString());
 

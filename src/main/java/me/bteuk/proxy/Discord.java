@@ -128,7 +128,7 @@ public class Discord {
     public void updateReviewerChannel() {
 
         //When a message is sent in the reviewer channel update the channel topic to the number of submitted plots.
-        int plot_count = Proxy.getInstance().plotSQL.getInt("SELECT count(id) FROM plot_data WHERE status='submitted';");
+        int plot_count = Proxy.getInstance().getPlotSQL().getInt("SELECT count(id) FROM plot_data WHERE status='submitted';");
         String topic;
 
         if (plot_count == 1) {

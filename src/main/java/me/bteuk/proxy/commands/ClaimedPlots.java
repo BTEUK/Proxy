@@ -10,7 +10,6 @@ public class ClaimedPlots extends PlotListCommand {
      * @param description Description of the command
      */
     public ClaimedPlots(String name, String description) {
-        super(name, description, "Claimed Plots", "", "There are currently no claimed plots.");
+        super(name, description, "Claimed Plots", "SELECT id FROM plot_data WHERE status='claimed';", "There are currently no claimed plots.");
     }
-
 }
