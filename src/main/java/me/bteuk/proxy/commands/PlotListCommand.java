@@ -3,6 +3,8 @@ package me.bteuk.proxy.commands;
 import me.bteuk.proxy.utils.PlotListMessage;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.commands.OptionMapping;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.restaction.interactions.MessageEditCallbackAction;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 
@@ -13,8 +15,8 @@ public abstract class PlotListCommand extends AbstractCommand {
     private final String QUERY;
     private final String EMPTY;
 
-    public PlotListCommand(String name, String description, String title, String query, String empty) {
-        super(name, description);
+    public PlotListCommand(String name, String description, String title, String query, String empty, OptionData... options) {
+        super(name, description, options);
         TYPE = name;
         TITLE = title;
         QUERY = query;
@@ -24,7 +26,14 @@ public abstract class PlotListCommand extends AbstractCommand {
     @Override
     public void onCommand(SlashCommandInteractionEvent event) {
 
-        PlotListMessage message = new PlotListMessage(TYPE, TITLE, QUERY, EMPTY, 1);
+        String player = null;
+
+        OptionMapping option = event.getOption("player");
+        if (option != null) {
+            player = option.getAsString();
+        }
+
+        PlotListMessage message = new PlotListMessage(TYPE, TITLE, QUERY, EMPTY, 1, player);
 
         ReplyCallbackAction reply = event.replyEmbeds(message.createList());
         message.addButtons(reply);
@@ -34,9 +43,15 @@ public abstract class PlotListCommand extends AbstractCommand {
     }
 
     @Override
-    public void onButtonInteraction(ButtonInteractionEvent event, int page) {
+    public void onButtonInteraction(ButtonInteractionEvent event, String component) {
 
-        PlotListMessage message = new PlotListMessage(TYPE, TITLE, QUERY, EMPTY, page);
+        //Unwrap the component.
+        String[] args = event.getComponentId().split(",");
+
+        int page = Integer.parseInt(args[1]);
+        String player = (args.length == 3) ? args[2] : null;
+
+        PlotListMessage message = new PlotListMessage(TYPE, TITLE, QUERY, EMPTY, page, player);
 
         MessageEditCallbackAction edit = event.editMessageEmbeds(message.createList());
         message.addButtons(edit);

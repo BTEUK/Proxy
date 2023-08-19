@@ -3,7 +3,6 @@ package me.bteuk.proxy.utils;
 import me.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.messages.MessageRequest;
 
@@ -19,6 +18,8 @@ public class PlotListMessage {
     private final int page;
     private final int maxPages;
 
+    private final String player;
+
     private final ArrayList<Integer> plots;
 
     /**
@@ -27,11 +28,26 @@ public class PlotListMessage {
      * @param query        SQL query that will get the list of plots
      * @param emptyMessage Message to send if no plots are found
      * @param page         Page
+     * @param player       Optional only list plots that this player owns/completed
      */
-    public PlotListMessage(String type, String title, String query, String emptyMessage, int page) {
+    public PlotListMessage(String type, String title, String query, String emptyMessage, int page, String player) {
         this.type = type;
         this.title = title;
         this.emptyMessage = emptyMessage;
+        this.player = player;
+
+        //Alter the query to add the player.
+        if (player != null) {
+            if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT uuid FROM player_data WHERE name='" + player + "';")) {
+                String uuid = Proxy.getInstance().getGlobalSQL().getString("SELECT uuid FROM player_data WHERE name='" + player + "';");
+                query = query.replace("%uuid%", " AND u.uuid='" + uuid + "'");
+            } else {
+                //This is the case when the player does not exist in the database.
+                query = query.replace("%uuid%", " AND u.uuid='" + player + "'");
+            }
+        } else {
+            query = query.replace("%uuid%", "");
+        }
 
         plots = Proxy.getInstance().getPlotSQL().getIntList(query);
 
@@ -62,7 +78,7 @@ public class PlotListMessage {
         if (page > 1) {
 
             //Set the id to the slash command.
-            components.add(Button.primary(type + "," + (page - 1), "◀"));
+            components.add(Button.primary(type + "," + (page - 1) + ((player != null) ? ("," + player) : ""), "◀"));
 
         }
 
@@ -70,7 +86,7 @@ public class PlotListMessage {
         if (plots.size() > page * 10) {
 
             //Set the id to the slash command.
-            components.add(Button.primary(type + "," + (page + 1), "▶"));
+            components.add(Button.primary(type + "," + (page + 1) + ((player != null) ? ("," + player) : ""), "▶"));
 
         }
 
