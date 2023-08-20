@@ -12,6 +12,6 @@ public class CompletedPlots extends PlotListCommand {
      * @param description Description of the command
      */
     public CompletedPlots(String name, String description, OptionData... options) {
-        super(name, description, "Completed Plots", "SELECT pd.id FROM plot_data AS pd INNER JOIN accept_data AS u ON pd.id=u.id WHERE pd.status='completed'%uuid%;", "There are currently no completed plots.", options);
+        super(name, description, "Completed Plots", "SELECT pd.id FROM plot_data AS pd INNER JOIN accept_data AS u ON pd.id=u.id WHERE pd.status='completed'%uuid% ORDER BY u.accept_time DESC;", "There are currently no completed plots.", options);
     }
 }
