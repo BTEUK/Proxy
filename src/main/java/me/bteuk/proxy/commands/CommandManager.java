@@ -66,8 +66,10 @@ public class CommandManager extends ListenerAdapter {
 
         //Search for the command.
         for (Command command : commands) {
-            command.onButtonInteraction(event, event.getComponentId());
-            break;
+            if (command.getName().equals(event.getComponentId().split(",")[0])) {
+                command.onButtonInteraction(event);
+                break;
+            }
         }
     }
 
@@ -91,7 +93,7 @@ public class CommandManager extends ListenerAdapter {
 
         //Add the command data for each command.
         for (Command command : commands) {
-            commandData.add(Commands.slash(command.getName(), command.getDescription()));
+            commandData.add(Commands.slash(command.getName(), command.getDescription()).addOptions(command.getOptions()));
         }
 
         //Add the commands to the guild.

@@ -35,5 +35,5 @@ public abstract class AbstractCommand implements Command {
         return options;
     }
 
-    public void onButtonInteraction(ButtonInteractionEvent event, String component) {}
+    public void onButtonInteraction(ButtonInteractionEvent event) {}
 }

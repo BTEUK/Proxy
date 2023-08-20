@@ -17,17 +17,15 @@ public class JdaFilter implements Filter {
         if (!loggerName.startsWith("github.scarsz.discordsrv.dependencies.jda")) return Result.NEUTRAL;
 
         switch (level.name()) {
-            case "INFO":
-                Proxy.getInstance().getLogger().info("[JDA] " + message); break;
-            case "WARN":
+            case "INFO" -> Proxy.getInstance().getLogger().info("[JDA] " + message);
+            case "WARN" -> {
                 if (message.contains("Encountered 429")) {
                     Proxy.getInstance().getLogger().debug(message);
                     break;
                 }
-
                 Proxy.getInstance().getLogger().warn("[JDA] " + message);
-                break;
-            case "ERROR":
+            }
+            case "ERROR" -> {
                 if (message.contains("Requester timed out while executing a request")) {
                     Proxy.getInstance().getLogger().error("[JDA] " + message + ". This is either a issue on Discord's end (https://discordstatus.com) or with your server's connection");
                     Proxy.getInstance().getLogger().debug(ExceptionUtils.getStackTrace(throwable));
@@ -42,14 +40,13 @@ public class JdaFilter implements Filter {
                     // so some requests are cancelled during shutdown. Logging errors for those request failures isn't important.
                     return Result.DENY;
                 }
-
                 if (throwable != null) {
                     Proxy.getInstance().getLogger().error("[JDA] " + message + "\n" + ExceptionUtils.getStackTrace(throwable));
                 } else {
                     Proxy.getInstance().getLogger().error("[JDA] " + message);
                 }
-                break;
-            default: Proxy.getInstance().getLogger().debug("[JDA] " + message);
+            }
+            default -> Proxy.getInstance().getLogger().debug("[JDA] " + message);
         }
 
         // all JDA messages should be denied because we handle them ourselves
@@ -88,6 +85,11 @@ public class JdaFilter implements Filter {
                 level,
                 message.getFormattedMessage(),
                 throwable);
+    }
+
+    @Override
+    public State getState() {
+        return State.STARTED;
     }
 
     public void start() {}

@@ -43,7 +43,7 @@ public abstract class PlotListCommand extends AbstractCommand {
     }
 
     @Override
-    public void onButtonInteraction(ButtonInteractionEvent event, String component) {
+    public void onButtonInteraction(ButtonInteractionEvent event) {
 
         //Unwrap the component.
         String[] args = event.getComponentId().split(",");

@@ -14,6 +14,6 @@ public interface Command {
 
     void onCommand(SlashCommandInteractionEvent event);
 
-    void onButtonInteraction(ButtonInteractionEvent event, String component);
+    void onButtonInteraction(ButtonInteractionEvent event);
 
 }
