@@ -129,6 +129,30 @@ public class ChatHandler extends Thread {
 
                 }
 
+                case "uknet:discord_dm" -> {
+
+                    //Convert the json format to plain text.
+                    Component component = GsonComponentSerializer.gson().deserialize(message);
+                    String plain = PlainTextComponentSerializer.plainText().serialize(component);
+
+                    //Split the comma-separated message.
+                    String[] args = plain.split(",");
+
+                    //Check if the player has their discord linked, else ignore this message altogether.
+                    if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT uuid FROM discord WHERE uuid='" + args[0] + "';")) {
+
+                        //Get the discord id of the player.
+                        String discord_id = Proxy.getInstance().getGlobalSQL().getString("SELECT discord_id FROM discord WHERE uuid='" + args[0] + "';");
+
+                        //Send dm to player.
+                        if (discord_id != null) {
+                            Proxy.getInstance().getDiscord().sendReviewingUpdateDM(discord_id, args);
+                        }
+
+
+                    }
+                }
+
             }
 
             socket.close();

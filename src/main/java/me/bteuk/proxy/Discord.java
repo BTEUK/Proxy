@@ -5,6 +5,8 @@ import me.bteuk.proxy.commands.Playerlist;
 import me.bteuk.proxy.events.BotChatListener;
 import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
+import me.bteuk.proxy.sql.GlobalSQL;
+import me.bteuk.proxy.sql.PlotSQL;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -16,6 +18,7 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -124,7 +127,6 @@ public class Discord {
 
     }
 
-
     public void updateReviewerChannel() {
 
         //When a message is sent in the reviewer channel update the channel topic to the number of submitted plots.
@@ -155,6 +157,61 @@ public class Discord {
         //Send message to staff channel.
         staff.sendMessage(message).queue();
 
+    }
+
+    /**
+     * Send a DM to the user telling them their plot was accepted/denied.
+     * Additionally send feedback is applicable or the promoted role if applicable.
+     *
+     * @param userID the user to send the DM to
+     * @param params the parameters used to construct the message in the following order, UUID of player, accepted/denied, plot id, (optional) promoted role.
+     */
+    public void sendReviewingUpdateDM(String userID, String[] params) {
+
+        GlobalSQL globalSQL = Proxy.getInstance().getGlobalSQL();
+        PlotSQL plotSQL = Proxy.getInstance().getPlotSQL();
+
+        //Construct the message.
+        StringBuilder builder = new StringBuilder();
+        builder.append("Plot ").append(params[2]).append(" has been ").append(params[1]);
+
+        //If the user was promoted add that.
+        if (params.length == 4) {
+            builder.append("\n").append("You have been promoted to **").append(params[3]).append("**!");
+        }
+
+        //If there is feedback.
+        //0 means no feedback.
+        int book_id;
+        if (params[1].equals("accepted")) {
+            book_id = plotSQL.getInt("SELECT book_id FROM accept_data WHERE id=" + Integer.parseInt(params[2]) + ";");
+        } else {
+            //Find the book id of the latest attempt.
+            book_id = plotSQL.getInt("SELECT book_id FROM deny_data WHERE id=" + Integer.parseInt(params[2]) + " ORDER BY attempt DESC;");
+        }
+
+        if (book_id != 0) {
+            //Add feedback to the message.
+            ArrayList<String> pages = plotSQL.getStringList("SELECT contents FROM book_data WHERE id=" + book_id + " ORDER BY page ASC;");
+
+            builder.append("\n").append("Feedback: ").append(String.join(" ", pages));
+        }
+
+        String message;
+
+        //Cut the message off at 2000 characters.
+        if (builder.length() > 2000) {
+            builder.replace(1997, 2000, "...");
+            message = builder.substring(0, 2000);
+        } else {
+            message = builder.toString();
+        }
+
+        //Get discord user.
+        jda.retrieveUserById(userID).queue(user -> {
+            //Open a private channel with the user and send the message.
+            user.openPrivateChannel().queue(channel -> channel.sendMessage(message).queue());
+        });
     }
 
     public void addRole(long user_id, long role_id) {
