@@ -15,7 +15,8 @@ import me.bteuk.proxy.events.CommandListener;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
 import me.bteuk.proxy.sql.RegionSQL;
-import net.kyori.adventure.text.Component;
+import me.bteuk.proxy.utils.Linked;
+import me.bteuk.proxy.utils.ReviewStatus;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
@@ -27,8 +28,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.5.0",
-        url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin for UKnet, deals with the chat and server selection.", authors = {"ELgamer"})
+@Plugin(id = "proxy", name = "Proxy", version = "1.6.0",
+        url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
 
     private final ProxyServer server;
@@ -45,9 +46,9 @@ public class Proxy {
 
     private ArrayList<Linked> linking;
 
-    public GlobalSQL globalSQL;
-    public PlotSQL plotSQL;
-    public RegionSQL regionSQL;
+    private GlobalSQL globalSQL;
+    private PlotSQL plotSQL;
+    private RegionSQL regionSQL;
 
     private HashMap<UUID, String> last_server;
 
@@ -397,5 +398,17 @@ public class Proxy {
                 .replace("{size}", "128");
 
         return defaultUrl;
+    }
+
+    public GlobalSQL getGlobalSQL() {
+        return globalSQL;
+    }
+
+    public PlotSQL getPlotSQL() {
+        return plotSQL;
+    }
+
+    public RegionSQL getRegionSQL() {
+        return regionSQL;
     }
 }
