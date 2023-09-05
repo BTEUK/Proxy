@@ -3,6 +3,7 @@ package me.bteuk.proxy.commands;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -21,8 +22,6 @@ public class Playerlist extends AbstractCommand {
 
     @Override
     public void onCommand(SlashCommandInteractionEvent event) {
-
-        event.deferReply().setEphemeral(true).queue();
 
         String playerListMessage;
         GlobalSQL globalSQL = Proxy.getInstance().getGlobalSQL();
@@ -60,7 +59,9 @@ public class Playerlist extends AbstractCommand {
 
         }
 
-        event.reply(playerListMessage).queue();
+        ReplyCallbackAction reply = event.reply(playerListMessage);
+        reply = reply.setEphemeral(true);
+        reply.queue();
 
     }
 }
