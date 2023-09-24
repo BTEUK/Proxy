@@ -127,14 +127,14 @@ public class PlotListMessage {
 
             //If the plot has an owner, add their name.
             if (Proxy.getInstance().getPlotSQL().hasRow("SELECT id FROM plot_members WHERE id=" + plots.get(index) + " AND is_owner=1;")) {
-                plot_message.append(" - claimed by: ").append(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
-                        Proxy.getInstance().getPlotSQL().getString("SELECT uuid FROM plot_members WHERE id=" + plots.get(index) + " AND is_owner=1;") + "';"));
+                plot_message.append(" - claimed by: ").append(ChatFormatter.escapeDiscordFormatting(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
+                        Proxy.getInstance().getPlotSQL().getString("SELECT uuid FROM plot_members WHERE id=" + plots.get(index) + " AND is_owner=1;") + "';")));
             }
 
             //If the plot is completed, add the builder.
             if (Proxy.getInstance().getPlotSQL().hasRow("SELECT id FROM plot_data WHERE id=" + plots.get(index) + " AND status='completed'")) {
-                plot_message.append(" - completed by: ").append(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
-                        Proxy.getInstance().getPlotSQL().getString("SELECT uuid FROM accept_data WHERE id=" + plots.get(index) + ";") + "';"));
+                plot_message.append(" - completed by: ").append(ChatFormatter.escapeDiscordFormatting(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
+                        Proxy.getInstance().getPlotSQL().getString("SELECT uuid FROM accept_data WHERE id=" + plots.get(index) + ";") + "';")));
             }
 
             //If the plot is currently being reviewed add that.
