@@ -7,6 +7,7 @@ import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
+import me.bteuk.proxy.utils.ChatFormatter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -197,20 +198,18 @@ public class Discord {
             builder.append("\n").append("Feedback: ").append(String.join(" ", pages));
         }
 
-        String message;
+        String message = ChatFormatter.escapeDiscordFormatting(builder.toString());
 
         //Cut the message off at 2000 characters.
-        if (builder.length() > 2000) {
-            builder.replace(1997, 2000, "...");
-            message = builder.substring(0, 2000);
-        } else {
-            message = builder.toString();
+        if (message.length() > 2000) {
+            message = builder.substring(0, 1997) + "...";
         }
 
         //Get discord user.
+        String finalMessage = message;
         jda.retrieveUserById(userID).queue(user -> {
             //Open a private channel with the user and send the message.
-            user.openPrivateChannel().queue(channel -> channel.sendMessage(message).queue());
+            user.openPrivateChannel().queue(channel -> channel.sendMessage(finalMessage).queue());
         });
     }
 
