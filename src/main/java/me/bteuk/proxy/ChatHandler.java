@@ -49,6 +49,17 @@ public class ChatHandler extends Thread {
 
                 }
 
+                case "uknet:discord_formatted" -> {
+
+                    //Convert the json format to plain text.
+                    Component component = GsonComponentSerializer.gson().deserialize(message);
+                    String plain = PlainTextComponentSerializer.plainText().serialize(component);
+
+                    //Send message to public discord chat.
+                    Proxy.getInstance().getDiscord().sendMessage(plain);
+
+                }
+
                 case "uknet:discord_staff" -> {
 
                     //Convert the json format to plain text.
