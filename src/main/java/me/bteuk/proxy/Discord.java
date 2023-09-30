@@ -122,9 +122,7 @@ public class Discord {
         //eb.setDescription("**" + chatMessage + "**");
         eb.setColor(Color.RED);
 
-        chat.sendMessageEmbeds(eb.build()).queue((reply) -> {
-            users.decrementAndGet();
-        });
+        chat.sendMessageEmbeds(eb.build()).queue((reply) -> users.decrementAndGet());
 
     }
 

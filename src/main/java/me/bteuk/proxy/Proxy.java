@@ -163,10 +163,10 @@ public class Proxy {
 
         //TODO: Add timeout if it takes too long.
         while (users.get() > 0) {
-            //wait
+            //Do nothing
         }
 
-        if (online_users.size() > 0) {
+        if (!online_users.isEmpty()) {
             getLogger().info("Sent disconnect message to online users!");
         }
 
