@@ -1,12 +1,8 @@
 package me.bteuk.proxy.commands;
 
 import me.bteuk.proxy.Proxy;
-import me.bteuk.proxy.sql.GlobalSQL;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
-
-import java.util.ArrayList;
-import java.util.Comparator;
 
 public class Map extends AbstractCommand {
 
