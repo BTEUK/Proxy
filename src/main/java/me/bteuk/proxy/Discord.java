@@ -7,6 +7,8 @@ import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
+import me.bteuk.proxy.utils.ChatFormatter;
+import me.bteuk.proxy.utils.UnknownUserErrorHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -20,6 +22,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Discord {
@@ -121,9 +124,7 @@ public class Discord {
         //eb.setDescription("**" + chatMessage + "**");
         eb.setColor(Color.RED);
 
-        chat.sendMessageEmbeds(eb.build()).queue((reply) -> {
-            users.decrementAndGet();
-        });
+        chat.sendMessageEmbeds(eb.build()).queue((reply) -> users.decrementAndGet());
 
     }
 
@@ -197,27 +198,27 @@ public class Discord {
             builder.append("\n").append("Feedback: ").append(String.join(" ", pages));
         }
 
-        String message;
+        String message = ChatFormatter.escapeDiscordFormatting(builder.toString());
 
         //Cut the message off at 2000 characters.
-        if (builder.length() > 2000) {
-            builder.replace(1997, 2000, "...");
-            message = builder.substring(0, 2000);
-        } else {
-            message = builder.toString();
+        if (message.length() > 2000) {
+            message = builder.substring(0, 1997) + "...";
         }
 
         //Get discord user.
+        String finalMessage = message;
         jda.retrieveUserById(userID).queue(user -> {
             //Open a private channel with the user and send the message.
-            user.openPrivateChannel().queue(channel -> channel.sendMessage(message).queue());
+            user.openPrivateChannel().queue(channel -> channel.sendMessage(finalMessage).queue());
         });
     }
 
     public void addRole(long user_id, long role_id) {
         try {
             //Get role.
-            chat.getGuild().addRoleToMember(UserSnowflake.fromId(user_id), chat.getGuild().getRoleById(role_id)).queue();
+            chat.getGuild().addRoleToMember(UserSnowflake.fromId(user_id), Objects.requireNonNull(chat.getGuild().getRoleById(role_id))).queue(
+                    null, new UnknownUserErrorHandler(user_id)
+            );
         } catch (Exception e) {
             //An error occurred, the user or role is null, this is not necessarily a problem, but is being caught to prevent console spam.
         }
@@ -225,7 +226,9 @@ public class Discord {
 
     public void removeRole(long user_id, long role_id) {
         try {
-            chat.getGuild().removeRoleFromMember(UserSnowflake.fromId(user_id), chat.getGuild().getRoleById(role_id)).queue();
+            chat.getGuild().removeRoleFromMember(UserSnowflake.fromId(user_id), Objects.requireNonNull(chat.getGuild().getRoleById(role_id))).queue(
+                    null, new UnknownUserErrorHandler(user_id)
+            );
         } catch (Exception e) {
             //An error occurred, the user or role is null, this is not necessarily a problem, but is being caught to prevent console spam.
         }

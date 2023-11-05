@@ -2,6 +2,7 @@ package me.bteuk.proxy;
 
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import me.bteuk.proxy.utils.ChatFormatter;
 import me.bteuk.proxy.utils.Linked;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -44,6 +45,17 @@ public class ChatHandler extends Thread {
                     String plain = PlainTextComponentSerializer.plainText().serialize(component);
 
                     //Send message to public discord chat.
+                    Proxy.getInstance().getDiscord().sendMessage(ChatFormatter.escapeDiscordFormatting(plain));
+
+                }
+
+                case "uknet:discord_formatted" -> {
+
+                    //Convert the json format to plain text.
+                    Component component = GsonComponentSerializer.gson().deserialize(message);
+                    String plain = PlainTextComponentSerializer.plainText().serialize(component);
+
+                    //Send message to public discord chat.
                     Proxy.getInstance().getDiscord().sendMessage(plain);
 
                 }
@@ -55,7 +67,7 @@ public class ChatHandler extends Thread {
                     String plain = PlainTextComponentSerializer.plainText().serialize(component);
 
                     //Send message to start chat.
-                    Proxy.getInstance().getDiscord().sendStaffMessage(plain);
+                    Proxy.getInstance().getDiscord().sendStaffMessage(ChatFormatter.escapeDiscordFormatting(plain));
 
                 }
 
@@ -69,7 +81,7 @@ public class ChatHandler extends Thread {
                     String plain = PlainTextComponentSerializer.plainText().serialize(component);
 
                     //Send a connect message to discord.
-                    Proxy.getInstance().getDiscord().sendConnectDisconnectMessage(plain, true);
+                    Proxy.getInstance().getDiscord().sendConnectDisconnectMessage(ChatFormatter.escapeDiscordFormatting(plain), true);
 
                 }
 
@@ -80,7 +92,7 @@ public class ChatHandler extends Thread {
                     String plain = PlainTextComponentSerializer.plainText().serialize(component);
 
                     //Send a disconnect message to discord.
-                    Proxy.getInstance().getDiscord().sendConnectDisconnectMessage(plain, false);
+                    Proxy.getInstance().getDiscord().sendConnectDisconnectMessage(ChatFormatter.escapeDiscordFormatting(plain), false);
 
                 }
 

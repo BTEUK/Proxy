@@ -141,11 +141,11 @@ public class ReviewStatus {
 
                 //If plot status is 'reviewing', then add additional info that the plot is currently under review.
                 if (plotSQL.hasRow("SELECT id FROM plot_data WHERE id=" + plot + " AND status='reviewing';")) {
-                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
-                            plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';")).append(" (under review)");
+                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(ChatFormatter.escapeDiscordFormatting(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
+                            plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"))).append(" (under review)");
                 } else {
-                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
-                            plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"));
+                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(ChatFormatter.escapeDiscordFormatting(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
+                            plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';")));
                 }
 
                 counter++;
@@ -220,7 +220,7 @@ public class ReviewStatus {
             for (String[] region : regions) {
 
                 region_message.append("• Region ").append(region[0]).append(" requested by ")
-                        .append(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" + region[1] + "';"));
+                        .append(ChatFormatter.escapeDiscordFormatting(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" + region[1] + "';")));
 
                 counter++;
 

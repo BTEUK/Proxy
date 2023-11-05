@@ -20,15 +20,26 @@ import me.bteuk.proxy.utils.ReviewStatus;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.6.0",
+@Plugin(id = "proxy", name = "Proxy", version = "1.7.0",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
 
@@ -163,10 +174,10 @@ public class Proxy {
 
         //TODO: Add timeout if it takes too long.
         while (users.get() > 0) {
-            //wait
+            //Do nothing
         }
 
-        if (online_users.size() > 0) {
+        if (!online_users.isEmpty()) {
             getLogger().info("Sent disconnect message to online users!");
         }
 

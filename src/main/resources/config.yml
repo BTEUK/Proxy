@@ -43,3 +43,6 @@ database:
   global: uknet_global
   plot: uknet_plots
   region: uknet_regions
+
+#Progress map link
+progress_map: https://maphub.net/BTEItaliaLocals/bte-uk-progress-map
