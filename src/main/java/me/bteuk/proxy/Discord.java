@@ -1,11 +1,9 @@
 package me.bteuk.proxy;
 
 import me.bteuk.proxy.commands.CommandManager;
-import me.bteuk.proxy.commands.Playerlist;
 import me.bteuk.proxy.events.BotChatListener;
 import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
-import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
 import me.bteuk.proxy.utils.ChatFormatter;
 import me.bteuk.proxy.utils.UnknownUserErrorHandler;
@@ -19,7 +17,7 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
@@ -28,8 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Discord {
 
     private JDA jda;
-
-    private JdaFilter jdaFilter;
 
     private TextChannel chat;
     private TextChannel staff;
@@ -41,14 +37,9 @@ public class Discord {
     public Discord() {
 
         // add log4j filter for JDA messages
-        try {
-            Class<?> jdaFilterClass = Class.forName("me.bteuk.proxy.log4j.JdaFilter");
-            jdaFilter = (JdaFilter) jdaFilterClass.newInstance();
-            ((org.apache.logging.log4j.core.Logger) org.apache.logging.log4j.LogManager.getRootLogger()).addFilter(jdaFilter);
-            Proxy.getInstance().getLogger().debug("JdaFilter applied");
-        } catch (Exception e) {
-            Proxy.getInstance().getLogger().error("Failed to attach JDA message filter to root logger", e);
-        }
+        JdaFilter jdaFilter = new JdaFilter();
+        ((org.apache.logging.log4j.core.Logger) org.apache.logging.log4j.LogManager.getRootLogger()).addFilter(jdaFilter);
+        Proxy.getInstance().getLogger().debug("JdaFilter applied");
 
         //Get token from config.
         String token = Proxy.getInstance().getConfig().getString("token");
@@ -169,7 +160,6 @@ public class Discord {
      */
     public void sendReviewingUpdateDM(String userID, String[] params) {
 
-        GlobalSQL globalSQL = Proxy.getInstance().getGlobalSQL();
         PlotSQL plotSQL = Proxy.getInstance().getPlotSQL();
 
         //Construct the message.

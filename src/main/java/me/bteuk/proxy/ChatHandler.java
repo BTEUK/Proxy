@@ -81,7 +81,7 @@ public class ChatHandler extends Thread {
                     String plain = PlainTextComponentSerializer.plainText().serialize(component);
 
                     //Send a connect message to discord.
-                    Proxy.getInstance().getDiscord().sendConnectDisconnectMessage(ChatFormatter.escapeDiscordFormatting(plain), true);
+                    Proxy.getInstance().getDiscord().sendConnectDisconnectMessage(plain, true);
 
                 }
 
@@ -92,7 +92,7 @@ public class ChatHandler extends Thread {
                     String plain = PlainTextComponentSerializer.plainText().serialize(component);
 
                     //Send a disconnect message to discord.
-                    Proxy.getInstance().getDiscord().sendConnectDisconnectMessage(ChatFormatter.escapeDiscordFormatting(plain), false);
+                    Proxy.getInstance().getDiscord().sendConnectDisconnectMessage(plain, false);
 
                 }
 
