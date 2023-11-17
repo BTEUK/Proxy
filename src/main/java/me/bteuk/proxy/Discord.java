@@ -66,7 +66,7 @@ public class Discord {
 
         builder.setAutoReconnect(true);
 
-        builder.setActivity(Activity.playing("BTE UK"));
+        builder.setActivity(Activity.playing("bteuk.net"));
 
         builder.addEventListeners(new DiscordChatListener(chat_channel, support_chat, staff_channel));
         builder.addEventListeners(new BotChatListener());
@@ -86,7 +86,7 @@ public class Discord {
         }
     }
 
-    public void sendConnectDisconnectMessage(String message, boolean connect) {
+    private void sendConnectDisconnectMessage(String message, boolean connect) {
 
         String[] aMessage = message.split(" ");
         String url = aMessage[0];
@@ -149,6 +149,25 @@ public class Discord {
         //Send message to staff channel.
         staff.sendMessage(message).queue();
 
+    }
+
+    /**
+     * Send an announcement, the type of announcement is the first of the string.
+     *
+     * @param message the message to announce
+     */
+    public void sendAnnouncement(String message) {
+
+        String[] aMessage = message.split(" ");
+        String type = aMessage[0];
+        String chatMessage = String.join(" ", Arrays.copyOfRange(aMessage, 1, aMessage.length));
+
+        switch (type) {
+            case "afk" -> sendItalicMessage(chatMessage);
+            case "promotion" -> sendBoldMessage(chatMessage);
+            case "connect" -> sendConnectDisconnectMessage(chatMessage, true);
+            case "disconnect" -> sendConnectDisconnectMessage(chatMessage, false);
+        }
     }
 
     /**
@@ -242,5 +261,13 @@ public class Discord {
 
     public String getReviewerRoleID() {
         return reviewer;
+    }
+
+    private void sendItalicMessage(String message) {
+        sendMessage("*" + ChatFormatter.escapeDiscordFormatting(message) + "*");
+    }
+
+    private void sendBoldMessage(String message) {
+        sendMessage("**" + ChatFormatter.escapeDiscordFormatting(message) + "**");
     }
 }
