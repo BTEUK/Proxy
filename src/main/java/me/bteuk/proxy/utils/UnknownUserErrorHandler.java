@@ -17,8 +17,10 @@ public class UnknownUserErrorHandler extends ErrorHandler {
         handle(Arrays.asList(UNKNOWN_USER, UNKNOWN_MEMBER),
                 e -> {
                     //Remove the user from the discord link table.
-                    Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE discord_id=" + userID + ";");
-                    Proxy.getInstance().getLogger().info(("Removed discord link for " + userID + ", they are no longer in the discord server."));
+                    if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT discord_id FROM discord WHERE discord_id='" + userID + "';")) {
+                        Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE discord_id=" + userID + ";");
+                        Proxy.getInstance().getLogger().info(("Removed discord link for " + userID + ", they are no longer in the discord server."));
+                    }
                 });
     }
 }
