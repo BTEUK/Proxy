@@ -6,6 +6,7 @@ import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
 import me.bteuk.proxy.sql.PlotSQL;
 import me.bteuk.proxy.utils.ChatFormatter;
+import me.bteuk.proxy.utils.Time;
 import me.bteuk.proxy.utils.UnknownUserErrorHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -20,7 +21,9 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Discord {
@@ -80,6 +83,9 @@ public class Discord {
             supportInfo = jda.getTextChannelById(support_info);
             supportChat = jda.getTextChannelById(support_chat);
             staff = jda.getTextChannelById(staff_channel);
+
+            //Enable role syncing.
+            enableRoleSyncing();
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -269,5 +275,47 @@ public class Discord {
 
     private void sendBoldMessage(String message) {
         sendMessage("**" + ChatFormatter.escapeDiscordFormatting(message) + "**");
+    }
+
+    private void enableRoleSyncing() {
+
+        long[] hasRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.has");
+        long[] giveRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.has");
+
+        if (hasRoles == null || giveRoles == null) {
+            return;
+        }
+
+        List<Long> hasRolesList = Arrays.stream(hasRoles).boxed().toList();
+
+        Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), () -> {
+                    // Remove the role from members that shouldn't have it.
+                    for (long role_id : giveRoles) {
+                        Role role = chat.getGuild().getRoleById(role_id);
+                        if (role != null) {
+                            List<Member> members = chat.getGuild().getMembersWithRoles(role);
+                            members.forEach(member -> {
+                                if (member.getRoles().stream().noneMatch(memberRole -> hasRolesList.contains(memberRole.getIdLong()))) {
+                                    removeRole(member.getIdLong(), role_id);
+                                }
+                            });
+                        }
+                    }
+
+                    // Add the roles to all members who should have it.
+                    for (long role_id : hasRoles) {
+                        Role role = chat.getGuild().getRoleById(role_id);
+                        if (role != null) {
+                            List<Member> members = chat.getGuild().getMembersWithRoles(role);
+                            members.forEach(member -> {
+                                for (long giveRole : giveRoles) {
+                                    addRole(member.getIdLong(), giveRole);
+                                }
+                            });
+                        }
+                    }
+                })
+                .repeat(5L, TimeUnit.MINUTES)
+                .schedule();
     }
 }

@@ -32,6 +32,13 @@ message:
 role:
   reviewer:
 
+#Role syncing will give all users with any of the 'has' roles the 'give' roles.
+#Roles must be the role id.
+role_syncing:
+  has: []
+  give: []
+
+
 #Database login
 host: localhost
 port: 3306

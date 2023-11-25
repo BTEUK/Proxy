@@ -24,4 +24,8 @@ public class Config {
     public boolean getBoolean(String path) {
         return config.getBoolean(path);
     }
+
+    public long[] getLongArray(String path) {
+        return config.getLongArray(path);
+    }
 }

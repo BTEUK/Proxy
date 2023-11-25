@@ -6,6 +6,7 @@ import me.bteuk.proxy.Proxy;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -111,6 +112,16 @@ public abstract class ConfigurationFile {
         Object value = getObject(path, defaultValue);
         if (value == null) return defaultValue;
         return (boolean) value;
+    }
+
+    public long[] getLongArray(String path) {
+        return getLongArray(path, null);
+    }
+
+    public long[] getLongArray(String path, long[] defaultValue) {
+        Object value = getObject(path, defaultValue);
+        if (value == null) return defaultValue;
+        return (long[]) value;
     }
 
     public void set(String path, Object value) {
