@@ -6,7 +6,6 @@ import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
 import me.bteuk.proxy.sql.PlotSQL;
 import me.bteuk.proxy.utils.ChatFormatter;
-import me.bteuk.proxy.utils.Time;
 import me.bteuk.proxy.utils.UnknownUserErrorHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -61,7 +60,7 @@ public class Discord {
         builder.enableIntents(GatewayIntent.DIRECT_MESSAGES);
         builder.enableIntents(GatewayIntent.GUILD_MESSAGES);
 
-        builder.setMemberCachePolicy(MemberCachePolicy.VOICE.or(MemberCachePolicy.OWNER));
+        builder.setMemberCachePolicy(MemberCachePolicy.ALL);
         builder.setChunkingFilter(ChunkingFilter.NONE);
         builder.disableCache(CacheFlag.ACTIVITY);
         builder.disableIntents(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_TYPING);
@@ -279,25 +278,24 @@ public class Discord {
 
     private void enableRoleSyncing() {
 
-        long[] hasRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.has");
-        long[] giveRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.has");
+        List<Long> hasRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.has");
+        List<Long> giveRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.give");
 
         if (hasRoles == null || giveRoles == null) {
             return;
         }
-
-        List<Long> hasRolesList = Arrays.stream(hasRoles).boxed().toList();
 
         Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), () -> {
                     // Remove the role from members that shouldn't have it.
                     for (long role_id : giveRoles) {
                         Role role = chat.getGuild().getRoleById(role_id);
                         if (role != null) {
-                            List<Member> members = chat.getGuild().getMembersWithRoles(role);
-                            members.forEach(member -> {
-                                if (member.getRoles().stream().noneMatch(memberRole -> hasRolesList.contains(memberRole.getIdLong()))) {
-                                    removeRole(member.getIdLong(), role_id);
-                                }
+                            chat.getGuild().findMembersWithRoles(role).onSuccess(members -> {
+                                members.forEach(member -> {
+                                    if (member.getRoles().stream().noneMatch(memberRole -> hasRoles.contains(memberRole.getIdLong()))) {
+                                        removeRole(member.getIdLong(), role_id);
+                                    }
+                                });
                             });
                         }
                     }
@@ -306,11 +304,12 @@ public class Discord {
                     for (long role_id : hasRoles) {
                         Role role = chat.getGuild().getRoleById(role_id);
                         if (role != null) {
-                            List<Member> members = chat.getGuild().getMembersWithRoles(role);
-                            members.forEach(member -> {
-                                for (long giveRole : giveRoles) {
-                                    addRole(member.getIdLong(), giveRole);
-                                }
+                            chat.getGuild().findMembersWithRoles(role).onSuccess(members -> {
+                                members.forEach(member -> {
+                                    for (long giveRole : giveRoles) {
+                                        addRole(member.getIdLong(), giveRole);
+                                    }
+                                });
                             });
                         }
                     }

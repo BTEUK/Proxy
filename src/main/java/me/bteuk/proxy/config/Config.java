@@ -4,6 +4,7 @@ import me.bteuk.proxy.Proxy;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public class Config {
 
@@ -25,7 +26,7 @@ public class Config {
         return config.getBoolean(path);
     }
 
-    public long[] getLongArray(String path) {
+    public List<Long> getLongArray(String path) {
         return config.getLongArray(path);
     }
 }

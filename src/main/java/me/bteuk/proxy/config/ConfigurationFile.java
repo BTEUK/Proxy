@@ -6,8 +6,10 @@ import me.bteuk.proxy.Proxy;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public abstract class ConfigurationFile {
@@ -114,14 +116,23 @@ public abstract class ConfigurationFile {
         return (boolean) value;
     }
 
-    public long[] getLongArray(String path) {
+    public List<Long> getLongArray(String path) {
         return getLongArray(path, null);
     }
 
-    public long[] getLongArray(String path, long[] defaultValue) {
+    public List<Long> getLongArray(String path, List<Long> defaultValue) {
         Object value = getObject(path, defaultValue);
-        if (value == null) return defaultValue;
-        return (long[]) value;
+        if (value instanceof List<?> list) {
+            List<Long> newList = new ArrayList<>();
+            for (Object item : list) {
+                if (item instanceof Long) {
+                    newList.add((Long) item);
+                }
+            }
+            return newList;
+        } else {
+            return defaultValue;
+        }
     }
 
     public void set(String path, Object value) {
