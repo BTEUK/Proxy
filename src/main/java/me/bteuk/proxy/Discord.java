@@ -20,7 +20,9 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -83,8 +85,13 @@ public class Discord {
             supportChat = jda.getTextChannelById(support_chat);
             staff = jda.getTextChannelById(staff_channel);
 
-            //Enable role syncing.
-            enableRoleSyncing();
+            //Load all members into cache.
+            chat.getGuild().loadMembers().onSuccess(members -> {
+                Proxy.getInstance().getLogger().info("Loaded all discord members into cache");
+
+                //Enable role syncing.
+                enableRoleSyncing();
+            });
 
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -286,33 +293,46 @@ public class Discord {
         }
 
         Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), () -> {
+
+                    // Get lists of all members with all the roles
+                    Map<Role, List<Member>> hasRolesMap = fillRoleMap(hasRoles);
+                    Map<Role, List<Member>> giveRolesMap = fillRoleMap(giveRoles);
+
                     // Remove the role from members that shouldn't have it.
-                    for (long role_id : giveRoles) {
-                        Role role = chat.getGuild().getRoleById(role_id);
-                        if (role != null) {
-                            chat.getGuild().findMembersWithRoles(role).onSuccess(members -> members.forEach(member -> {
-                                if (member.getRoles().stream().noneMatch(memberRole -> hasRoles.contains(memberRole.getIdLong()))) {
-                                    removeRole(member.getIdLong(), role_id);
-                                }
-                            }));
-                        }
+                    for (Role role : giveRolesMap.keySet()) {
+                        chat.getGuild().getMembersWithRoles(role).forEach(member -> {
+                            if (member.getRoles().stream().noneMatch(hasRolesMap::containsKey)) {
+                                removeRole(member.getIdLong(), role.getIdLong());
+                            }
+                        });
                     }
 
                     // Add the roles to all members who should have it.
-                    for (long role_id : hasRoles) {
-                        Role role = chat.getGuild().getRoleById(role_id);
-                        if (role != null) {
-                            chat.getGuild().findMembersWithRoles(role).onSuccess(members -> {
-                                members.forEach(member -> {
-                                    for (long giveRole : giveRoles) {
-                                        addRole(member.getIdLong(), giveRole);
-                                    }
-                                });
-                            });
-                        }
+                    for (Role role : hasRolesMap.keySet()) {
+                        chat.getGuild().getMembersWithRoles(role).forEach(member -> {
+                            for (Role giveRole : giveRolesMap.keySet()) {
+                                // Only give the role if they don't have it yet.
+                                if (!member.getRoles().contains(giveRole)) {
+                                    addRole(member.getIdLong(), giveRole.getIdLong());
+                                }
+                            }
+                        });
                     }
                 })
                 .repeat(5L, TimeUnit.MINUTES)
                 .schedule();
+    }
+
+    private Map<Role, List<Member>> fillRoleMap(List<Long> role_ids) {
+        Map<Role, List<Member>> roleMap = new HashMap<>();
+        for (long role_id : role_ids) {
+            // Get the role.
+            Role role = chat.getGuild().getRoleById(role_id);
+            if (role != null) {
+                //Get all members with the role.
+                roleMap.put(role, chat.getGuild().getMembersWithRoles(role));
+            }
+        }
+        return roleMap;
     }
 }
