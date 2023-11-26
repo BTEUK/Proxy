@@ -290,13 +290,11 @@ public class Discord {
                     for (long role_id : giveRoles) {
                         Role role = chat.getGuild().getRoleById(role_id);
                         if (role != null) {
-                            chat.getGuild().findMembersWithRoles(role).onSuccess(members -> {
-                                members.forEach(member -> {
-                                    if (member.getRoles().stream().noneMatch(memberRole -> hasRoles.contains(memberRole.getIdLong()))) {
-                                        removeRole(member.getIdLong(), role_id);
-                                    }
-                                });
-                            });
+                            chat.getGuild().findMembersWithRoles(role).onSuccess(members -> members.forEach(member -> {
+                                if (member.getRoles().stream().noneMatch(memberRole -> hasRoles.contains(memberRole.getIdLong()))) {
+                                    removeRole(member.getIdLong(), role_id);
+                                }
+                            }));
                         }
                     }
 
