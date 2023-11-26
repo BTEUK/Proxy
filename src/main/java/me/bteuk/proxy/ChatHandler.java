@@ -38,7 +38,7 @@ public class ChatHandler extends Thread {
                     }
                 }
 
-                case "uknet:discord" -> {
+                case "uknet:discord_chat" -> {
 
                     //Convert the json format to plain text.
                     Component component = GsonComponentSerializer.gson().deserialize(message);
@@ -49,14 +49,14 @@ public class ChatHandler extends Thread {
 
                 }
 
-                case "uknet:discord_formatted" -> {
+                case "uknet:discord_announcements" -> {
 
                     //Convert the json format to plain text.
                     Component component = GsonComponentSerializer.gson().deserialize(message);
                     String plain = PlainTextComponentSerializer.plainText().serialize(component);
 
-                    //Send message to public discord chat.
-                    Proxy.getInstance().getDiscord().sendMessage(plain);
+                    //Send announcement to discord, this will be formatted before sending.
+                    Proxy.getInstance().getDiscord().sendAnnouncement(plain);
 
                 }
 
@@ -73,28 +73,6 @@ public class ChatHandler extends Thread {
 
                 case "uknet:discord_reviewer" -> //Tell discord to update the reviewer channel.
                         Proxy.getInstance().getDiscord().updateReviewerChannel();
-
-                case "uknet:discord_connect" -> {
-
-                    //Convert the json format to plain text.
-                    Component component = GsonComponentSerializer.gson().deserialize(message);
-                    String plain = PlainTextComponentSerializer.plainText().serialize(component);
-
-                    //Send a connect message to discord.
-                    Proxy.getInstance().getDiscord().sendConnectDisconnectMessage(ChatFormatter.escapeDiscordFormatting(plain), true);
-
-                }
-
-                case "uknet:discord_disconnect" -> {
-
-                    //Convert the json format to plain text.
-                    Component component = GsonComponentSerializer.gson().deserialize(message);
-                    String plain = PlainTextComponentSerializer.plainText().serialize(component);
-
-                    //Send a disconnect message to discord.
-                    Proxy.getInstance().getDiscord().sendConnectDisconnectMessage(ChatFormatter.escapeDiscordFormatting(plain), false);
-
-                }
 
                 case "uknet:discord_linking" -> {
 

@@ -1,11 +1,9 @@
 package me.bteuk.proxy;
 
 import me.bteuk.proxy.commands.CommandManager;
-import me.bteuk.proxy.commands.Playerlist;
 import me.bteuk.proxy.events.BotChatListener;
 import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
-import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
 import me.bteuk.proxy.utils.ChatFormatter;
 import me.bteuk.proxy.utils.UnknownUserErrorHandler;
@@ -19,17 +17,19 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Discord {
 
     private JDA jda;
-
-    private JdaFilter jdaFilter;
 
     private TextChannel chat;
     private TextChannel staff;
@@ -41,14 +41,9 @@ public class Discord {
     public Discord() {
 
         // add log4j filter for JDA messages
-        try {
-            Class<?> jdaFilterClass = Class.forName("me.bteuk.proxy.log4j.JdaFilter");
-            jdaFilter = (JdaFilter) jdaFilterClass.newInstance();
-            ((org.apache.logging.log4j.core.Logger) org.apache.logging.log4j.LogManager.getRootLogger()).addFilter(jdaFilter);
-            Proxy.getInstance().getLogger().debug("JdaFilter applied");
-        } catch (Exception e) {
-            Proxy.getInstance().getLogger().error("Failed to attach JDA message filter to root logger", e);
-        }
+        JdaFilter jdaFilter = new JdaFilter();
+        ((org.apache.logging.log4j.core.Logger) org.apache.logging.log4j.LogManager.getRootLogger()).addFilter(jdaFilter);
+        Proxy.getInstance().getLogger().debug("JdaFilter applied");
 
         //Get token from config.
         String token = Proxy.getInstance().getConfig().getString("token");
@@ -67,7 +62,7 @@ public class Discord {
         builder.enableIntents(GatewayIntent.DIRECT_MESSAGES);
         builder.enableIntents(GatewayIntent.GUILD_MESSAGES);
 
-        builder.setMemberCachePolicy(MemberCachePolicy.VOICE.or(MemberCachePolicy.OWNER));
+        builder.setMemberCachePolicy(MemberCachePolicy.ALL);
         builder.setChunkingFilter(ChunkingFilter.NONE);
         builder.disableCache(CacheFlag.ACTIVITY);
         builder.disableIntents(GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_TYPING);
@@ -75,7 +70,7 @@ public class Discord {
 
         builder.setAutoReconnect(true);
 
-        builder.setActivity(Activity.playing("BTE UK"));
+        builder.setActivity(Activity.playing("bteuk.net"));
 
         builder.addEventListeners(new DiscordChatListener(chat_channel, support_chat, staff_channel));
         builder.addEventListeners(new BotChatListener());
@@ -90,12 +85,20 @@ public class Discord {
             supportChat = jda.getTextChannelById(support_chat);
             staff = jda.getTextChannelById(staff_channel);
 
+            //Load all members into cache.
+            chat.getGuild().loadMembers().onSuccess(members -> {
+                Proxy.getInstance().getLogger().info("Loaded all discord members into cache");
+
+                //Enable role syncing.
+                enableRoleSyncing();
+            });
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    public void sendConnectDisconnectMessage(String message, boolean connect) {
+    private void sendConnectDisconnectMessage(String message, boolean connect) {
 
         String[] aMessage = message.split(" ");
         String url = aMessage[0];
@@ -161,6 +164,25 @@ public class Discord {
     }
 
     /**
+     * Send an announcement, the type of announcement is the first of the string.
+     *
+     * @param message the message to announce
+     */
+    public void sendAnnouncement(String message) {
+
+        String[] aMessage = message.split(" ");
+        String type = aMessage[0];
+        String chatMessage = String.join(" ", Arrays.copyOfRange(aMessage, 1, aMessage.length));
+
+        switch (type) {
+            case "afk" -> sendItalicMessage(chatMessage);
+            case "promotion" -> sendBoldMessage(chatMessage);
+            case "connect" -> sendConnectDisconnectMessage(chatMessage, true);
+            case "disconnect" -> sendConnectDisconnectMessage(chatMessage, false);
+        }
+    }
+
+    /**
      * Send a DM to the user telling them their plot was accepted/denied.
      * Additionally send feedback is applicable or the promoted role if applicable.
      *
@@ -169,7 +191,6 @@ public class Discord {
      */
     public void sendReviewingUpdateDM(String userID, String[] params) {
 
-        GlobalSQL globalSQL = Proxy.getInstance().getGlobalSQL();
         PlotSQL plotSQL = Proxy.getInstance().getPlotSQL();
 
         //Construct the message.
@@ -252,5 +273,66 @@ public class Discord {
 
     public String getReviewerRoleID() {
         return reviewer;
+    }
+
+    private void sendItalicMessage(String message) {
+        sendMessage("*" + ChatFormatter.escapeDiscordFormatting(message) + "*");
+    }
+
+    private void sendBoldMessage(String message) {
+        sendMessage("**" + ChatFormatter.escapeDiscordFormatting(message) + "**");
+    }
+
+    private void enableRoleSyncing() {
+
+        List<Long> hasRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.has");
+        List<Long> giveRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.give");
+
+        if (hasRoles == null || giveRoles == null) {
+            return;
+        }
+
+        Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), () -> {
+
+                    // Get lists of all members with all the roles
+                    Map<Role, List<Member>> hasRolesMap = fillRoleMap(hasRoles);
+                    Map<Role, List<Member>> giveRolesMap = fillRoleMap(giveRoles);
+
+                    // Remove the role from members that shouldn't have it.
+                    for (Role role : giveRolesMap.keySet()) {
+                        chat.getGuild().getMembersWithRoles(role).forEach(member -> {
+                            if (member.getRoles().stream().noneMatch(hasRolesMap::containsKey)) {
+                                removeRole(member.getIdLong(), role.getIdLong());
+                            }
+                        });
+                    }
+
+                    // Add the roles to all members who should have it.
+                    for (Role role : hasRolesMap.keySet()) {
+                        chat.getGuild().getMembersWithRoles(role).forEach(member -> {
+                            for (Role giveRole : giveRolesMap.keySet()) {
+                                // Only give the role if they don't have it yet.
+                                if (!member.getRoles().contains(giveRole)) {
+                                    addRole(member.getIdLong(), giveRole.getIdLong());
+                                }
+                            }
+                        });
+                    }
+                })
+                .repeat(5L, TimeUnit.MINUTES)
+                .schedule();
+    }
+
+    private Map<Role, List<Member>> fillRoleMap(List<Long> role_ids) {
+        Map<Role, List<Member>> roleMap = new HashMap<>();
+        for (long role_id : role_ids) {
+            // Get the role.
+            Role role = chat.getGuild().getRoleById(role_id);
+            if (role != null) {
+                //Get all members with the role.
+                roleMap.put(role, chat.getGuild().getMembersWithRoles(role));
+            }
+        }
+        return roleMap;
     }
 }

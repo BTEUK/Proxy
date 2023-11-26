@@ -58,7 +58,7 @@ public class BotChatListener extends ListenerAdapter {
 
                     for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
                         if (!server.getPlayersConnected().isEmpty()) {
-                            server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "discord"), stream.toByteArray());
+                            server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "discord_linking"), stream.toByteArray());
                         }
                     }
 
