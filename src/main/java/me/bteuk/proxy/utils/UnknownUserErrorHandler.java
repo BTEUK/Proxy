@@ -4,6 +4,8 @@ import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -30,7 +32,7 @@ public class UnknownUserErrorHandler extends ErrorHandler {
                         ByteArrayOutputStream stream = new ByteArrayOutputStream();
                         DataOutputStream out = new DataOutputStream(stream);
                         try {
-                            out.writeUTF("unlink " + userID);
+                            out.writeUTF(GsonComponentSerializer.gson().serialize(Component.text("unlink " + userID)));
                         } catch (IOException ex) {
                             Proxy.getInstance().getLogger().info("Unable to send unlink message for " + userID);
                         }
