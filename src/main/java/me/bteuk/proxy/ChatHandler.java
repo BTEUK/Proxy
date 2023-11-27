@@ -87,13 +87,13 @@ public class ChatHandler extends Thread {
 
                         long user_id = Long.parseLong(args[1]);
                         long role_id = Long.parseLong(args[2]);
-                        Proxy.getInstance().getDiscord().addRole(user_id, role_id);
+                        Proxy.getInstance().getDiscord().addRole(user_id, role_id, true);
 
                     } else if (args[0].equalsIgnoreCase("removerole")) {
 
                         long user_id = Long.parseLong(args[1]);
                         long role_id = Long.parseLong(args[2]);
-                        Proxy.getInstance().getDiscord().removeRole(user_id, role_id);
+                        Proxy.getInstance().getDiscord().removeRole(user_id, role_id, true);
 
                     } else if (args[0].equalsIgnoreCase("link")) {
 
