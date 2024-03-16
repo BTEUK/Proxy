@@ -209,7 +209,7 @@ public class Discord {
             book_id = plotSQL.getInt("SELECT book_id FROM accept_data WHERE id=" + Integer.parseInt(params[2]) + ";");
         } else {
             //Find the book id of the latest attempt.
-            book_id = plotSQL.getInt("SELECT book_id FROM deny_data WHERE id=" + Integer.parseInt(params[2]) + " ORDER BY attempt DESC;");
+            book_id = plotSQL.getInt("SELECT book_id FROM deny_data WHERE id=" + Integer.parseInt(params[2]) + " AND uuid='" + params[0] + "' ORDER BY attempt DESC;");
         }
 
         if (book_id != 0) {
