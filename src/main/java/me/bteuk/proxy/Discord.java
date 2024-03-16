@@ -1,5 +1,7 @@
 package me.bteuk.proxy;
 
+import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.commands.CommandManager;
 import me.bteuk.proxy.events.BotChatListener;
 import me.bteuk.proxy.events.DiscordChatListener;
@@ -16,14 +18,18 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 import java.awt.Color;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -37,6 +43,9 @@ public class Discord {
     private TextChannel supportChat;
 
     private final String reviewer;
+
+    private List<Long> hasRoles;
+    private List<Long> giveRoles;
 
     public Discord() {
 
@@ -95,6 +104,26 @@ public class Discord {
 
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void unlinkUser(long userID) {
+        //Remove the user from the discord link table.
+        if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT discord_id FROM discord WHERE discord_id='" + userID + "';")) {
+            Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE discord_id=" + userID + ";");
+            Proxy.getInstance().getLogger().info(("Removed discord link for " + userID + ", they are no longer in the discord server."));
+        } else {
+            //The link does not exist in the database, make sure it's removed for the Network also.
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            DataOutputStream out = new DataOutputStream(stream);
+            try {
+                out.writeUTF(GsonComponentSerializer.gson().serialize(Component.text("unlink " + userID)));
+            } catch (IOException ex) {
+                Proxy.getInstance().getLogger().info("Unable to send unlink message for " + userID);
+            }
+            for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
+                server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "discord_linking"), stream.toByteArray());
+            }
         }
     }
 
@@ -234,22 +263,62 @@ public class Discord {
         });
     }
 
-    public void addRole(long user_id, long role_id) {
+    public void addRole(long user_id, long role_id, boolean sync) {
+        // Only give the role if they don't have it yet.
         try {
-            //Get role.
-            chat.getGuild().addRoleToMember(UserSnowflake.fromId(user_id), Objects.requireNonNull(chat.getGuild().getRoleById(role_id))).queue(
-                    null, new UnknownUserErrorHandler(user_id)
-            );
+            // Get the member.
+            Member member = chat.getGuild().getMember(UserSnowflake.fromId(user_id));
+            if (member == null) {
+                // Unlink user is linked.
+                unlinkUser(user_id);
+                return;
+            }
+            // Get the role.
+            Role role = chat.getGuild().getRoleById(role_id);
+            if (role == null) {
+                return;
+            }
+            // If the member does not have the role, add it.
+            if (!member.getRoles().contains(role)) {
+                // If successful, resync if enabled.
+                chat.getGuild().addRoleToMember(member, role).queue(
+                        (user) -> {
+                            if (sync && hasRoles != null && giveRoles != null) {
+                                syncRoles();
+                            }
+                        }, new UnknownUserErrorHandler(user_id)
+                );
+            }
         } catch (Exception e) {
             //An error occurred, the user or role is null, this is not necessarily a problem, but is being caught to prevent console spam.
         }
     }
 
-    public void removeRole(long user_id, long role_id) {
+    public void removeRole(long user_id, long role_id, boolean sync) {
+        // Only remove the role if they don't have it yet.
         try {
-            chat.getGuild().removeRoleFromMember(UserSnowflake.fromId(user_id), Objects.requireNonNull(chat.getGuild().getRoleById(role_id))).queue(
-                    null, new UnknownUserErrorHandler(user_id)
-            );
+            // Get the member.
+            Member member = chat.getGuild().getMember(UserSnowflake.fromId(user_id));
+            if (member == null) {
+                // Unlink user is linked.
+                unlinkUser(user_id);
+                return;
+            }
+            // Get the role.
+            Role role = chat.getGuild().getRoleById(role_id);
+            if (role == null) {
+                return;
+            }
+            // If the member does not have the role, add it.
+            if (member.getRoles().contains(role)) {
+                chat.getGuild().removeRoleFromMember(member, role).queue(
+                        (user) -> {
+                            if (sync && hasRoles != null && giveRoles != null) {
+                                syncRoles();
+                            }
+                        }, new UnknownUserErrorHandler(user_id)
+                );
+            }
         } catch (Exception e) {
             //An error occurred, the user or role is null, this is not necessarily a problem, but is being caught to prevent console spam.
         }
@@ -285,42 +354,43 @@ public class Discord {
 
     private void enableRoleSyncing() {
 
-        List<Long> hasRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.has");
-        List<Long> giveRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.give");
+        hasRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.has");
+        giveRoles = Proxy.getInstance().getConfig().getLongArray("role_syncing.give");
 
         if (hasRoles == null || giveRoles == null) {
             return;
         }
 
-        Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), () -> {
-
-                    // Get lists of all members with all the roles
-                    Map<Role, List<Member>> hasRolesMap = fillRoleMap(hasRoles);
-                    Map<Role, List<Member>> giveRolesMap = fillRoleMap(giveRoles);
-
-                    // Remove the role from members that shouldn't have it.
-                    for (Role role : giveRolesMap.keySet()) {
-                        chat.getGuild().getMembersWithRoles(role).forEach(member -> {
-                            if (member.getRoles().stream().noneMatch(hasRolesMap::containsKey)) {
-                                removeRole(member.getIdLong(), role.getIdLong());
-                            }
-                        });
-                    }
-
-                    // Add the roles to all members who should have it.
-                    for (Role role : hasRolesMap.keySet()) {
-                        chat.getGuild().getMembersWithRoles(role).forEach(member -> {
-                            for (Role giveRole : giveRolesMap.keySet()) {
-                                // Only give the role if they don't have it yet.
-                                if (!member.getRoles().contains(giveRole)) {
-                                    addRole(member.getIdLong(), giveRole.getIdLong());
-                                }
-                            }
-                        });
-                    }
-                })
+        Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), this::syncRoles)
                 .repeat(5L, TimeUnit.MINUTES)
                 .schedule();
+    }
+
+    private void syncRoles() {
+        // Get lists of all members with all the roles
+        Map<Role, List<Member>> hasRolesMap = fillRoleMap(hasRoles);
+        Map<Role, List<Member>> giveRolesMap = fillRoleMap(giveRoles);
+
+        // Remove the role from members that shouldn't have it.
+        for (Role role : giveRolesMap.keySet()) {
+            chat.getGuild().getMembersWithRoles(role).forEach(member -> {
+                if (member.getRoles().stream().noneMatch(hasRolesMap::containsKey)) {
+                    removeRole(member.getIdLong(), role.getIdLong(), false);
+                }
+            });
+        }
+
+        // Add the roles to all members who should have it.
+        for (Role role : hasRolesMap.keySet()) {
+            chat.getGuild().getMembersWithRoles(role).forEach(member -> {
+                for (Role giveRole : giveRolesMap.keySet()) {
+                    // Only give the role if they don't have it yet.
+                    if (!member.getRoles().contains(giveRole)) {
+                        addRole(member.getIdLong(), giveRole.getIdLong(), false);
+                    }
+                }
+            });
+        }
     }
 
     private Map<Role, List<Member>> fillRoleMap(List<Long> role_ids) {

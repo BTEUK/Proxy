@@ -39,7 +39,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.7.1",
+@Plugin(id = "proxy", name = "Proxy", version = "1.7.2",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
 
@@ -128,6 +128,9 @@ public class Proxy {
             getLogger().error("Failed to connect to the database, please check that you have set the config values correctly.");
             return;
         }
+
+        // To make sure no players were left online when the Proxy was closed, clear the list of online users.
+        globalSQL.update("DELETE FROM online_users;");
 
         //Setup review status message.
         new ReviewStatus();
