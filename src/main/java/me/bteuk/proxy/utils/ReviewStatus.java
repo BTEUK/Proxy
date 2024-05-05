@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 
 import java.awt.*;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -103,11 +104,15 @@ public class ReviewStatus {
 
     private void createMessage() {
 
-        supportInfoChannel.sendMessageEmbeds(getEmbed()).queue((message) -> {
+        try {
+            supportInfoChannel.sendMessageEmbeds(getEmbed()).queue((message) -> {
 
-            //Set message id for next time.
-            messageID = message.getId();
-        });
+                //Set message id for next time.
+                messageID = message.getId();
+            });
+        } catch (SQLException e) {
+            Proxy.getInstance().getLogger().error(String.format("An error occurred while fetching region requests, %s.", e.getMessage()));
+        }
 
     }
 
@@ -115,13 +120,17 @@ public class ReviewStatus {
 
         supportInfoChannel.retrieveMessageById(messageID).queue((message) -> {
             // use the message here, its an async callback
-            message.editMessageEmbeds(getEmbed()).queue();
+            try {
+                message.editMessageEmbeds(getEmbed()).queue();
+            } catch (SQLException e) {
+                Proxy.getInstance().getLogger().error(String.format("An error occurred while fetching region requests, %s.", e.getMessage()));
+            }
         }, new ErrorHandler().handle(ErrorResponse.UNKNOWN_MESSAGE, (e) -> supportInfoChannel.sendMessage("The message with id " + messageID + " does not exist!").queue()));
 
 
     }
 
-    private MessageEmbed getEmbed() {
+    private MessageEmbed getEmbed() throws SQLException {
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Support Information");

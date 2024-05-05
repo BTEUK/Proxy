@@ -10,8 +10,11 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import lombok.Getter;
 import me.bteuk.proxy.config.Config;
 import me.bteuk.proxy.events.CommandListener;
+import me.bteuk.proxy.socket.ProxySocket;
+import me.bteuk.proxy.sql.DatabaseInit;
 import me.bteuk.proxy.sql.GlobalSQL;
 import me.bteuk.proxy.sql.PlotSQL;
 import me.bteuk.proxy.sql.RegionSQL;
@@ -27,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,29 +38,37 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Plugin(id = "proxy", name = "Proxy", version = "1.7.2",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
 
+    @Getter
     private final ProxyServer server;
+    @Getter
     private final Logger logger;
 
+    @Getter
     private static Proxy instance;
     private static ServerSocket serverSocket;
 
+    @Getter
     private Config config;
 
     private File dataFolder;
 
+    @Getter
     private Discord discord;
 
+    @Getter
     private ArrayList<Linked> linking;
 
+    @Getter
     private GlobalSQL globalSQL;
+    @Getter
     private PlotSQL plotSQL;
+    @Getter
     private RegionSQL regionSQL;
 
     private HashMap<UUID, String> last_server;
@@ -92,14 +102,13 @@ public class Proxy {
 
         int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
 
-        CompletableFuture.runAsync(() -> {
-            try {
-                serverSocket = new ServerSocket(socket_port);
-                while (true) new ChatHandler(serverSocket.accept()).start();
-            } catch (IOException ex) {
-                if (serverSocket == null) logger.warn("Could not bind port to socket!");
-            }
-        });
+        // Start socket.
+        if (socket_port == 0) {
+            logger.error("Socket port is not set in config or is set to 0. Please set a valid port!");
+        } else {
+            ProxySocket proxySocket = new ProxySocket(socket_port);
+            proxySocket.start();
+        }
 
         this.dataFolder = getDataFolder();
 
@@ -108,24 +117,26 @@ public class Proxy {
         //Setup MySQL
         try {
 
+            DatabaseInit init = new DatabaseInit();
+
             //Global Database
             String global_database = config.getString("database.global");
-            BasicDataSource global_dataSource = mysqlSetup(global_database);
+            BasicDataSource global_dataSource = init.mysqlSetup(global_database);
             globalSQL = new GlobalSQL(global_dataSource);
-
-            //Plot Database
-            String plot_database = config.getString("database.plot");
-            BasicDataSource plot_dataSource = mysqlSetup(plot_database);
-            plotSQL = new PlotSQL(plot_dataSource);
 
             //Region Database
             String region_database = config.getString("database.region");
-            BasicDataSource region_dataSource = mysqlSetup(region_database);
+            BasicDataSource region_dataSource = init.mysqlSetup(region_database);
             regionSQL = new RegionSQL(region_dataSource);
 
-        } catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
-            getLogger().error("Failed to connect to the database, please check that you have set the config values correctly.");
+            //Plot Database
+            String plot_database = config.getString("database.plot");
+            BasicDataSource plot_dataSource = init.mysqlSetup(plot_database);
+            plotSQL = new PlotSQL(plot_dataSource);
+
+        } catch (SQLException | RuntimeException | ClassNotFoundException e) {
+            logger.error("Failed to connect to the database, please check that you have set the config values correctly.");
+            logger.error("Disabling Proxy");
             return;
         }
 
@@ -275,18 +286,6 @@ public class Proxy {
         setLastServer(e.getPlayer().getUniqueId(), e.getServer().getServerInfo().getName());
     }
 
-    public static Proxy getInstance() {
-        return instance;
-    }
-
-    public ProxyServer getServer() {
-        return server;
-    }
-
-    public Logger getLogger() {
-        return logger;
-    }
-
     public static RegisteredServer getServer(String name) {
         for (RegisteredServer server : instance.getServer().getAllServers()) {
             if (server.getServerInfo().getName().equalsIgnoreCase(name)) {
@@ -357,47 +356,6 @@ public class Proxy {
         }
     }
 
-    //Creates the mysql connection.
-    private BasicDataSource mysqlSetup(String database) throws SQLException, ClassNotFoundException {
-
-        Class.forName("com.mysql.cj.jdbc.Driver");
-
-        String host = config.getString("host");
-        int port = config.getInt("port");
-        String username = config.getString("username");
-        String password = config.getString("password");
-
-        BasicDataSource dataSource = new BasicDataSource();
-
-        dataSource.setUrl("jdbc:mysql://" + host + ":" + port + "/" + database + "?&useSSL=false&");
-        dataSource.setUsername(username);
-        dataSource.setPassword(password);
-
-        testDataSource(dataSource);
-        return dataSource;
-
-    }
-
-    public void testDataSource(BasicDataSource dataSource) throws SQLException {
-        try (Connection connection = dataSource.getConnection()) {
-            if (!connection.isValid(1000)) {
-                throw new SQLException("Could not establish database connection.");
-            }
-        }
-    }
-
-    public Config getConfig() {
-        return config;
-    }
-
-    public Discord getDiscord() {
-        return discord;
-    }
-
-    public ArrayList<Linked> getLinking() {
-        return linking;
-    }
-
     public String getAvatarUrl(String uuid, String texture) {
         return constructAvatarUrl(uuid, texture);
     }
@@ -412,17 +370,5 @@ public class Proxy {
                 .replace("{size}", "128");
 
         return defaultUrl;
-    }
-
-    public GlobalSQL getGlobalSQL() {
-        return globalSQL;
-    }
-
-    public PlotSQL getPlotSQL() {
-        return plotSQL;
-    }
-
-    public RegionSQL getRegionSQL() {
-        return regionSQL;
     }
 }
