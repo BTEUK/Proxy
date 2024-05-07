@@ -2,12 +2,14 @@ package me.bteuk.proxy;
 
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import lombok.Getter;
+import lombok.Setter;
 import me.bteuk.proxy.commands.CommandManager;
 import me.bteuk.proxy.events.BotChatListener;
 import me.bteuk.proxy.events.DiscordChatListener;
 import me.bteuk.proxy.log4j.JdaFilter;
+import me.bteuk.proxy.socket.ChatMessage;
 import me.bteuk.proxy.sql.PlotSQL;
-import me.bteuk.proxy.utils.ChatFormatter;
 import me.bteuk.proxy.utils.UnknownUserErrorHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -19,7 +21,10 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
@@ -35,6 +40,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Discord {
 
+    @Setter
+    @Getter
     private JDA jda;
 
     private TextChannel chat;
@@ -107,6 +114,28 @@ public class Discord {
         }
     }
 
+    /**
+     * Handle a {@link ChatMessage}.
+     *
+     * @param message the message to handle
+     */
+    public void handle(ChatMessage message) {
+
+        // Format the message according to the formatting rules.
+        String text = format(message.getComponent());
+        message.getComponent().style();
+
+        // Send the message to the relevent channel.
+        switch (message.getChannel()) {
+
+            case "global" -> chat.sendMessage(text).queue();
+            case "staff" -> staff.sendMessage(text).queue();
+
+            // Ignore chat message in all other channels, they are not intended to be posted on discord.
+        }
+
+    }
+
     public static void unlinkUser(long userID) {
         //Remove the user from the discord link table.
         if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT discord_id FROM discord WHERE discord_id='" + userID + "';")) {
@@ -172,23 +201,7 @@ public class Discord {
             topic = "There are " + plot_count + " plots waiting to be reviewed!";
         }
 
-        chat.getManager().setTopic(topic);
-
-    }
-
-    public void sendMessage(String message) {
-
-        //TODO: could consider applying bold, italic and other formatting to discord messages if used in Minecraft.
-
-        //If chat channel is global send it.
-        chat.sendMessage(message).queue();
-
-    }
-
-    public void sendStaffMessage(String message) {
-
-        //Send message to staff channel.
-        staff.sendMessage(message).queue();
+        chat.getManager().setTopic(topic).queue();
 
     }
 
@@ -204,8 +217,8 @@ public class Discord {
         String chatMessage = String.join(" ", Arrays.copyOfRange(aMessage, 1, aMessage.length));
 
         switch (type) {
-            case "afk" -> sendItalicMessage(chatMessage);
-            case "promotion" -> sendBoldMessage(chatMessage);
+            //case "afk" -> sendItalicMessage(chatMessage);
+            //case "promotion" -> sendBoldMessage(chatMessage);
             case "connect" -> sendConnectDisconnectMessage(chatMessage, true);
             case "disconnect" -> sendConnectDisconnectMessage(chatMessage, false);
         }
@@ -248,12 +261,10 @@ public class Discord {
             builder.append("\n").append("Feedback: ").append(String.join(" ", pages));
         }
 
-        String message = ChatFormatter.escapeDiscordFormatting(builder.toString());
+        String message = escapeDiscordFormatting(builder.toString());
 
         //Cut the message off at 2000 characters.
-        if (message.length() > 2000) {
-            message = builder.substring(0, 1997) + "...";
-        }
+        message = messageLimit(message);
 
         //Get discord user.
         String finalMessage = message;
@@ -324,14 +335,6 @@ public class Discord {
         }
     }
 
-    public JDA getJda() {
-        return jda;
-    }
-
-    public void setJda(JDA jda) {
-        this.jda = jda;
-    }
-
     public TextChannel getSupportInfoChannel() {
         return supportInfo;
     }
@@ -342,14 +345,6 @@ public class Discord {
 
     public String getReviewerRoleID() {
         return reviewer;
-    }
-
-    private void sendItalicMessage(String message) {
-        sendMessage("*" + ChatFormatter.escapeDiscordFormatting(message) + "*");
-    }
-
-    private void sendBoldMessage(String message) {
-        sendMessage("**" + ChatFormatter.escapeDiscordFormatting(message) + "**");
     }
 
     private void enableRoleSyncing() {
@@ -404,5 +399,62 @@ public class Discord {
             }
         }
         return roleMap;
+    }
+
+    private static String format(Component component) {
+
+        // Format each section of the component individually.
+        StringBuilder builder = new StringBuilder();
+
+        if (component instanceof TextComponent textComponent) {
+            builder.append(format(textComponent));
+            textComponent.children().forEach(
+                    child -> builder.append(format(child))
+            );
+        }
+
+        return messageLimit(builder.toString());
+    }
+
+    private static String format(TextComponent component) {
+
+        String text = PlainTextComponentSerializer.plainText().serialize(component);
+
+        // Escape all potential discord markdown of plaintext.
+        text = escapeDiscordFormatting(text);
+
+        // Apply bold, italic and underline from the component.
+        if (component.hasDecoration(TextDecoration.ITALIC)) {
+            text = italic(text);
+        }
+        if (component.hasDecoration(TextDecoration.BOLD)) {
+            text = bold(text);
+        }
+        if (component.hasDecoration(TextDecoration.UNDERLINED)) {
+            text = underline(text);
+        }
+
+        return text;
+    }
+
+    private static String escapeDiscordFormatting(String message) {
+        return message.replace("@", "@\u200B")
+                .replaceAll("[*_#\\[\\]()\\-`>]", "\\\\$0");
+    }
+
+    private static String italic(String message) {
+        return String.format("*%s*", message);
+    }
+
+    private static String bold(String message) {
+        return String.format("**%s**", message);
+    }
+
+    private static String underline(String message) {
+        return String.format("__%s__", message);
+    }
+
+    private static String messageLimit(String message) {
+        return message.substring(0, 1997) + "...";
     }
 }

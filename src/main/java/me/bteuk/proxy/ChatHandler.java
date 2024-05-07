@@ -1,9 +1,8 @@
 package me.bteuk.proxy;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
-import com.velocitypowered.api.proxy.server.RegisteredServer;
 import me.bteuk.proxy.socket.ChatMessage;
-import me.bteuk.proxy.utils.ChatFormatter;
 import me.bteuk.proxy.utils.Linked;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -16,9 +15,17 @@ public class ChatHandler {
 
     /**
      * Handle a chat message.
+     *
      * @param message the chat message to handle.
      */
     public static void handle(ChatMessage message) throws IOException {
+
+        // Send the chat message to all servers.
+        sendProxyMessage(message);
+
+        // Send the chat message to discord.
+        Proxy.getInstance().getDiscord().handle(message);
+
         switch (message.getChannel()) {
 
             case "uknet:globalchat", "uknet:reviewer", "uknet:staff", "uknet:connect", "uknet:disconnect", "uknet:tab" -> {
@@ -31,9 +38,8 @@ public class ChatHandler {
                 out.writeUTF(jsonMessage);
 
                 //Send message to all servers.
-                for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
-                    server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", message.getChannel().split(":")[1]), stream.toByteArray());
-                }
+                Proxy.getInstance().getServer().getAllServers().forEach(server ->
+                        server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", message.getChannel().split(":")[1]), stream.toByteArray()));
             }
 
             case "uknet:discord_chat" -> {
@@ -136,5 +142,22 @@ public class ChatHandler {
                 }
             }
         }
+    }
+
+    /**
+     * Send a message to all servers on a specific channel.
+     *
+     * @param message the {@link ChatMessage} to send
+     */
+    private static void sendProxyMessage(ChatMessage message) throws IOException {
+
+        // Serialize the chat message and convert it to bytes.
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(stream, message);
+
+        //Send message to all servers.
+        Proxy.getInstance().getServer().getAllServers().forEach(server ->
+                server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "chat"), stream.toByteArray()));
     }
 }
