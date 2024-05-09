@@ -134,6 +134,16 @@ public abstract class ConfigurationFile {
         }
     }
 
+    public long getLong(String path) {
+        return getLong(path, 0L);
+    }
+
+    public long getLong(String path, long defaultValue) {
+        Object value = getObject(path, defaultValue);
+        if (value == null) return defaultValue;
+        return (long) value;
+    }
+
     public void set(String path, Object value) {
         set(values, path, value);
         save();

@@ -1,5 +1,5 @@
 #Config version (do not update)
-version: "1.7.1"
+version: "1.8.0"
 
 #Bot token
 token: "insert token here"
@@ -9,11 +9,21 @@ default_server: "lobby"
 
 #Channels IDS in discord for the following chat channels.
 chat:
-  global:
+  global: 0
   support:
-    info:
-    chat:
-  staff:
+    info: 0
+    chat: 0
+  staff: 0
+
+#Discord role IDs.
+discord_roles:
+  default: 0
+  applicant: 0
+  apprentice: 0
+  jrbuilder: 0
+  builder: 0
+  architect: 0
+  reviewer: 0
 
 #Chat Socket Port
 socket_port: 30589

@@ -29,4 +29,8 @@ public class Config {
     public List<Long> getLongArray(String path) {
         return config.getLongArray(path);
     }
+
+    public long getLong(String path) {
+        return config.getLong(path);
+    }
 }

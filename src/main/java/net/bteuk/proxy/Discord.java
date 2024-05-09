@@ -1,15 +1,21 @@
 package net.bteuk.proxy;
 
+import com.google.protobuf.Field;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import lombok.Getter;
 import lombok.Setter;
 import net.bteuk.network.lib.dto.ChatMessage;
+import net.bteuk.network.lib.dto.DiscordDirectMessage;
+import net.bteuk.network.lib.dto.DiscordEmbed;
+import net.bteuk.network.lib.dto.DiscordLinking;
+import net.bteuk.network.lib.dto.DiscordRole;
 import net.bteuk.proxy.commands.CommandManager;
 import net.bteuk.proxy.events.BotChatListener;
 import net.bteuk.proxy.events.DiscordChatListener;
 import net.bteuk.proxy.log4j.JdaFilter;
 import net.bteuk.proxy.sql.PlotSQL;
+import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.utils.UnknownUserErrorHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -133,7 +139,149 @@ public class Discord {
 
             // Ignore chat message in all other channels, they are not intended to be posted on discord.
         }
+    }
 
+    /**
+     * Handle a {@link DiscordEmbed}
+     *
+     * @param embed the embed to handle
+     */
+    public void handle(DiscordEmbed embed) {
+
+        // Create the embed from the transfer object.
+        chat.sendMessageEmbeds(createEmbed(embed)).queue();
+
+    }
+
+    /**
+     * Handle a {@link DiscordRole}
+     *
+     * @param role the role to add/remove
+     */
+    public void handle(DiscordRole role) {
+
+        if (role.getUuid() == null || role.getRole() == null) {
+            return;
+        }
+
+        // Get the user, cancel if not exists.
+        long userId = Proxy.getInstance().getGlobalSQL().getLong("SELECT discord_id FROM discord WHERE uuid='" + role.getUuid() + "';");
+        if (userId == 0) {
+            return;
+        }
+
+        // Get the role, cancel if not exists.
+        long roleId = Proxy.getInstance().getConfig().getLong("discord_roles." + role.getRole());
+        if (roleId == 0) {
+            return;
+        }
+
+        if (role.isAddRole()) {
+            addRole(userId, roleId, true);
+        } else {
+            removeRole(userId, roleId, true);
+        }
+    }
+
+    /**
+     * Handle a {@link DiscordDirectMessage}
+     *
+     * @param directMessage the direct message
+     */
+    public void handle(DiscordDirectMessage directMessage) {
+
+        if (directMessage.getRecipient() == null || directMessage.getMessage() == null) {
+            return;
+        }
+
+        // Get the user, cancel if not exists.
+        long userId = Proxy.getInstance().getGlobalSQL().getLong("SELECT discord_id FROM discord WHERE uuid='" + directMessage.getRecipient() + "';");
+        if (userId == 0) {
+            return;
+        }
+
+        // Send direct message to the user.
+        sendDirectMessage(userId, directMessage.getMessage());
+
+    }
+
+    /**
+     * Handle a {@link DiscordLinking}
+     *
+     * @param discordLinking the discord linking event to handle.
+     */
+    public void handle(DiscordLinking discordLinking) {
+
+        if (discordLinking.getUuid() == null) {
+            return;
+        }
+
+        if (discordLinking.isUnlink()) {
+            unlinkUser(discordLinking.getUuid());
+        } else {
+            if (discordLinking.getToken() == null) {
+                return;
+            }
+
+            // Add object for linking, with a time to remove.
+            // If there is already an instance, replace it.
+            Linked linked = null;
+            for (Linked l : Proxy.getInstance().getLinking()) {
+                if (l.uuid.equalsIgnoreCase(discordLinking.getUuid())) {
+                    linked = l;
+                }
+            }
+
+            //If there was already a task for this player, close it first.
+            if (linked != null) {
+                linked.close();
+                Proxy.getInstance().getLinking().remove(linked);
+            }
+
+            //Create new link.
+            Proxy.getInstance().getLinking().add(new Linked(discordLinking.getUuid(), discordLinking.getToken()));
+        }
+
+    }
+
+    private MessageEmbed createEmbed(DiscordEmbed embed) {
+
+        EmbedBuilder builder = new EmbedBuilder();
+
+        // Add all non-null fields from the transfer object to the embed.
+
+        if (embed.getTitle() != null) {
+            builder.setTitle(embed.getTitle());
+        }
+
+        if (embed.getAuthor() != null || embed.getIcon() != null) {
+            builder.setAuthor(embed.getAuthor(), null, embed.getIcon());
+        }
+
+        if (embed.getDescription() != null) {
+            builder.setDescription(embed.getDescription());
+        }
+
+        if (embed.getFields() != null) {
+            embed.getFields().forEach(field ->
+                    builder.addField(new MessageEmbed.Field(field.getName(), field.getValue(), field.isInline())));
+        }
+
+        if (embed.getFooter() != null) {
+            builder.setFooter(embed.getFooter());
+        }
+
+        // -1 is the default colour.
+        if (embed.getColour() != -1) {
+            builder.setColor(embed.getColour());
+        }
+
+        return builder.build();
+    }
+
+    public void unlinkUser(String uuid) {
+        //Remove the user from the discord link table.
+        Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE uuid=" + uuid + ";");
     }
 
     public static void unlinkUser(long userID) {
@@ -141,87 +289,26 @@ public class Discord {
         if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT discord_id FROM discord WHERE discord_id='" + userID + "';")) {
             Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE discord_id=" + userID + ";");
             Proxy.getInstance().getLogger().info(("Removed discord link for " + userID + ", they are no longer in the discord server."));
-        } else {
-            //The link does not exist in the database, make sure it's removed for the Network also.
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(stream);
-            try {
-                out.writeUTF(GsonComponentSerializer.gson().serialize(Component.text("unlink " + userID)));
-            } catch (IOException ex) {
-                Proxy.getInstance().getLogger().info("Unable to send unlink message for " + userID);
-            }
-            for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
-                server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "discord_linking"), stream.toByteArray());
-            }
         }
     }
 
-    private void sendConnectDisconnectMessage(String message, boolean connect) {
-
-        String[] aMessage = message.split(" ");
-        String url = aMessage[0];
-        String chatMessage = String.join(" ", Arrays.copyOfRange(aMessage, 1, aMessage.length));
-
-        //If channel is connect send connect message using embed.
-        EmbedBuilder eb = new EmbedBuilder();
-
-        eb.setAuthor(chatMessage, null, url);
-        //eb.setDescription("**" + chatMessage + "**");
-        eb = (connect) ? eb.setColor(Color.GREEN) : eb.setColor(Color.RED);
-        chat.sendMessageEmbeds(eb.build()).queue();
-
-    }
-
-    public void sendDisconnectBlockingMessage(String message, AtomicInteger users) {
-
-        String[] aMessage = message.split(" ");
-        String url = aMessage[0];
-        String chatMessage = String.join(" ", Arrays.copyOfRange(aMessage, 1, aMessage.length));
-
-        //If channel is connect send connect message using embed.
-        EmbedBuilder eb = new EmbedBuilder();
-
-        eb.setAuthor(chatMessage, null, url);
-        //eb.setDescription("**" + chatMessage + "**");
-        eb.setColor(Color.RED);
-
-        chat.sendMessageEmbeds(eb.build()).queue((reply) -> users.decrementAndGet());
-
-    }
-
-    public void updateReviewerChannel() {
-
-        //When a message is sent in the reviewer channel update the channel topic to the number of submitted plots.
-        int plot_count = Proxy.getInstance().getPlotSQL().getInt("SELECT count(id) FROM plot_data WHERE status='submitted';");
-        String topic;
-
-        if (plot_count == 1) {
-            topic = "There is 1 plot waiting to be reviewed!";
-        } else {
-            topic = "There are " + plot_count + " plots waiting to be reviewed!";
-        }
-
-        chat.getManager().setTopic(topic).queue();
-
+    private void sendDirectMessage(long userId, String message) {
+        jda.retrieveUserById(userId).queue(user -> {
+            //Open a private channel with the user and send the message.
+            user.openPrivateChannel().queue(channel -> channel.sendMessage(messageLimit(message)).queue());
+        });
     }
 
     /**
-     * Send an announcement, the type of announcement is the first of the string.
+     * Sends an embed and decrement the integer.
      *
-     * @param message the message to announce
+     * @param embed the embed to send
+     * @param users the integer to decrease
      */
-    public void sendAnnouncement(String message) {
+    public void sendBlockingEmbed(MessageEmbed embed, AtomicInteger users) {
 
-        String[] aMessage = message.split(" ");
-        String type = aMessage[0];
-        String chatMessage = String.join(" ", Arrays.copyOfRange(aMessage, 1, aMessage.length));
+        chat.sendMessageEmbeds(embed).queue((reply) -> users.decrementAndGet());
 
-        switch (type) {
-            //case "afk" -> sendItalicMessage(chatMessage);
-            //case "promotion" -> sendBoldMessage(chatMessage);
-            case "connect" -> sendConnectDisconnectMessage(chatMessage, true);
-            case "disconnect" -> sendConnectDisconnectMessage(chatMessage, false);
-        }
     }
 
     /**

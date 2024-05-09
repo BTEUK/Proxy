@@ -2,7 +2,9 @@ package net.bteuk.proxy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
+import net.bteuk.network.lib.dto.AbstractTransferObject;
 import net.bteuk.network.lib.dto.ChatMessage;
+import net.bteuk.network.lib.dto.DirectMessage;
 import net.bteuk.proxy.utils.Linked;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -23,34 +25,7 @@ public class ChatHandler {
         // Send the chat message to all servers.
         sendProxyMessage(message);
 
-        // Send the chat message to discord.
-        Proxy.getInstance().getDiscord().handle(message);
-
         switch (message.getChannel()) {
-
-            case "uknet:globalchat", "uknet:reviewer", "uknet:staff", "uknet:connect", "uknet:disconnect", "uknet:tab" -> {
-
-                // Convert the component back to json.
-                String jsonMessage = GsonComponentSerializer.gson().serialize(message.getComponent());
-
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                DataOutputStream out = new DataOutputStream(stream);
-                out.writeUTF(jsonMessage);
-
-                //Send message to all servers.
-                Proxy.getInstance().getServer().getAllServers().forEach(server ->
-                        server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", message.getChannel().split(":")[1]), stream.toByteArray()));
-            }
-
-            case "uknet:discord_announcements" -> {
-
-                // Convert the component to plain text.
-                String plain = PlainTextComponentSerializer.plainText().serialize(message.getComponent());
-
-                //Send announcement to discord, this will be formatted before sending.
-                Proxy.getInstance().getDiscord().sendAnnouncement(plain);
-
-            }
 
             case "uknet:discord_linking" -> {
 
@@ -60,19 +35,7 @@ public class ChatHandler {
                 //Split message.
                 String[] args = plain.split(" ");
 
-                if (args[0].equalsIgnoreCase("addrole")) {
-
-                    long user_id = Long.parseLong(args[1]);
-                    long role_id = Long.parseLong(args[2]);
-                    Proxy.getInstance().getDiscord().addRole(user_id, role_id, true);
-
-                } else if (args[0].equalsIgnoreCase("removerole")) {
-
-                    long user_id = Long.parseLong(args[1]);
-                    long role_id = Long.parseLong(args[2]);
-                    Proxy.getInstance().getDiscord().removeRole(user_id, role_id, true);
-
-                } else if (args[0].equalsIgnoreCase("link")) {
+                if (args[0].equalsIgnoreCase("link")) {
 
                     //Add object for linking, with a time to remove.
                     //If there is already an instance, replace it.
@@ -122,11 +85,23 @@ public class ChatHandler {
     }
 
     /**
+     * Handle a chat message.
+     *
+     * @param message the direct message to handle.
+     */
+    public static void handle(AbstractTransferObject message) throws IOException {
+
+        // Send the direct message to all servers.
+        sendProxyMessage(message);
+
+    }
+
+    /**
      * Send a message to all servers on a specific channel.
      *
-     * @param message the {@link ChatMessage} to send
+     * @param message the {@link AbstractTransferObject} to send
      */
-    private static void sendProxyMessage(ChatMessage message) throws IOException {
+    private static void sendProxyMessage(AbstractTransferObject message) throws IOException {
 
         // Serialize the chat message and convert it to bytes.
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -135,6 +110,6 @@ public class ChatHandler {
 
         //Send message to all servers.
         Proxy.getInstance().getServer().getAllServers().forEach(server ->
-                server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "chat"), stream.toByteArray()));
+                server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "network"), stream.toByteArray()));
     }
 }
