@@ -2,6 +2,8 @@ package net.bteuk.proxy.events;
 
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import net.bteuk.network.lib.dto.DiscordLinking;
+import net.bteuk.proxy.ChatHandler;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -25,12 +27,12 @@ public class BotChatListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
 
-        //Check channel type.
+        // Check channel type.
         if (event.getChannelType() != ChannelType.PRIVATE) {
             return;
         }
 
-        //Block messages from bot.
+        // Block messages from bot.
         if (event.getAuthor().isBot()) {
             return;
         }
@@ -39,32 +41,24 @@ public class BotChatListener extends ListenerAdapter {
             return;
         }
 
-        //Check if author is in the linked list.
+        // Check if author is in the linked list.
         Linked l = null;
         for (Linked linked : Proxy.getInstance().getLinking()) {
 
-            //Check message
+            // Check message
             if (event.getMessage().getContentRaw().equalsIgnoreCase(linked.token)) {
 
                 try {
-                    //Link accounts.
-                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                    DataOutputStream out = new DataOutputStream(stream);
+                    // Link accounts.
+                    DiscordLinking discordLinking = new DiscordLinking();
+                    discordLinking.setUuid(linked.uuid);
+                    discordLinking.setDiscordId(event.getAuthor().getIdLong());
 
-                    Component component = PlainTextComponentSerializer.plainText().deserialize("link " + linked.uuid + " " + event.getAuthor().getId());
-                    String json = GsonComponentSerializer.gson().serialize(component);
-
-                    out.writeUTF(json);
-
-                    for (RegisteredServer server : Proxy.getInstance().getServer().getAllServers()) {
-                        if (!server.getPlayersConnected().isEmpty()) {
-                            server.sendPluginMessage(MinecraftChannelIdentifier.create("uknet", "discord_linking"), stream.toByteArray());
-                        }
-                    }
+                    ChatHandler.handle(discordLinking);
 
                     l = linked;
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    // Ignored
                 }
             }
         }
