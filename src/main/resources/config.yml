@@ -17,13 +17,12 @@ chat:
 
 #Discord role IDs.
 discord_roles:
-  default: 0
-  applicant: 0
-  apprentice: 0
-  jrbuilder: 0
-  builder: 0
-  architect: 0
-  reviewer: 0
+  reviewer: 815686457838272512
+  architect: 1050426152700878871
+  builder: 696773933256671373
+  jrbuilder: 837045714562973754
+  apprentice: 728017845652553799
+  applicant: 955520858577850458
 
 #Chat Socket Port
 socket_port: 30589

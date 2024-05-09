@@ -28,6 +28,7 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -275,12 +276,22 @@ public class Discord {
         Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE uuid=" + uuid + ";");
     }
 
-    public static void unlinkUser(long userID) {
+    public static void unlinkUser(long userId) {
         //Remove the user from the discord link table.
-        if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT discord_id FROM discord WHERE discord_id='" + userID + "';")) {
-            Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE discord_id=" + userID + ";");
-            Proxy.getInstance().getLogger().info(("Removed discord link for " + userID + ", they are no longer in the discord server."));
+        if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT discord_id FROM discord WHERE discord_id='" + userId + "';")) {
+            Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE discord_id=" + userId + ";");
+            Proxy.getInstance().getLogger().info(("Removed discord link for " + userId + ", they are no longer in the discord server."));
         }
+        // Send an unlink message to the servers to make sure it's also unlinked there.
+        DiscordLinking discordLinking = new DiscordLinking();
+        discordLinking.setDiscordId(userId);
+        discordLinking.setUnlink(true);
+        try {
+            ChatHandler.handle(discordLinking);
+        } catch (IOException e) {
+            // Ignored
+        }
+
     }
 
     private void sendDirectMessage(long userId, String message) {
