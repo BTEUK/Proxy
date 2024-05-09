@@ -22,6 +22,7 @@ import net.bteuk.proxy.sql.PlotSQL;
 import net.bteuk.proxy.sql.RegionSQL;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.utils.ReviewStatus;
+import net.dv8tion.jda.api.EmbedBuilder;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
@@ -31,7 +32,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.ServerSocket;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +53,7 @@ public class Proxy {
 
     @Getter
     private static Proxy instance;
-    private static ServerSocket serverSocket;
+    private InputSocket inputSocket;
 
     @Getter
     private Config config;
@@ -112,7 +112,7 @@ public class Proxy {
             SocketHandler handler = new ProxySocketHandler();
 
             // Create the input socket.
-            InputSocket inputSocket = new InputSocket(socket_port);
+            inputSocket = new InputSocket(socket_port);
             inputSocket.start(handler);
         }
 
@@ -165,12 +165,8 @@ public class Proxy {
         //Store the last server players are connected to.
         updateLastServer();
 
-        if (serverSocket != null && !serverSocket.isClosed()) {
-            try {
-                serverSocket.close();
-            } catch (IOException ex) {
-                logger.warn("Could not unbind port from socket!");
-            }
+        if (inputSocket != null) {
+            inputSocket.close();
         }
 
         //Set leave message.
@@ -179,22 +175,28 @@ public class Proxy {
             leaveMessage = config.getString("custom_messages.leave");
         }
 
+        // Get start time.
+        long startTime = System.currentTimeMillis();
+        long currentTime = System.currentTimeMillis();
 
-        //Show disconnect message for all players in discord.
+        // Show disconnect message for all players in discord.
         for (String uuid : online_users) {
 
             String player_skin = globalSQL.getString("SELECT player_skin FROM player_data WHERE uuid='" + uuid + "';");
+            String url = getAvatarUrl(uuid, player_skin);
 
-            //Get player name from database.
-            String message = getAvatarUrl(uuid, player_skin) + " " +
-                    leaveMessage.replace("%player%", globalSQL.getString("SELECT name FROM player_data WHERE uuid='" + uuid + "';"));
-            discord.sendDisconnectBlockingMessage(message, users);
+            EmbedBuilder builder = new EmbedBuilder();
+            builder.setAuthor(
+                    leaveMessage.replace("%player%", globalSQL.getString("SELECT name FROM player_data WHERE uuid='" + uuid + "';")),
+                    null, url);
 
+            discord.sendBlockingEmbed(builder.build(), users);
         }
 
-        //TODO: Add timeout if it takes too long.
-        while (users.get() > 0) {
-            //Do nothing
+        // Stop if it takes longer than 15 seconds.
+        while (users.get() > 0 && (currentTime - startTime) < 15000) {
+            // Get the time for a pontetial timeout.
+            currentTime = System.currentTimeMillis();
         }
 
         if (!online_users.isEmpty()) {

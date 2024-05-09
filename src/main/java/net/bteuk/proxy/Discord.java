@@ -1,8 +1,5 @@
 package net.bteuk.proxy;
 
-import com.google.protobuf.Field;
-import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
-import com.velocitypowered.api.proxy.server.RegisteredServer;
 import lombok.Getter;
 import lombok.Setter;
 import net.bteuk.network.lib.dto.ChatMessage;
@@ -29,15 +26,9 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
-import java.awt.Color;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +107,7 @@ public class Discord {
             });
 
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Proxy.getInstance().getLogger().error("An error occurred while loading discord!");
         }
     }
 
