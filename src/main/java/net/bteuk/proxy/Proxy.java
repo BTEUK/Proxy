@@ -11,15 +11,17 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import lombok.Getter;
+import net.bteuk.network.lib.socket.InputSocket;
+import net.bteuk.network.lib.socket.SocketHandler;
 import net.bteuk.proxy.config.Config;
 import net.bteuk.proxy.events.CommandListener;
+import net.bteuk.proxy.socket.ProxySocketHandler;
 import net.bteuk.proxy.sql.DatabaseInit;
 import net.bteuk.proxy.sql.GlobalSQL;
 import net.bteuk.proxy.sql.PlotSQL;
 import net.bteuk.proxy.sql.RegionSQL;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.utils.ReviewStatus;
-import net.bteuk.proxy.socket.ProxySocket;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
@@ -106,8 +108,12 @@ public class Proxy {
         if (socket_port == 0) {
             logger.error("Socket port is not set in config or is set to 0. Please set a valid port!");
         } else {
-            ProxySocket proxySocket = new ProxySocket(socket_port);
-            proxySocket.start();
+            // Create the socket handler.
+            SocketHandler handler = new ProxySocketHandler();
+
+            // Create the input socket.
+            InputSocket inputSocket = new InputSocket(socket_port);
+            inputSocket.start(handler);
         }
 
         this.dataFolder = getDataFolder();

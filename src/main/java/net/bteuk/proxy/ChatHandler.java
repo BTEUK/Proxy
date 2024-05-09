@@ -2,7 +2,7 @@ package net.bteuk.proxy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
-import net.bteuk.proxy.socket.ChatMessage;
+import net.bteuk.network.lib.dto.ChatMessage;
 import net.bteuk.proxy.utils.Linked;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -51,9 +51,6 @@ public class ChatHandler {
                 Proxy.getInstance().getDiscord().sendAnnouncement(plain);
 
             }
-
-            case "uknet:discord_reviewer" -> //Tell discord to update the reviewer channel.
-                    Proxy.getInstance().getDiscord().updateReviewerChannel();
 
             case "uknet:discord_linking" -> {
 
