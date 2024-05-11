@@ -1,21 +1,14 @@
 package net.bteuk.proxy.events;
 
-import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
-import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.bteuk.network.lib.dto.DiscordLinking;
-import net.bteuk.proxy.ChatHandler;
+import net.bteuk.proxy.chat.ChatHandler;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 public class BotChatListener extends ListenerAdapter {

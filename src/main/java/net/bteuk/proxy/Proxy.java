@@ -13,6 +13,7 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import lombok.Getter;
 import net.bteuk.network.lib.socket.InputSocket;
 import net.bteuk.network.lib.socket.SocketHandler;
+import net.bteuk.proxy.chat.ChatManager;
 import net.bteuk.proxy.config.Config;
 import net.bteuk.proxy.events.CommandListener;
 import net.bteuk.proxy.socket.ProxySocketHandler;
@@ -75,6 +76,10 @@ public class Proxy {
 
     private HashMap<UUID, String> last_server;
 
+    private UserManager userManager;
+
+    private ChatManager chatManager;
+
     @Inject
     public Proxy(ProxyServer server, Logger logger) {
         this.server = server;
@@ -104,12 +109,16 @@ public class Proxy {
 
         int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
 
+        userManager = new UserManager();
+
+        chatManager = new ChatManager(userManager);
+
         // Start socket.
         if (socket_port == 0) {
             logger.error("Socket port is not set in config or is set to 0. Please set a valid port!");
         } else {
             // Create the socket handler.
-            SocketHandler handler = new ProxySocketHandler();
+            SocketHandler handler = new ProxySocketHandler(chatManager);
 
             // Create the input socket.
             inputSocket = new InputSocket(socket_port);

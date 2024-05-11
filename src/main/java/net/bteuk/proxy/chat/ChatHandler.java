@@ -1,8 +1,9 @@
-package net.bteuk.proxy;
+package net.bteuk.proxy.chat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import net.bteuk.network.lib.dto.AbstractTransferObject;
+import net.bteuk.proxy.Proxy;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,9 +11,9 @@ import java.io.IOException;
 public class ChatHandler {
 
     /**
-     * Handle a chat message.
+     * Handle a message.
      *
-     * @param message the direct message to handle.
+     * @param message the message to handle.
      */
     public static void handle(AbstractTransferObject message) throws IOException {
 

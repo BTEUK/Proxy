@@ -1,31 +1,36 @@
 package net.bteuk.proxy.socket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.bteuk.network.lib.dto.AbstractTransferObject;
+import net.bteuk.network.lib.dto.ChannelEvent;
 import net.bteuk.network.lib.dto.ChatMessage;
 import net.bteuk.network.lib.dto.DirectMessage;
 import net.bteuk.network.lib.dto.DiscordDirectMessage;
 import net.bteuk.network.lib.dto.DiscordEmbed;
 import net.bteuk.network.lib.dto.DiscordLinking;
 import net.bteuk.network.lib.dto.DiscordRole;
+import net.bteuk.network.lib.dto.Reply;
 import net.bteuk.network.lib.dto.TabEvent;
 import net.bteuk.network.lib.socket.SocketHandler;
 import net.bteuk.proxy.Proxy;
-import net.bteuk.proxy.ChatHandler;
+import net.bteuk.proxy.chat.ChatHandler;
+import net.bteuk.proxy.chat.ChatManager;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.Socket;
 
 public class ProxySocketHandler implements SocketHandler {
 
+    private ChatManager manager;
+
+    public ProxySocketHandler(ChatManager manager) {
+        this.manager = manager;
+    }
+
     @Override
-    public void handle(AbstractTransferObject abstractTransferObject) {
+    public Reply handle(AbstractTransferObject abstractTransferObject) {
         // Handle the different objects.
         if (abstractTransferObject instanceof ChatMessage chatMessage) {
             try {
-                ChatHandler.handle(chatMessage);
+                manager.handle(chatMessage);
                 // Send the chat message to discord.
                 Proxy.getInstance().getDiscord().handle(chatMessage);
             } catch (IOException e) {
@@ -33,7 +38,7 @@ public class ProxySocketHandler implements SocketHandler {
             }
         } else if (abstractTransferObject instanceof DirectMessage directMessage) {
             try {
-                ChatHandler.handle(directMessage);
+                manager.handle(directMessage);
             } catch (IOException e) {
                 // Ignored
             }
@@ -54,5 +59,6 @@ public class ProxySocketHandler implements SocketHandler {
         } else {
             Proxy.getInstance().getLogger().warn(String.format("Socket object has an unrecognised type %s", abstractTransferObject.getClass().getTypeName()));
         }
+        return null;
     }
 }
