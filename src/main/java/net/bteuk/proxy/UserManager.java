@@ -1,10 +1,13 @@
 package net.bteuk.proxy;
 
 import lombok.Getter;
+import net.bteuk.network.lib.dto.UserUpdate;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import static net.bteuk.proxy.utils.Constants.RECONNECT_MESSAGE;
 
 /**
  * Class to manage the users on the network.
@@ -16,7 +19,23 @@ public class UserManager {
 
     public void addUser(String uuid) {
 
-        // Add the user to the global chat channels.
+        // See is user instance still exists.
+        User user = getUserByUuid(uuid);
+        if (user != null) {
+
+            // Cancel disconnect task.
+            user.reconnect();
+
+            // Send reconnect message to servers and discord.
+            Proxy.getInstance().getDiscord().sendConnectEmbed(RECONNECT_MESSAGE, user.getName(), user.getUuid(), user.getPlayerSkin(), null);
+
+        } else {
+
+            // Create new user.
+
+            // Send connect message, or welcome message if this is their first time joining.
+
+        }
 
 
     }
@@ -51,6 +70,10 @@ public class UserManager {
             }
         }
         return false;
+    }
+
+    public void updateUser(UserUpdate update) {
+
     }
 
     /**

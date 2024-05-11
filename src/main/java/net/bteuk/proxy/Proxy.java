@@ -43,6 +43,8 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static net.bteuk.proxy.utils.Constants.LEAVE_MESSAGE;
+
 @Plugin(id = "proxy", name = "Proxy", version = "1.7.2",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
@@ -178,28 +180,13 @@ public class Proxy {
             inputSocket.close();
         }
 
-        //Set leave message.
-        String leaveMessage = "%player% has left the game.";
-        if (config.getBoolean("custom_messages.enabled")) {
-            leaveMessage = config.getString("custom_messages.leave");
-        }
-
         // Get start time.
         long startTime = System.currentTimeMillis();
         long currentTime = System.currentTimeMillis();
 
         // Show disconnect message for all players in discord.
-        for (String uuid : online_users) {
-
-            String player_skin = globalSQL.getString("SELECT player_skin FROM player_data WHERE uuid='" + uuid + "';");
-            String url = getAvatarUrl(uuid, player_skin);
-
-            EmbedBuilder builder = new EmbedBuilder();
-            builder.setAuthor(
-                    leaveMessage.replace("%player%", globalSQL.getString("SELECT name FROM player_data WHERE uuid='" + uuid + "';")),
-                    null, url);
-
-            discord.sendBlockingEmbed(builder.build(), users);
+        for (User user : userManager.getUsers()) {
+            discord.sendConnectEmbed(LEAVE_MESSAGE, user.getName(), user.getUuid(), user.getPlayerSkin(), (reply) -> users.decrementAndGet());
         }
 
         // Stop if it takes longer than 15 seconds.

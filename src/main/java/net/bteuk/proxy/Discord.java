@@ -13,6 +13,7 @@ import net.bteuk.proxy.events.BotChatListener;
 import net.bteuk.proxy.events.DiscordChatListener;
 import net.bteuk.proxy.log4j.JdaFilter;
 import net.bteuk.proxy.sql.PlotSQL;
+import net.bteuk.proxy.utils.Avatar;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.utils.UnknownUserErrorHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public class Discord {
 
@@ -303,18 +305,6 @@ public class Discord {
     }
 
     /**
-     * Sends an embed and decrement the integer.
-     *
-     * @param embed the embed to send
-     * @param users the integer to decrease
-     */
-    public void sendBlockingEmbed(MessageEmbed embed, AtomicInteger users) {
-
-        chat.sendMessageEmbeds(embed).queue((reply) -> users.decrementAndGet());
-
-    }
-
-    /**
      * Send a DM to the user telling them their plot was accepted/denied.
      * Additionally send feedback is applicable or the promoted role if applicable.
      *
@@ -423,6 +413,36 @@ public class Discord {
         } catch (Exception e) {
             //An error occurred, the user or role is null, this is not necessarily a problem, but is being caught to prevent console spam.
         }
+    }
+
+    /**
+     * Sends an embed for a player join/leaving the server
+     * @param message the message to format
+     * @param name the name of the player
+     * @param uuid the uuid of the player
+     * @param playerSkin the player skin
+     * @param consumer to run after success
+     */
+    public void sendConnectEmbed(String message, String name, String uuid, String playerSkin, Consumer<Message> consumer) {
+        MessageEmbed embed = createAuthorEmbed(message.replace("%player%", name), null, Avatar.getAvatarUrl(uuid, playerSkin));
+        sendEmbed(embed, consumer);
+    }
+
+    private void sendEmbed(MessageEmbed embed, Consumer<Message> consumer) {
+        chat.sendMessageEmbeds(embed).queue(consumer);
+    }
+
+    /**
+     * Create an embed with an author as message with an icon.
+     *
+     * @param author author
+     * @param iconUrl icon url
+     * @return the {@link MessageEmbed}
+     */
+    public MessageEmbed createAuthorEmbed(String author, String url, String iconUrl) {
+        EmbedBuilder builder = new EmbedBuilder();
+        builder.setAuthor(author, url, iconUrl);
+        return builder.build();
     }
 
     public TextChannel getSupportInfoChannel() {

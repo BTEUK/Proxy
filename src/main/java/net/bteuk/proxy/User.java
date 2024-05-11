@@ -20,7 +20,13 @@ public class User {
     @Getter
     private String uuid;
 
+    @Getter
     private String name;
+
+    @Getter
+    private String playerSkin;
+
+    private String primaryRole;
 
     /** List of muted users for this session */
     private Set<User> mutedUsers = new HashSet<>();

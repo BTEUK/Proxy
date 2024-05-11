@@ -30,7 +30,9 @@ socket_port: 30589
 #Network messages
 #%player% is a placeholder for the player name.
 custom_messages:
-  enabled: true
+  join: '%player% has joined UKnet'
+  welcome: 'Welcome to UKnet, %player%'
+  reconnect: '%player% has rejoined UKnet'
   leave: '%player% has left UKnet'
 
 #Message ID in discord.
