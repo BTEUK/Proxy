@@ -99,18 +99,6 @@ CREATE TABLE IF NOT EXISTS online_users
     CONSTRAINT fk_online_users_2 FOREIGN KEY(server) REFERENCES server_data(name)
 );
 
-CREATE TABLE IF NOT EXISTS server_switch
-(
-    uuid        CHAR(36)        NOT NULL,
-    from_server VARCHAR(64)     NOT NULL,
-    to_server   VARCHAR(64)     NOT NULL,
-    switch_time BIGINT          NOT NULL,
-    PRIMARY KEY(uuid),
-    CONSTRAINT fk_server_switch_1 FOREIGN KEY(uuid) REFERENCES player_data(uuid),
-    CONSTRAINT fk_server_switch_2 FOREIGN KEY(from_server) REFERENCES server_data(name),
-    CONSTRAINT fk_server_switch_3 FOREIGN KEY(to_server) REFERENCES server_data(name)
-);
-
 CREATE TABLE IF NOT EXISTS location_subcategory
 (
     id          INT             AUTO_INCREMENT,

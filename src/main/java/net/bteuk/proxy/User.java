@@ -6,10 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.proxy.sql.GlobalSQL;
+import net.bteuk.proxy.utils.SwitchServer;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -25,7 +24,7 @@ public class User {
     private boolean newUser = false;
 
     @Getter
-    private String uuid;
+    private final String uuid;
 
     @Getter
     private String name;
@@ -40,15 +39,23 @@ public class User {
     private String primaryRole;
 
     /** List of muted users for this session */
-    private Set<User> mutedUsers = new HashSet<>();
+    private final Set<User> mutedUsers = new HashSet<>();
 
     /** List of channels the user can read */
-    private Set<String> channels = new HashSet<>();
+    private final Set<String> channels = new HashSet<>();
+
+    @Getter
+    @Setter
+    private boolean afk;
 
     private ScheduledTask disconnectTask;
 
     /** Utility reference to the database. */
     private final GlobalSQL globalSQL;
+
+    @Getter
+    @Setter
+    private SwitchServer switchServer = null;
 
     public User(String uuid, String name, String playerSkin) {
         this.uuid = uuid;
@@ -125,6 +132,8 @@ public class User {
             setNewUser(false);
         }
 
+        // TODO: Add a potential join event.
+
         return new UserConnectReply(
                 uuid,
                 isNavigatorEnabled(),
@@ -133,6 +142,10 @@ public class User {
                 getChatChannel(),
                 isTipsEnabled()
         );
+    }
+
+    public void clearJoinEvent() {
+        globalSQL.update("DELETE FROM join_events WHERE uuid='" + uuid + "';");
     }
 
     private boolean isNavigatorEnabled() {

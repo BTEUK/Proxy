@@ -1,14 +1,12 @@
 package net.bteuk.proxy.socket;
 
 import net.bteuk.network.lib.dto.AbstractTransferObject;
-import net.bteuk.network.lib.dto.ChannelEvent;
 import net.bteuk.network.lib.dto.ChatMessage;
 import net.bteuk.network.lib.dto.DirectMessage;
 import net.bteuk.network.lib.dto.DiscordDirectMessage;
 import net.bteuk.network.lib.dto.DiscordEmbed;
 import net.bteuk.network.lib.dto.DiscordLinking;
 import net.bteuk.network.lib.dto.DiscordRole;
-import net.bteuk.network.lib.dto.Reply;
 import net.bteuk.network.lib.dto.TabEvent;
 import net.bteuk.network.lib.dto.UserConnectRequest;
 import net.bteuk.network.lib.socket.SocketHandler;
@@ -20,7 +18,7 @@ import java.io.IOException;
 
 public class ProxySocketHandler implements SocketHandler {
 
-    private ChatManager manager;
+    private final ChatManager manager;
 
     public ProxySocketHandler(ChatManager manager) {
         this.manager = manager;

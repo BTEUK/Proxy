@@ -84,6 +84,9 @@ public class Proxy {
     @Getter
     private ChatManager chatManager;
 
+    @Getter
+    private TabManager tabManager;
+
     @Inject
     public Proxy(ProxyServer server, Logger logger) {
         this.server = server;
@@ -116,6 +119,8 @@ public class Proxy {
         userManager = new UserManager();
 
         chatManager = new ChatManager(userManager);
+
+        tabManager = new TabManager();
 
         // Start socket.
         if (socket_port == 0) {
