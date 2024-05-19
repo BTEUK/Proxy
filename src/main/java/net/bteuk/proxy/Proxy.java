@@ -78,8 +78,10 @@ public class Proxy {
 
     private HashMap<UUID, String> last_server;
 
+    @Getter
     private UserManager userManager;
 
+    @Getter
     private ChatManager chatManager;
 
     @Inject

@@ -3,6 +3,9 @@ package net.bteuk.proxy;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.api.scheduler.TaskStatus;
 import lombok.Getter;
+import lombok.Setter;
+import net.bteuk.network.lib.dto.UserConnectReply;
+import net.bteuk.proxy.sql.GlobalSQL;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -17,6 +20,10 @@ public class User {
 
     private boolean online = true;
 
+    /** Indicator for new users, so the database object is created when fetching information. */
+    @Setter
+    private boolean newUser = false;
+
     @Getter
     private String uuid;
 
@@ -25,6 +32,10 @@ public class User {
 
     @Getter
     private String playerSkin;
+
+    @Getter
+    @Setter
+    private String server;
 
     private String primaryRole;
 
@@ -35,6 +46,17 @@ public class User {
     private Set<String> channels = new HashSet<>();
 
     private ScheduledTask disconnectTask;
+
+    /** Utility reference to the database. */
+    private final GlobalSQL globalSQL;
+
+    public User(String uuid, String name, String playerSkin) {
+        this.uuid = uuid;
+        this.name = name;
+        this.playerSkin = playerSkin;
+
+        this.globalSQL = Proxy.getInstance().getGlobalSQL();
+    }
 
     /**
      * The user has disconnected from the network.
@@ -88,5 +110,48 @@ public class User {
      */
     public boolean isMuted(User user) {
         return mutedUsers.contains(user);
+    }
+
+    /**
+     * Create a {@link UserConnectReply} for the user.
+     * If the User object in the database is missing, create it.
+     *
+     * @return the {@link UserConnectReply}
+     */
+    public UserConnectReply createUserConnectReply() {
+
+        // Create database object if not exists.
+        if (newUser && globalSQL.createUser(uuid, name, playerSkin)) {
+            setNewUser(false);
+        }
+
+        return new UserConnectReply(
+                uuid,
+                isNavigatorEnabled(),
+                isTeleportEnabled(),
+                isNightvisionEnabled(),
+                getChatChannel(),
+                isTipsEnabled()
+        );
+    }
+
+    private boolean isNavigatorEnabled() {
+        return globalSQL.getBoolean("SELECT navigator FROM player_data WHERE uuid='" + uuid + "';");
+    }
+
+    private boolean isTeleportEnabled() {
+        return globalSQL.getBoolean("SELECT teleport_enabled FROM player_data WHERE uuid='" + uuid + "';");
+    }
+
+    private boolean isNightvisionEnabled() {
+        return globalSQL.getBoolean("SELECT nightvision_enabled FROM player_data WHERE uuid='" + uuid + "';");
+    }
+
+    private String getChatChannel() {
+        return globalSQL.getString("SELECT chat_channel FROM player_data WHERE uuid='" + uuid + "';");
+    }
+
+    private boolean isTipsEnabled() {
+        return globalSQL.getBoolean("SELECT tips_enabled FROM player_data WHERE uuid='" + uuid + "';");
     }
 }

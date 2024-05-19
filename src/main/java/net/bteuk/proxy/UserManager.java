@@ -1,47 +1,85 @@
 package net.bteuk.proxy;
 
 import lombok.Getter;
+import net.bteuk.network.lib.dto.ChatMessage;
+import net.bteuk.network.lib.dto.UserConnectReply;
+import net.bteuk.network.lib.dto.UserConnectRequest;
 import net.bteuk.network.lib.dto.UserUpdate;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static net.bteuk.network.lib.enums.ChatChannels.GLOBAL;
+import static net.bteuk.proxy.utils.Constants.JOIN_MESSAGE;
 import static net.bteuk.proxy.utils.Constants.RECONNECT_MESSAGE;
+import static net.bteuk.proxy.utils.Constants.SERVER_SENDER;
+import static net.bteuk.proxy.utils.Constants.WELCOME_MESSAGE;
 
 /**
  * Class to manage the users on the network.
  */
+@Getter
 public class UserManager {
 
-    @Getter
     List<User> users = new ArrayList<>();
 
-    public void addUser(String uuid) {
+    public UserConnectReply handleUserConnect(UserConnectRequest request) {
+
+        User user = addUser(request);
+
+        // Get the information for the reply.
+        return user.createUserConnectReply();
+
+    }
+
+    public User addUser(UserConnectRequest request) {
+
+        String joinMessage;
 
         // See is user instance still exists.
-        User user = getUserByUuid(uuid);
+        User user = getUserByUuid(request.getUuid());
         if (user != null) {
 
             // Cancel disconnect task.
             user.reconnect();
 
             // Send reconnect message to servers and discord.
-            Proxy.getInstance().getDiscord().sendConnectEmbed(RECONNECT_MESSAGE, user.getName(), user.getUuid(), user.getPlayerSkin(), null);
+            joinMessage = RECONNECT_MESSAGE;
 
         } else {
 
-            // Create new user.
+            // Add user.
+            user = new User(request.getUuid(), request.getName(), request.getPlayerSkin());
+            users.add(user);
 
-            // Send connect message, or welcome message if this is their first time joining.
+            if (!Proxy.getInstance().getGlobalSQL().hasRow("SELECT uuid FROM player_data WHERE uuid='" + request.getUuid() + "';")) {
+                // Send welcome message.
+                joinMessage = WELCOME_MESSAGE;
 
+                // Set the user as a new user.
+                user.setNewUser(true);
+            } else {
+                // Send connect message.
+                joinMessage = JOIN_MESSAGE;
+            }
         }
 
+        // Set the server.
+        user.setServer(request.getServer());
 
+        // Send join message.
+        sendConnectMessage(joinMessage, user);
+
+        return user;
     }
 
     /**
      * A user has disconnected, start their removal timer.
+     *
      * @param uuid the uuid of the {@link User}
      */
     public void disconnectUser(String uuid) {
@@ -57,7 +95,8 @@ public class UserManager {
 
     /**
      * Check if a user has another user muted.
-     * @param userUuid uuid of user
+     *
+     * @param userUuid      uuid of user
      * @param otherUserUuid uuid of user to check
      * @return boolean if user has otherUser muted
      */
@@ -78,6 +117,7 @@ public class UserManager {
 
     /**
      * Remove a user from the proxy.
+     *
      * @param user the user to remove
      */
     private void removeUser(User user) {
@@ -85,6 +125,7 @@ public class UserManager {
         users.remove(user);
         // Remove the user from the list of muted users for all players, if they had this player muted.
         users.forEach(u -> u.unmute(user));
+        // TODO: Send message to frontend for them to delete the user instance.
     }
 
     /**
@@ -95,5 +136,21 @@ public class UserManager {
      */
     private User getUserByUuid(String uuid) {
         return users.stream().filter(user -> Objects.equals(user.getUuid(), uuid)).findFirst().orElse(null);
+    }
+
+    private void sendConnectMessage(String message, User user) {
+        Proxy.getInstance().getDiscord().sendConnectEmbed(message, user.getName(), user.getUuid(), user.getPlayerSkin(), null);
+        sendConnectMessageToServer(message, user.getName());
+    }
+
+    private void sendConnectMessageToServer(String message, String name) {
+        // Construct a chat message to send to the servers.
+        Component component = Component.text(message.replace("%player%", name), NamedTextColor.YELLOW);
+        ChatMessage chatMessage = new ChatMessage(GLOBAL.getChannelName(), SERVER_SENDER, component);
+        try {
+            Proxy.getInstance().getChatManager().handle(chatMessage);
+        } catch (IOException e) {
+            // TODO: Exception handling.
+        }
     }
 }
