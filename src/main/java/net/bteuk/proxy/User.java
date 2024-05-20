@@ -1,5 +1,6 @@
 package net.bteuk.proxy;
 
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.api.scheduler.TaskStatus;
 import lombok.Getter;
@@ -25,6 +26,11 @@ public class User {
 
     @Getter
     private final String uuid;
+
+    /** The Proxy {@link Player}, this may be null if the user is not currently online. */
+    @Getter
+    @Setter
+    private Player player;
 
     @Getter
     private String name;

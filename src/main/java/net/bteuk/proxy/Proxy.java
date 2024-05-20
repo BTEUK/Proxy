@@ -2,6 +2,7 @@ package net.bteuk.proxy;
 
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
@@ -116,11 +117,11 @@ public class Proxy {
 
         int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
 
-        userManager = new UserManager();
+        userManager = new UserManager(server);
 
         chatManager = new ChatManager(userManager);
 
-        tabManager = new TabManager();
+        tabManager = new TabManager(server);
 
         // Start socket.
         if (socket_port == 0) {
@@ -171,6 +172,9 @@ public class Proxy {
         new ReviewStatus();
 
         logger.info("Loaded Proxy");
+
+        server.getAllPlayers();
+
 
     }
 

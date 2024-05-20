@@ -1,5 +1,6 @@
 package net.bteuk.proxy;
 
+import com.velocitypowered.api.proxy.ProxyServer;
 import lombok.Getter;
 import net.bteuk.network.lib.dto.ChatMessage;
 import net.bteuk.network.lib.dto.TabEvent;
@@ -26,7 +27,13 @@ import static net.bteuk.proxy.utils.Constants.WELCOME_MESSAGE;
 @Getter
 public class UserManager {
 
-    List<User> users = new ArrayList<>();
+    private final ProxyServer server;
+
+    private final List<User> users = new ArrayList<>();
+
+    public UserManager(ProxyServer server) {
+        this.server = server;
+    }
 
     public UserConnectReply handleUserConnect(UserConnectRequest request) {
 
@@ -86,6 +93,9 @@ public class UserManager {
 
         // Set the server.
         user.setServer(request.getServer());
+
+        // Set the proxy player.
+        user.setPlayer(server.getAllPlayers().stream().filter(player -> player.getUniqueId().toString().equals(request.getUuid())).findFirst().orElse(null));
 
         // Send join message, if not null.
         if (joinMessage != null) {
