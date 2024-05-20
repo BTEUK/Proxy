@@ -123,7 +123,7 @@ public class TabManager {
             return TabListEntry.builder()
                     .tabList(user.getPlayer().getTabList())
                     .gameMode(1) // All players will be shown in creative
-                    .displayName(getDisplayName(tabPlayer.getPrefix(), formattedName(user, tabPlayer.getUuid(), tabPlayer.getName())))
+                    .displayName(formattedName(user, tabPlayer.getUuid(), tabPlayer.getName()))
                     .profile(GameProfile.forOfflinePlayer(player.getUsername()).withProperties(player.getGameProfileProperties()))
                     .latency((int) player.getPing())
                     .listed(true)
@@ -150,9 +150,5 @@ public class TabManager {
             }
         }
         return name;
-    }
-
-    private static Component getDisplayName(Component prefix, Component name) {
-        return prefix.append(Component.space()).append(name);
     }
 }

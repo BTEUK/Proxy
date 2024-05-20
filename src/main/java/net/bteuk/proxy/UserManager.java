@@ -3,7 +3,6 @@ package net.bteuk.proxy;
 import com.velocitypowered.api.proxy.ProxyServer;
 import lombok.Getter;
 import net.bteuk.network.lib.dto.ChatMessage;
-import net.bteuk.network.lib.dto.TabEvent;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.network.lib.dto.UserConnectRequest;
 import net.bteuk.network.lib.dto.UserUpdate;
