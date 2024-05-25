@@ -9,8 +9,8 @@ import net.bteuk.network.lib.dto.DiscordLinking;
 import net.bteuk.network.lib.dto.DiscordRole;
 import net.bteuk.proxy.chat.ChatHandler;
 import net.bteuk.proxy.commands.CommandManager;
-import net.bteuk.proxy.events.BotChatListener;
-import net.bteuk.proxy.events.DiscordChatListener;
+import net.bteuk.proxy.eventing.jda.BotChatListener;
+import net.bteuk.proxy.eventing.jda.DiscordChatListener;
 import net.bteuk.proxy.log4j.JdaFilter;
 import net.bteuk.proxy.sql.PlotSQL;
 import net.bteuk.proxy.utils.Avatar;
@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class Discord {

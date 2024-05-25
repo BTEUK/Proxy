@@ -1,4 +1,4 @@
-package net.bteuk.proxy.events;
+package net.bteuk.proxy.eventing.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.command.CommandExecuteEvent;
@@ -8,8 +8,8 @@ import net.bteuk.proxy.Proxy;
 
 public class CommandListener {
 
-    public CommandListener(ProxyServer server, Proxy proxy) {
-        server.getEventManager().register(proxy, this);
+    public CommandListener(Proxy proxy) {
+        proxy.getServer().getEventManager().register(proxy, this);
     }
 
     @Subscribe

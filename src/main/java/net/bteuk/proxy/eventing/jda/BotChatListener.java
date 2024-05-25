@@ -1,4 +1,4 @@
-package net.bteuk.proxy.events;
+package net.bteuk.proxy.eventing.jda;
 
 import net.bteuk.network.lib.dto.DiscordLinking;
 import net.bteuk.proxy.chat.ChatHandler;

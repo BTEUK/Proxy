@@ -4,6 +4,8 @@ import com.velocitypowered.api.scheduler.ScheduledTask;
 import lombok.Getter;
 import net.bteuk.proxy.Proxy;
 import net.bteuk.proxy.User;
+import net.bteuk.proxy.eventing.listeners.ServerConnectListener;
+import net.bteuk.proxy.exceptions.ServerNotFoundException;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,6 +35,13 @@ public class SwitchServer {
         switchTask = Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), this::onTimeout)
                 .delay(10L, TimeUnit.SECONDS)
                 .schedule();
+
+        // Switch the player to the server.
+        try {
+            ServerConnectListener.switchServer(user, toServer);
+        } catch (ServerNotFoundException e) {
+            // TODO: Send message to current server letting it know the server switch failed.
+        }
     }
 
     public void cancelTimeout() {
@@ -42,6 +51,6 @@ public class SwitchServer {
     }
 
     private void onTimeout() {
-        // TODO: Run leave event.
+        Proxy.getInstance().getUserManager().disconnectUser(user.getUuid());
     }
 }

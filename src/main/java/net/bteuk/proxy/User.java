@@ -8,6 +8,7 @@ import lombok.Setter;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.proxy.sql.GlobalSQL;
 import net.bteuk.proxy.utils.SwitchServer;
+import net.bteuk.proxy.utils.Time;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class User {
 
+    @Getter
     private boolean online = true;
 
     /** Indicator for new users, so the database object is created when fetching information. */
@@ -78,7 +80,7 @@ public class User {
      */
     public void disconnect(Runnable runnable) {
         online = false;
-        //Run a delayed task to remove the user.
+        // Run a delayed task to remove the user.
         disconnectTask = Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), runnable)
                 .delay(5L, TimeUnit.MINUTES)
                 .schedule();

@@ -2,9 +2,7 @@ package net.bteuk.proxy;
 
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
-import com.velocitypowered.api.event.player.PlayerChatEvent;
 import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
-import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
@@ -16,7 +14,8 @@ import net.bteuk.network.lib.socket.InputSocket;
 import net.bteuk.network.lib.socket.SocketHandler;
 import net.bteuk.proxy.chat.ChatManager;
 import net.bteuk.proxy.config.Config;
-import net.bteuk.proxy.events.CommandListener;
+import net.bteuk.proxy.eventing.listeners.CommandListener;
+import net.bteuk.proxy.eventing.listeners.ServerConnectListener;
 import net.bteuk.proxy.socket.ProxySocketHandler;
 import net.bteuk.proxy.sql.DatabaseInit;
 import net.bteuk.proxy.sql.GlobalSQL;
@@ -24,7 +23,6 @@ import net.bteuk.proxy.sql.PlotSQL;
 import net.bteuk.proxy.sql.RegionSQL;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.utils.ReviewStatus;
-import net.dv8tion.jda.api.EmbedBuilder;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
@@ -77,7 +75,7 @@ public class Proxy {
     @Getter
     private RegionSQL regionSQL;
 
-    private HashMap<UUID, String> last_server;
+    private HashMap<UUID, String> lastServer;
 
     @Getter
     private UserManager userManager;
@@ -110,10 +108,7 @@ public class Proxy {
 
         linking = new ArrayList<>();
 
-        last_server = new HashMap<>();
-
-        //Load command listener to forward /server to the servers.
-        new CommandListener(server, this);
+        lastServer = new HashMap<>();
 
         int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
 
@@ -171,18 +166,18 @@ public class Proxy {
         //Setup review status message.
         new ReviewStatus();
 
+        // Register listeners.
+        new CommandListener(this);
+        new ServerConnectListener(this, lastServer);
+
         logger.info("Loaded Proxy");
-
-        server.getAllPlayers();
-
 
     }
 
     @Subscribe
     public void onProxyShutDown(ProxyShutdownEvent event) {
 
-        ArrayList<String> online_users = globalSQL.getStringList("SELECT uuid FROM online_users;");
-        AtomicInteger users = new AtomicInteger(online_users.size());
+        AtomicInteger users = new AtomicInteger(userManager.getUsers().size());
 
         //Store the last server players are connected to.
         updateLastServer();
@@ -206,9 +201,12 @@ public class Proxy {
             currentTime = System.currentTimeMillis();
         }
 
-        if (!online_users.isEmpty()) {
+        if (!userManager.getUsers().isEmpty()) {
             getLogger().info("Sent disconnect message to online users!");
         }
+
+        // Remove the user instance.
+        userManager.removeAllUsers();
 
         // Clear JDA listeners
         if (discord.getJda() != null) {
@@ -295,12 +293,6 @@ public class Proxy {
 
     }
 
-    @Subscribe
-    public void change(ServerConnectedEvent e) {
-        //Store server as last server.
-        setLastServer(e.getPlayer().getUniqueId(), e.getServer().getServerInfo().getName());
-    }
-
     public static RegisteredServer getServer(String name) {
         for (RegisteredServer server : instance.getServer().getAllServers()) {
             if (server.getServerInfo().getName().equalsIgnoreCase(name)) {
@@ -310,12 +302,8 @@ public class Proxy {
         return null;
     }
 
-    private void setLastServer(UUID uuid, String serverName) {
-        last_server.put(uuid, serverName);
-    }
-
     private String getLastServer(UUID uuid) {
-        return last_server.get(uuid);
+        return lastServer.get(uuid);
     }
 
     //Store the last server data in the properties file when the server closes.
@@ -326,7 +314,7 @@ public class Proxy {
             Properties prop = new Properties();
 
             //Store all entries of the array.
-            for (Map.Entry<UUID, String> entry : last_server.entrySet()) {
+            for (Map.Entry<UUID, String> entry : lastServer.entrySet()) {
                 prop.setProperty(entry.getKey().toString(), entry.getValue());
             }
 
@@ -347,8 +335,8 @@ public class Proxy {
             // load a properties file
             prop.load(input);
 
-            prop.forEach((uuid, server) -> last_server.put(UUID.fromString((String) uuid), (String) server));
-            logger.info("Loaded last_server.properties with " + last_server.size() + " entries.");
+            prop.forEach((uuid, server) -> lastServer.put(UUID.fromString((String) uuid), (String) server));
+            logger.info("Loaded last_server.properties with " + lastServer.size() + " entries.");
 
         } catch (IOException ignored) {
             logger.info("last_server.properties does not exist, if this is the first time loading the plugin this is normal behaviour.");

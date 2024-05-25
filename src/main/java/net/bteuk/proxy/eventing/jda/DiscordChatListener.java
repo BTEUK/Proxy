@@ -1,4 +1,4 @@
-package net.bteuk.proxy.events;
+package net.bteuk.proxy.eventing.jda;
 
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;

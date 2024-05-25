@@ -3,9 +3,13 @@ package net.bteuk.proxy;
 import com.velocitypowered.api.proxy.ProxyServer;
 import lombok.Getter;
 import net.bteuk.network.lib.dto.ChatMessage;
+import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.network.lib.dto.UserConnectRequest;
 import net.bteuk.network.lib.dto.UserUpdate;
+import net.bteuk.proxy.chat.ChatHandler;
+import net.bteuk.proxy.eventing.listeners.ServerConnectListener;
+import net.bteuk.proxy.exceptions.ServerNotFoundException;
 import net.bteuk.proxy.utils.SwitchServer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -15,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static net.bteuk.network.lib.enums.ChatChannels.GLOBAL;
+import static net.bteuk.proxy.utils.Analytics.logPlayerCount;
 import static net.bteuk.proxy.utils.Constants.JOIN_MESSAGE;
 import static net.bteuk.proxy.utils.Constants.RECONNECT_MESSAGE;
 import static net.bteuk.proxy.utils.Constants.SERVER_SENDER;
@@ -34,13 +39,44 @@ public class UserManager {
         this.server = server;
     }
 
-    public UserConnectReply handleUserConnect(UserConnectRequest request) {
+    public void handleUserConnect(UserConnectRequest request) {
 
         User user = addUser(request);
 
         // Get the information for the reply.
-        return user.createUserConnectReply();
+        UserConnectReply reply = user.createUserConnectReply();
 
+        // Send the reply to the server.
+        try {
+            ChatHandler.handle(reply, request.getServer());
+        } catch (IOException | ServerNotFoundException e) {
+            // TODO: Handle exception
+        }
+
+    }
+
+    /**
+     * Handler for switch server events.
+     * On receiving, switch the server of a user.
+     * If the user does not switch within 10 seconds, cancel.
+     * The {@link ServerConnectListener} will be able to check if the switch has actually happened.
+     *
+     * @param switchServerEvent the event
+     */
+    public void handleSwitchServerEvent(SwitchServerEvent switchServerEvent) {
+
+        User user = getUserByUuid(switchServerEvent.getUuid());
+
+        if (user != null) {
+            SwitchServer switchServer = user.getSwitchServer();
+            if (switchServer != null) {
+                // Cancel the existing switch server event.
+                switchServer.cancelTimeout();
+            }
+            user.setSwitchServer(new SwitchServer(user, switchServerEvent.getFrom_server(), switchServerEvent.getTo_server()));
+        } else {
+            Proxy.getInstance().getLogger().warn(String.format("Switch server event was received for non-existing user %s", switchServerEvent.getUuid()));
+        }
     }
 
     public User addUser(UserConnectRequest request) {
@@ -55,7 +91,7 @@ public class UserManager {
             if (switchServer != null) {
 
                 // Check if the user is switching the server they are actually connecting to.
-                // Else cancel their join events, since they weren't meant for this server.
+                // Else cancel their join eventing, since they weren't meant for this server.
                 // Cancel the switch server task either way.
                 if (!switchServer.getToServer().equals(request.getServer())) {
                     user.clearJoinEvent();
@@ -104,6 +140,9 @@ public class UserManager {
             Proxy.getInstance().getTabManager().addPlayer(request.getTabPlayer());
         }
 
+        // Log the player count.
+        logPlayerCount(getUsers());
+
         // Send the tab list to the user.
         Proxy.getInstance().getTabManager().sendTablist(user);
 
@@ -122,7 +161,10 @@ public class UserManager {
         if (user != null) {
             user.disconnect(() -> removeUser(user));
 
-            // TODO: Run leave events.
+            // Log the player count.
+            logPlayerCount(getUsers());
+
+            // TODO: Run leave eventing.
         } else {
             Proxy.getInstance().getLogger().warn(String.format("Disconnect event for %s was started, but no User exists.", uuid));
         }
@@ -147,7 +189,6 @@ public class UserManager {
     }
 
     public void updateUser(UserUpdate update) {
-
     }
 
     /**
@@ -161,6 +202,17 @@ public class UserManager {
     }
 
     /**
+     * Removes all users from the user list.
+     * The removal is run as if they disconnected.
+     * This is to be used on Proxy-shutdown.
+     */
+    public void removeAllUsers() {
+        while (!getUsers().isEmpty()) {
+            removeUser(getUsers().get(0));
+        }
+    }
+
+    /**
      * Remove a user from the proxy.
      *
      * @param user the user to remove
@@ -168,6 +220,7 @@ public class UserManager {
     private void removeUser(User user) {
         // Remove the user from the list.
         users.remove(user);
+        user.delete();
         // Remove the user from the list of muted users for all players, if they had this player muted.
         users.forEach(u -> u.unmute(user));
         // TODO: Send message to frontend for them to delete the user instance.
