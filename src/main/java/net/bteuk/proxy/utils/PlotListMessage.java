@@ -1,5 +1,6 @@
 package net.bteuk.proxy.utils;
 
+import net.bteuk.proxy.Discord;
 import net.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -127,13 +128,13 @@ public class PlotListMessage {
 
             //If the plot has an owner, add their name.
             if (Proxy.getInstance().getPlotSQL().hasRow("SELECT id FROM plot_members WHERE id=" + plots.get(index) + " AND is_owner=1;")) {
-                plot_message.append(" - claimed by: ").append(ChatFormatter.escapeDiscordFormatting(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
+                plot_message.append(" - claimed by: ").append(Discord.escapeDiscordFormatting(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
                         Proxy.getInstance().getPlotSQL().getString("SELECT uuid FROM plot_members WHERE id=" + plots.get(index) + " AND is_owner=1;") + "';")));
             }
 
             //If the plot is completed, add the builder.
             if (Proxy.getInstance().getPlotSQL().hasRow("SELECT id FROM plot_data WHERE id=" + plots.get(index) + " AND status='completed'")) {
-                plot_message.append(" - completed by: ").append(ChatFormatter.escapeDiscordFormatting(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
+                plot_message.append(" - completed by: ").append(Discord.escapeDiscordFormatting(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
                         Proxy.getInstance().getPlotSQL().getString("SELECT uuid FROM accept_data WHERE id=" + plots.get(index) + ";") + "';")));
             }
 

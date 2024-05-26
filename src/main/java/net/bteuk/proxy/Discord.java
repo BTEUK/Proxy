@@ -123,13 +123,12 @@ public class Discord {
 
         // Format the message according to the formatting rules.
         String text = format(message.getComponent());
-        message.getComponent().style();
 
         // Send the message to the relevent channel.
         switch (message.getChannel()) {
 
             case "global" -> chat.sendMessage(text).queue();
-            case "staff" -> staff.sendMessage(text).queue();
+            case "staff" -> staff.sendMessage(staffMessage(text)).queue();
 
             // Ignore chat message in all other channels, they are not intended to be posted on discord.
         }
@@ -517,9 +516,6 @@ public class Discord {
 
         if (component instanceof TextComponent textComponent) {
             builder.append(format(textComponent));
-            textComponent.children().forEach(
-                    child -> builder.append(format(child))
-            );
         }
 
         return messageLimit(builder.toString());
@@ -546,7 +542,20 @@ public class Discord {
         return text;
     }
 
-    private static String escapeDiscordFormatting(String message) {
+    /**
+     * Remove the [Staff] prefix from staff-messages.
+     *
+     * @param message the message with prefix
+     * @return the message without prefix
+     */
+    private static String staffMessage(String message) {
+        if (message.startsWith("\\[Staff\\]")) {
+            message = message.substring(9);
+        }
+        return message;
+    }
+
+    public static String escapeDiscordFormatting(String message) {
         return message.replace("@", "@\u200B")
                 .replaceAll("[*_#\\[\\]()\\-`>]", "\\\\$0");
     }
@@ -564,6 +573,9 @@ public class Discord {
     }
 
     private static String messageLimit(String message) {
-        return message.substring(0, 1997) + "...";
+        if (message.length() > 2000) {
+            message = message.substring(0, 1997) + "...";
+        }
+        return message;
     }
 }

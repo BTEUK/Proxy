@@ -42,6 +42,7 @@ public class UserManager {
     public void handleUserConnect(UserConnectRequest request) {
 
         User user = addUser(request);
+        Proxy.getInstance().getLogger().info(String.format("UserConnectRequest for %s received.", request.getName()));
 
         // Get the information for the reply.
         UserConnectReply reply = user.createUserConnectReply();
