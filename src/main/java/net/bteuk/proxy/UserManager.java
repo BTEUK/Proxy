@@ -6,6 +6,7 @@ import net.bteuk.network.lib.dto.ChatMessage;
 import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.network.lib.dto.UserConnectRequest;
+import net.bteuk.network.lib.dto.UserDisconnect;
 import net.bteuk.network.lib.dto.UserUpdate;
 import net.bteuk.proxy.chat.ChatHandler;
 import net.bteuk.proxy.eventing.listeners.ServerConnectListener;
@@ -14,6 +15,7 @@ import net.bteuk.proxy.utils.SwitchServer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.List;
 import static net.bteuk.network.lib.enums.ChatChannels.GLOBAL;
 import static net.bteuk.proxy.utils.Analytics.logPlayerCount;
 import static net.bteuk.proxy.utils.Constants.JOIN_MESSAGE;
+import static net.bteuk.proxy.utils.Constants.LEAVE_MESSAGE;
 import static net.bteuk.proxy.utils.Constants.RECONNECT_MESSAGE;
 import static net.bteuk.proxy.utils.Constants.SERVER_SENDER;
 import static net.bteuk.proxy.utils.Constants.WELCOME_MESSAGE;
@@ -53,7 +56,26 @@ public class UserManager {
         } catch (IOException | ServerNotFoundException e) {
             // TODO: Handle exception
         }
+    }
 
+    public void handleUserDisconnect(UserDisconnect disconnect) {
+
+        // Get the user.
+        User user = getUserByUuid(disconnect.getUuid());
+
+        if (user != null) {
+            // Disconnect.
+            disconnectUser(user);
+
+            // Save information about the user.
+            user.setNavigatorEnabled(disconnect.isNavigatorEnabled());
+            user.setNightvisionEnabled(disconnect.isNightvisionEnabled());
+            user.setTipsEnabled(disconnect.isTipsEnabled());
+            user.setChatChannel(disconnect.getChatChannel());
+            user.setTeleportEnabled(disconnect.isTeleportEnabled());
+        } else {
+            Proxy.getInstance().getLogger().warn(String.format("Disconnect event for %s was started, but no User exists.", disconnect.getUuid()));
+        }
     }
 
     /**
@@ -135,7 +157,7 @@ public class UserManager {
 
         // Send join message, if not null.
         if (joinMessage != null) {
-            sendConnectMessage(joinMessage, user);
+            sendConnectMessage(joinMessage, user, Color.GREEN);
 
             // Add the user to tab for other players.
             Proxy.getInstance().getTabManager().addPlayer(request.getTabPlayer());
@@ -153,22 +175,19 @@ public class UserManager {
     /**
      * A user has disconnected, start their removal timer.
      *
-     * @param uuid the uuid of the {@link User}
+     * @param user the {@link User}
      */
-    public void disconnectUser(String uuid) {
-        // Get the user.
-        User user = getUserByUuid(uuid);
+    public void disconnectUser(User user) {
 
-        if (user != null) {
-            user.disconnect(() -> removeUser(user));
+        user.disconnect(() -> removeUser(user));
 
-            // Log the player count.
-            logPlayerCount(getUsers());
+        // Log the player count.
+        logPlayerCount(getUsers());
 
-            // TODO: Run leave eventing.
-        } else {
-            Proxy.getInstance().getLogger().warn(String.format("Disconnect event for %s was started, but no User exists.", uuid));
-        }
+        // Remove the player from tab.
+        Proxy.getInstance().getTabManager().removePlayer(user.getUuid());
+
+        sendConnectMessage(LEAVE_MESSAGE, user, Color.RED);
     }
 
     /**
@@ -227,8 +246,8 @@ public class UserManager {
         // TODO: Send message to frontend for them to delete the user instance.
     }
 
-    private void sendConnectMessage(String message, User user) {
-        Proxy.getInstance().getDiscord().sendConnectEmbed(message, user.getName(), user.getUuid(), user.getPlayerSkin(), null);
+    private void sendConnectMessage(String message, User user, Color colour) {
+        Proxy.getInstance().getDiscord().sendConnectEmbed(message, user.getName(), user.getUuid(), user.getPlayerSkin(), colour, null);
         sendConnectMessageToServer(message, user.getName());
     }
 

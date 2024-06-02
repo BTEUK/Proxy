@@ -42,6 +42,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.awt.Color.RED;
 import static net.bteuk.proxy.utils.Constants.LEAVE_MESSAGE;
 
 @Plugin(id = "proxy", name = "Proxy", version = "1.7.2",
@@ -192,7 +193,9 @@ public class Proxy {
 
         // Show disconnect message for all players in discord.
         for (User user : userManager.getUsers()) {
-            discord.sendConnectEmbed(LEAVE_MESSAGE, user.getName(), user.getUuid(), user.getPlayerSkin(), (reply) -> users.decrementAndGet());
+            if (user.isOnline()) {
+                discord.sendConnectEmbed(LEAVE_MESSAGE, user.getName(), user.getUuid(), user.getPlayerSkin(), RED, (reply) -> users.decrementAndGet());
+            }
         }
 
         // Stop if it takes longer than 15 seconds.

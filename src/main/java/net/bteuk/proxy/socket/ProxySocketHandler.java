@@ -9,6 +9,7 @@ import net.bteuk.network.lib.dto.DiscordLinking;
 import net.bteuk.network.lib.dto.DiscordRole;
 import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectRequest;
+import net.bteuk.network.lib.dto.UserDisconnect;
 import net.bteuk.network.lib.socket.SocketHandler;
 import net.bteuk.proxy.Proxy;
 import net.bteuk.proxy.chat.ChatManager;
@@ -50,6 +51,8 @@ public class ProxySocketHandler implements SocketHandler {
             Proxy.getInstance().getDiscord().handle(discordRole);
         } else if (abstractTransferObject instanceof UserConnectRequest userConnect) {
             Proxy.getInstance().getUserManager().handleUserConnect(userConnect);
+        } else if (abstractTransferObject instanceof UserDisconnect userDisconnect) {
+            Proxy.getInstance().getUserManager().handleUserDisconnect(userDisconnect);
         } else if (abstractTransferObject instanceof SwitchServerEvent switchServerEvent) {
             Proxy.getInstance().getUserManager().handleSwitchServerEvent(switchServerEvent);
         } else {

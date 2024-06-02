@@ -156,20 +156,40 @@ public class User {
         globalSQL.update("DELETE FROM join_events WHERE uuid='" + uuid + "';");
     }
 
+    public void setNavigatorEnabled(boolean enabled) {
+        globalSQL.update("UPDATE player_data SET navigator=" + enabled + " WHERE uuid='" + uuid + "';");
+    }
+
     private boolean isNavigatorEnabled() {
         return globalSQL.getBoolean("SELECT navigator FROM player_data WHERE uuid='" + uuid + "';");
+    }
+
+    public void setTeleportEnabled(boolean enabled) {
+        globalSQL.update("UPDATE player_data SET teleport_enabled=" + enabled + " WHERE uuid='" + uuid + "';");
     }
 
     private boolean isTeleportEnabled() {
         return globalSQL.getBoolean("SELECT teleport_enabled FROM player_data WHERE uuid='" + uuid + "';");
     }
 
+    public void setNightvisionEnabled(boolean enabled) {
+        globalSQL.update("UPDATE player_data SET nightvision_enabled=" + enabled + " WHERE uuid='" + uuid + "';");
+    }
+
     private boolean isNightvisionEnabled() {
         return globalSQL.getBoolean("SELECT nightvision_enabled FROM player_data WHERE uuid='" + uuid + "';");
     }
 
+    public void setChatChannel(String channel) {
+        globalSQL.update("UPDATE player_data SET chat_channel='" + channel + "' WHERE uuid='" + uuid + "';");
+    }
+
     private String getChatChannel() {
         return globalSQL.getString("SELECT chat_channel FROM player_data WHERE uuid='" + uuid + "';");
+    }
+
+    public void setTipsEnabled(boolean enabled) {
+        globalSQL.update("UPDATE player_data SET tips_enabled=" + enabled + " WHERE uuid='" + uuid + "';");
     }
 
     private boolean isTipsEnabled() {

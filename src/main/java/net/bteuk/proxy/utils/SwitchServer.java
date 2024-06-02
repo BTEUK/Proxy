@@ -51,6 +51,8 @@ public class SwitchServer {
     }
 
     private void onTimeout() {
-        Proxy.getInstance().getUserManager().disconnectUser(user.getUuid());
+        if (user != null) {
+            Proxy.getInstance().getUserManager().disconnectUser(user);
+        }
     }
 }

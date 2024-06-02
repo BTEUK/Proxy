@@ -30,6 +30,7 @@ import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -421,8 +422,8 @@ public class Discord {
      * @param playerSkin the player skin
      * @param consumer to run after success
      */
-    public void sendConnectEmbed(String message, String name, String uuid, String playerSkin, Consumer<Message> consumer) {
-        MessageEmbed embed = createAuthorEmbed(message.replace("%player%", name), null, Avatar.getAvatarUrl(uuid, playerSkin));
+    public void sendConnectEmbed(String message, String name, String uuid, String playerSkin, Color colour, Consumer<Message> consumer) {
+        MessageEmbed embed = createAuthorEmbed(message.replace("%player%", name), null, Avatar.getAvatarUrl(uuid, playerSkin), colour);
         sendEmbed(embed, consumer);
     }
 
@@ -437,9 +438,10 @@ public class Discord {
      * @param iconUrl icon url
      * @return the {@link MessageEmbed}
      */
-    public MessageEmbed createAuthorEmbed(String author, String url, String iconUrl) {
+    public MessageEmbed createAuthorEmbed(String author, String url, String iconUrl, Color colour) {
         EmbedBuilder builder = new EmbedBuilder();
         builder.setAuthor(author, url, iconUrl);
+        builder.setColor(colour);
         return builder.build();
     }
 

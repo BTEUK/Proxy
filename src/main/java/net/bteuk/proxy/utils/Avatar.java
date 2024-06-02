@@ -1,5 +1,7 @@
 package net.bteuk.proxy.utils;
 
+import net.bteuk.proxy.Proxy;
+
 import java.util.Objects;
 
 public class Avatar {
@@ -14,9 +16,10 @@ public class Avatar {
 
         url = url
                 .replace("{texture}", texture != null ? texture : "")
-                .replace("{uuid}", uuid != null ? uuid : "")
+                .replace("{uuid}", uuid != null ? uuid.replace("-", "") : "")
                 .replace("{size}", "128");
 
+        Proxy.getInstance().getLogger().info(url);
         return url;
     }
 }
