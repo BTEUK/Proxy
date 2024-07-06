@@ -146,6 +146,22 @@ public class TabManager {
     }
 
     /**
+     * Update a specific user in the tablist of another user.
+     * This can be used specifically when you do a personal mute of a player.
+     *
+     * @param userToGetTablist the user to update the tablist for
+     * @param userToUpdate the user to update in the tablist
+     */
+    public void updatePlayerInTablistOfPlayer(User userToGetTablist, User userToUpdate) {
+        TabPlayer tabPlayer = findTabPlayerByUuid(userToUpdate.getUuid());
+        TabListEntry tabEntry = findTabListEntryForPlayer(userToGetTablist.getPlayer().getTabList().getEntries(), userToUpdate.getName());
+        if (tabPlayer != null && tabEntry != null) {
+            // Update the display name.
+            tabEntry.setDisplayName(formattedName(userToGetTablist, tabPlayer));
+        }
+    }
+
+    /**
      * Update the ping in tab for all players.
      */
     private void updatePing() {
@@ -230,7 +246,7 @@ public class TabManager {
         Component name = ChatUtils.line(tabPlayer.getName());
 
         if (userToAdd != null) {
-            if (user.isMuted(userToAdd)) {
+            if (user.isMuted(userToAdd) /* TODO: Check if player is globally muted */) {
                 name = name.color(NamedTextColor.RED);
             }
             if (userToAdd.isAfk()) {

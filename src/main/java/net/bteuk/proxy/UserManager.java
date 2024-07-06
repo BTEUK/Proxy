@@ -3,6 +3,7 @@ package net.bteuk.proxy;
 import com.velocitypowered.api.proxy.ProxyServer;
 import lombok.Getter;
 import net.bteuk.network.lib.dto.ChatMessage;
+import net.bteuk.network.lib.dto.MuteEvent;
 import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.network.lib.dto.UserConnectRequest;
@@ -111,6 +112,29 @@ public class UserManager {
             user.setSwitchServer(new SwitchServer(user, switchServerEvent.getFrom_server(), switchServerEvent.getTo_server()));
         } else {
             Proxy.getInstance().getLogger().warn(String.format("Switch server event was received for non-existing user %s", switchServerEvent.getUuid()));
+        }
+    }
+
+    public void handleMuteEvent(MuteEvent muteEvent) {
+
+        User user = getUserByUuid(muteEvent.getUuid());
+        User userToMute = getUserByUuid(muteEvent.getUuidToMute());
+
+        if (user != null && userToMute != null) {
+            if (muteEvent.isMute()) {
+                user.mute(userToMute);
+            } else {
+                user.unmute(userToMute);
+            }
+            // Update tab.
+            Proxy.getInstance().getTabManager().updatePlayerInTablistOfPlayer(user, userToMute);
+        } else {
+            if (user == null) {
+                Proxy.getInstance().getLogger().warn(String.format("Mute event was received from non-existing user %s", muteEvent.getUuid()));
+            }
+            if (userToMute == null) {
+                Proxy.getInstance().getLogger().warn(String.format("Mute event was received for non-existing user %s", muteEvent.getUuidToMute()));
+            }
         }
     }
 

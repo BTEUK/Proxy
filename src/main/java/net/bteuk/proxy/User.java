@@ -35,10 +35,10 @@ public class User {
     private Player player;
 
     @Getter
-    private String name;
+    private final String name;
 
     @Getter
-    private String playerSkin;
+    private final String playerSkin;
 
     @Getter
     @Setter
