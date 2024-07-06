@@ -44,17 +44,20 @@ public class User {
     @Setter
     private String server;
 
+    @Getter
+    @Setter
     private String primaryRole;
 
     /** List of muted users for this session */
     private final Set<User> mutedUsers = new HashSet<>();
 
     /** List of channels the user can read */
+    @Getter
     private final Set<String> channels = new HashSet<>();
 
     @Getter
     @Setter
-    private boolean afk;
+    private boolean afk = false;
 
     private ScheduledTask disconnectTask;
 
@@ -65,10 +68,11 @@ public class User {
     @Setter
     private SwitchServer switchServer = null;
 
-    public User(String uuid, String name, String playerSkin) {
+    public User(String uuid, String name, String playerSkin, Set<String> channels) {
         this.uuid = uuid;
         this.name = name;
         this.playerSkin = playerSkin;
+        this.channels.addAll(channels);
 
         this.globalSQL = Proxy.getInstance().getGlobalSQL();
     }

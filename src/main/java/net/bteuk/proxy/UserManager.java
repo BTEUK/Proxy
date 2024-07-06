@@ -74,7 +74,19 @@ public class UserManager {
             user.setChatChannel(disconnect.getChatChannel());
             user.setTeleportEnabled(disconnect.isTeleportEnabled());
         } else {
-            Proxy.getInstance().getLogger().warn(String.format("Disconnect event for %s was started, but no User exists.", disconnect.getUuid()));
+            Proxy.getInstance().getLogger().warn(String.format("Disconnect event for %s was started, but no User exists by that uuid.", disconnect.getUuid()));
+        }
+    }
+
+    public void handleUserUpdate(UserUpdate userUpdate) {
+
+        // Get the user.
+        User user = getUserByUuid(userUpdate.getUuid());
+
+        if (user != null) {
+            updateUser(user, userUpdate);
+        } else {
+            Proxy.getInstance().getLogger().warn(String.format("Update event for %s was received, but no User exists by that uuid.", userUpdate.getUuid()));
         }
     }
 
@@ -134,7 +146,7 @@ public class UserManager {
         } else {
 
             // Add user.
-            user = new User(request.getUuid(), request.getName(), request.getPlayerSkin());
+            user = new User(request.getUuid(), request.getName(), request.getPlayerSkin(), request.getChannels());
             users.add(user);
 
             if (!Proxy.getInstance().getGlobalSQL().hasRow("SELECT uuid FROM player_data WHERE uuid='" + request.getUuid() + "';")) {
@@ -154,6 +166,9 @@ public class UserManager {
 
         // Set the proxy player.
         user.setPlayer(server.getAllPlayers().stream().filter(player -> player.getUniqueId().toString().equals(request.getUuid())).findFirst().orElse(null));
+
+        // Set primary role.
+        user.setPrimaryRole(request.getTabPlayer().getPrimaryGroup());
 
         // Send join message, if not null.
         if (joinMessage != null) {
@@ -208,7 +223,23 @@ public class UserManager {
         return false;
     }
 
-    public void updateUser(UserUpdate update) {
+    public void updateUser(User user, UserUpdate update) {
+
+        // Check what needs updating.
+        if (update.getChannels() != null && !user.getChannels().equals(update.getChannels())) {
+            user.getChannels().clear();
+            user.getChannels().addAll(update.getChannels());
+        }
+
+        if (update.getAfk() != null && user.isAfk() != update.getAfk()) {
+            user.setAfk(update.getAfk());
+            Proxy.getInstance().getTabManager().updatePlayer(update.getTabPlayer());
+        }
+
+        if (update.getTabPlayer() != null && !update.getTabPlayer().getPrimaryGroup().equals(user.getPrimaryRole())) {
+            user.setPrimaryRole(update.getTabPlayer().getPrimaryGroup());
+            Proxy.getInstance().getTabManager().updatePlayer(update.getTabPlayer());
+        }
     }
 
     /**
@@ -244,6 +275,7 @@ public class UserManager {
         // Remove the user from the list of muted users for all players, if they had this player muted.
         users.forEach(u -> u.unmute(user));
         // TODO: Send message to frontend for them to delete the user instance.
+        Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy, they have been offline for more than 5 minutes", user.getName()));
     }
 
     private void sendConnectMessage(String message, User user, Color colour) {
