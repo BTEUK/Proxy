@@ -3,14 +3,17 @@ package net.bteuk.proxy;
 import com.velocitypowered.api.proxy.ProxyServer;
 import lombok.Getter;
 import net.bteuk.network.lib.dto.ChatMessage;
+import net.bteuk.network.lib.dto.DirectMessage;
 import net.bteuk.network.lib.dto.MuteEvent;
 import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.network.lib.dto.UserConnectRequest;
 import net.bteuk.network.lib.dto.UserDisconnect;
 import net.bteuk.network.lib.dto.UserUpdate;
+import net.bteuk.network.lib.utils.ChatUtils;
 import net.bteuk.proxy.chat.ChatHandler;
 import net.bteuk.proxy.eventing.listeners.ServerConnectListener;
+import net.bteuk.proxy.exceptions.ErrorMessage;
 import net.bteuk.proxy.exceptions.ServerNotFoundException;
 import net.bteuk.proxy.utils.SwitchServer;
 import net.kyori.adventure.text.Component;
@@ -117,24 +120,49 @@ public class UserManager {
 
     public void handleMuteEvent(MuteEvent muteEvent) {
 
-        User user = getUserByUuid(muteEvent.getUuid());
-        User userToMute = getUserByUuid(muteEvent.getUuidToMute());
+        String muteType = muteEvent.isMute() ? "mute" : "unmute";
+        Component returnMessage;
 
-        if (user != null && userToMute != null) {
-            if (muteEvent.isMute()) {
-                user.mute(userToMute);
-            } else {
-                user.unmute(userToMute);
-            }
-            // Update tab.
-            Proxy.getInstance().getTabManager().updatePlayerInTablistOfPlayer(user, userToMute);
-        } else {
+        try {
+            User user = getUserByUuid(muteEvent.getUuid());
+            User userToMute = getUserByUuid(muteEvent.getUuidToMute());
+
             if (user == null) {
                 Proxy.getInstance().getLogger().warn(String.format("Mute event was received from non-existing user %s", muteEvent.getUuid()));
-            }
-            if (userToMute == null) {
+                throw new ErrorMessage(ChatUtils.error("An error has occurred, please rejoin the server."));
+            } else if (userToMute == null) {
                 Proxy.getInstance().getLogger().warn(String.format("Mute event was received for non-existing user %s", muteEvent.getUuidToMute()));
+                throw new ErrorMessage(ChatUtils.error("The selected player to %s is no longer online.", muteType));
             }
+
+            // Check if the player is already muted or unmuted.
+            // Prevent from muting yourself.
+            if (muteEvent.isMute() && user == userToMute) {
+                throw new ErrorMessage(ChatUtils.error("You can't mute yourself, just stop sending messages."));
+            } else if (muteEvent.isMute() && user.isMuted(userToMute)) {
+                throw new ErrorMessage(ChatUtils.error("%s is already muted.", userToMute.getName()));
+            } else if (!muteEvent.isMute() && !user.isMuted(userToMute)) {
+                throw new ErrorMessage(ChatUtils.error("%s is not muted.", userToMute.getName()));
+            }
+
+            if (muteEvent.isMute()) {
+                user.mute(userToMute);
+                returnMessage = ChatUtils.success("Muted %s for this session.", userToMute.getName());
+            } else {
+                user.unmute(userToMute);
+                returnMessage = ChatUtils.success("Unmuted %s", userToMute.getName());
+            }
+
+        } catch (ErrorMessage errorMessage) {
+            // Set the error message as the return message.
+            returnMessage = errorMessage.getError();
+        }
+
+        DirectMessage directMessage = new DirectMessage(muteEvent.getUuid(), muteEvent.getUuid(), returnMessage);
+        try {
+            Proxy.getInstance().getChatManager().handle(directMessage);
+        } catch (IOException e) {
+            // TODO Error handling.
         }
     }
 
