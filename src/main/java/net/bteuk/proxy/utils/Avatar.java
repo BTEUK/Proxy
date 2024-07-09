@@ -19,7 +19,6 @@ public class Avatar {
                 .replace("{uuid}", uuid != null ? uuid.replace("-", "") : "")
                 .replace("{size}", "128");
 
-        Proxy.getInstance().getLogger().info(url);
         return url;
     }
 }

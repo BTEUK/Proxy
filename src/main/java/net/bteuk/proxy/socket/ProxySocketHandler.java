@@ -8,7 +8,6 @@ import net.bteuk.network.lib.dto.DiscordEmbed;
 import net.bteuk.network.lib.dto.DiscordLinking;
 import net.bteuk.network.lib.dto.DiscordRole;
 import net.bteuk.network.lib.dto.MuteEvent;
-import net.bteuk.network.lib.dto.PromoteEvent;
 import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectRequest;
 import net.bteuk.network.lib.dto.UserDisconnect;

@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -106,12 +107,22 @@ public class TabManager {
         } else {
             // Update the display name and ping.
             String name = tabPlayer.getName();
-            updatePlayerPing(name, findPingForPlayer(name));
+            updatePlayerPing(name, findPingForPlayer(tabPlayer.getUuid()));
             updatePlayerDisplayName(name, tabPlayer);
             // If the primary role has changed update the players team.
             if (!tabPlayer.getPrimaryGroup().equals(currentTabPlayer.getPrimaryGroup())) {
+                currentTabPlayer.setPrimaryGroup(tabPlayer.getPrimaryGroup());
+                currentTabPlayer.setPrefix(tabPlayer.getPrefix());
                 sendAddTeam(tabPlayer);
             }
+        }
+    }
+
+    public void updatePlayerByUuid(String uuid) {
+        // Find the tab player by uuid.
+        TabPlayer currentTabPlayer = findTabPlayerByUuid(uuid);
+        if (currentTabPlayer != null) {
+            updatePlayer(currentTabPlayer);
         }
     }
 
@@ -193,7 +204,7 @@ public class TabManager {
 
     private void updatePingForTabList(Collection<TabListEntry> tabEntries) {
         tabEntries.forEach(tabEntry -> {
-            int ping = findPingForPlayer(tabEntry.getProfile().getName());
+            int ping = findPingForPlayer(tabEntry.getProfile().getId().toString());
             updateLatency(tabEntry, ping);
         });
     }
@@ -210,8 +221,8 @@ public class TabManager {
         return tabEntries.stream().filter(tabEntry -> tabEntry.getProfile().getName().equals(playerName)).findFirst().orElse(null);
     }
 
-    private int findPingForPlayer(String playerName) {
-        return (int) server.getAllPlayers().stream().filter(player -> player.getUsername().equals(playerName)).mapToLong(Player::getPing).findFirst().orElse(-1);
+    private int findPingForPlayer(String uuid) {
+        return (int) server.getAllPlayers().stream().filter(player -> player.getUniqueId().toString().equals(uuid)).mapToLong(Player::getPing).findFirst().orElse(-1);
     }
 
     private TabPlayer findTabPlayerByUuid(String uuid) {
@@ -223,7 +234,6 @@ public class TabManager {
         Optional<Player> optionalPlayer = server.getAllPlayers().stream().filter(p -> p.getUniqueId().toString().equals(tabPlayer.getUuid())).findFirst();
         if (optionalPlayer.isPresent()) {
             Player player = optionalPlayer.get();
-            Proxy.getInstance().getLogger().info(String.valueOf(player.getPing()));
             return TabListEntry.builder()
                     .tabList(user.getPlayer().getTabList())
                     .gameMode(1) // All players will be shown in creative

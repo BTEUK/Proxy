@@ -9,6 +9,7 @@ import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.network.lib.dto.UserConnectRequest;
 import net.bteuk.network.lib.dto.UserDisconnect;
+import net.bteuk.network.lib.dto.UserRemove;
 import net.bteuk.network.lib.dto.UserUpdate;
 import net.bteuk.network.lib.utils.ChatUtils;
 import net.bteuk.proxy.chat.ChatHandler;
@@ -246,7 +247,7 @@ public class UserManager {
      */
     public void disconnectUser(User user) {
 
-        user.disconnect(() -> removeUser(user));
+        user.disconnect(() -> removeUser(user, false));
 
         // Log the player count.
         logPlayerCount(getUsers());
@@ -285,7 +286,7 @@ public class UserManager {
 
         if (update.getAfk() != null && user.isAfk() != update.getAfk()) {
             user.setAfk(update.getAfk());
-            Proxy.getInstance().getTabManager().updatePlayer(update.getTabPlayer());
+            Proxy.getInstance().getTabManager().updatePlayerByUuid(update.getUuid());
         }
 
         if (update.getTabPlayer() != null && !update.getTabPlayer().getPrimaryGroup().equals(user.getPrimaryRole())) {
@@ -311,7 +312,7 @@ public class UserManager {
      */
     public void removeAllUsers() {
         while (!getUsers().isEmpty()) {
-            removeUser(getUsers().get(0));
+            removeUser(getUsers().get(0), true);
         }
     }
 
@@ -320,14 +321,24 @@ public class UserManager {
      *
      * @param user the user to remove
      */
-    private void removeUser(User user) {
+    private void removeUser(User user, boolean shutdown) {
         // Remove the user from the list.
         users.remove(user);
         user.delete();
         // Remove the user from the list of muted users for all players, if they had this player muted.
         users.forEach(u -> u.unmute(user));
-        // TODO: Send message to frontend for them to delete the user instance.
-        Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy, they have been offline for more than 5 minutes", user.getName()));
+        UserRemove userRemoveEvent = new UserRemove(user.getUuid());
+        try {
+            ChatHandler.handle(userRemoveEvent);
+        } catch (IOException e) {
+            // TODO Exception handling
+        }
+        if (!shutdown) {
+            Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy, they have been offline for more than 5 minutes", user.getName()));
+        } else {
+            Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy due to shutdown", user.getName()));
+
+        }
     }
 
     private void sendConnectMessage(String message, User user, Color colour) {

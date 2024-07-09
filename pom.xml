@@ -80,7 +80,7 @@
         <dependency>
             <groupId>com.github.BTEUK</groupId>
             <artifactId>NetworkLib</artifactId>
-            <version>710a495fbb</version>
+            <version>7eeb796ae5</version>
         </dependency>
 
         <!-- jda -->
