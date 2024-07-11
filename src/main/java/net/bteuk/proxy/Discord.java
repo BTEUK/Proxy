@@ -7,6 +7,7 @@ import net.bteuk.network.lib.dto.DiscordDirectMessage;
 import net.bteuk.network.lib.dto.DiscordEmbed;
 import net.bteuk.network.lib.dto.DiscordLinking;
 import net.bteuk.network.lib.dto.DiscordRole;
+import net.bteuk.network.lib.dto.PromoteEvent;
 import net.bteuk.proxy.chat.ChatHandler;
 import net.bteuk.proxy.commands.CommandManager;
 import net.bteuk.proxy.eventing.jda.BotChatListener;
@@ -235,6 +236,9 @@ public class Discord {
             //Create new link.
             Proxy.getInstance().getLinking().add(new Linked(discordLinking.getUuid(), discordLinking.getToken()));
         }
+    }
+
+    public void handlePromoteEvent(PromoteEvent promoteEvent) {
 
     }
 

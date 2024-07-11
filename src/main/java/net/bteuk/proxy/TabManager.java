@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -107,7 +106,11 @@ public class TabManager {
         } else {
             // Update the display name and ping.
             String name = tabPlayer.getName();
-            updatePlayerPing(name, findPingForPlayer(tabPlayer.getUuid()));
+            int ping = findPingForPlayer(tabPlayer.getUuid());
+            if (ping > -1) {
+                currentTabPlayer.setPing(ping);
+                updatePlayerPing(name, tabPlayer.getPing());
+            }
             updatePlayerDisplayName(name, tabPlayer);
             // If the primary role has changed update the players team.
             if (!tabPlayer.getPrimaryGroup().equals(currentTabPlayer.getPrimaryGroup())) {
@@ -210,7 +213,12 @@ public class TabManager {
     }
 
     private void updatePingForTabList(Collection<TabListEntry> tabEntries) {
-        tabEntries.forEach(tabEntry -> tabEntry.setLatency(findPingForPlayer(tabEntry.getProfile().getId().toString())));
+        tabEntries.forEach(tabEntry -> {
+            int ping = findPingForTabPlayer(tabEntry.getProfile().getId().toString());
+            if (ping > -1) {
+                tabEntry.setLatency(ping);
+            }
+        });
     }
     
     private void updateDisplayName(TabListEntry tabEntry, Component displayName) {
@@ -221,8 +229,13 @@ public class TabManager {
         return tabEntries.stream().filter(tabEntry -> tabEntry.getProfile().getName().equals(playerName)).findFirst().orElse(null);
     }
 
-    private int findPingForPlayer(String uuid) {
+    private int findPingForTabPlayer(String uuid) {
         return tabPlayers.stream().filter(tabPlayer -> tabPlayer.getUuid().equals(uuid)).mapToInt(TabPlayer::getPing).findFirst().orElse(-1);
+    }
+    private int findPingForPlayer(String uuid) {
+        return (int) Proxy.getInstance().getServer().getAllPlayers().stream()
+                .filter(player -> player.getUniqueId().toString().equals(uuid))
+                .mapToLong(Player::getPing).findFirst().orElse(-1);
     }
 
     private TabPlayer findTabPlayerByUuid(String uuid) {
