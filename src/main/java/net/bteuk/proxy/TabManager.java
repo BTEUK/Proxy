@@ -176,6 +176,13 @@ public class TabManager {
      * Update the ping in tab for all players.
      */
     private void updatePing() {
+        server.getAllPlayers().forEach(player -> {
+            TabPlayer tabPlayer = findTabPlayerByUuid(player.getUniqueId().toString());
+            int ping = (int) player.getPing();
+            if (tabPlayer != null && ping > -1) {
+                tabPlayer.setPing((int) player.getPing());
+            }
+        });
         server.getAllPlayers().forEach(player -> updatePingForTabList(player.getTabList().getEntries()));
     }
 
@@ -187,7 +194,7 @@ public class TabManager {
         server.getAllPlayers().forEach(player -> {
             TabListEntry tabEntry = findTabListEntryForPlayer(player.getTabList().getEntries(), playerName);
             if (tabEntry != null) {
-                updateLatency(tabEntry, ping);
+                tabEntry.setLatency(ping);
             }
         });
     }
@@ -203,14 +210,7 @@ public class TabManager {
     }
 
     private void updatePingForTabList(Collection<TabListEntry> tabEntries) {
-        tabEntries.forEach(tabEntry -> {
-            int ping = findPingForPlayer(tabEntry.getProfile().getId().toString());
-            updateLatency(tabEntry, ping);
-        });
-    }
-
-    private void updateLatency(TabListEntry tabEntry, int ping) {
-        tabEntry.setLatency(ping);
+        tabEntries.forEach(tabEntry -> tabEntry.setLatency(findPingForPlayer(tabEntry.getProfile().getId().toString())));
     }
     
     private void updateDisplayName(TabListEntry tabEntry, Component displayName) {
@@ -222,7 +222,7 @@ public class TabManager {
     }
 
     private int findPingForPlayer(String uuid) {
-        return (int) server.getAllPlayers().stream().filter(player -> player.getUniqueId().toString().equals(uuid)).mapToLong(Player::getPing).findFirst().orElse(-1);
+        return tabPlayers.stream().filter(tabPlayer -> tabPlayer.getUuid().equals(uuid)).mapToInt(TabPlayer::getPing).findFirst().orElse(-1);
     }
 
     private TabPlayer findTabPlayerByUuid(String uuid) {
@@ -238,8 +238,8 @@ public class TabManager {
                     .tabList(user.getPlayer().getTabList())
                     .gameMode(1) // All players will be shown in creative
                     .displayName(formattedName(user, tabPlayer))
-                    .profile(GameProfile.forOfflinePlayer(player.getUsername()).withProperties(player.getGameProfileProperties()))
-                    .latency((int) player.getPing())
+                    .profile(GameProfile.forOfflinePlayer(tabPlayer.getName()).withProperties(player.getGameProfileProperties()))
+                    .latency(tabPlayer.getPing())
                     .listed(true)
                     .build();
         } else {

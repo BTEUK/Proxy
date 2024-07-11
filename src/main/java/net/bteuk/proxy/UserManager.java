@@ -154,6 +154,9 @@ public class UserManager {
                 returnMessage = ChatUtils.success("Unmuted %s", userToMute.getName());
             }
 
+            // Update tab list to reflect mute.
+            Proxy.getInstance().getTabManager().updatePlayerInTablistOfPlayer(user, userToMute);
+
         } catch (ErrorMessage errorMessage) {
             // Set the error message as the return message.
             returnMessage = errorMessage.getError();
