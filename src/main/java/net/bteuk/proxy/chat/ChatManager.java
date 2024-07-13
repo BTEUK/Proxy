@@ -2,8 +2,10 @@ package net.bteuk.proxy.chat;
 
 import net.bteuk.network.lib.dto.ChatMessage;
 import net.bteuk.network.lib.dto.DirectMessage;
+import net.bteuk.proxy.Proxy;
 import net.bteuk.proxy.User;
 import net.bteuk.proxy.UserManager;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,7 +44,14 @@ public class ChatManager {
     public void handle(DirectMessage directMessage) throws IOException {
         // If the sender is muted for the recipient, don't send the message.
         if (!userManager.isMutedForUser(directMessage.getRecipient(), directMessage.getSender())) {
-            ChatHandler.handle(directMessage);
+            if (userManager.getUserByUuid(directMessage.getRecipient()) != null) {
+                ChatHandler.handle(directMessage);
+            } else if (directMessage.isOffline()) {
+                // Send offline message.
+                Proxy.getInstance().getGlobalSQL().update("INSERT INTO messages(recipient,message) VALUES(" +
+                        directMessage.getRecipient() + "," +
+                        GsonComponentSerializer.gson().serialize(directMessage.getComponent()) + ");");
+            }
         }
     }
 }

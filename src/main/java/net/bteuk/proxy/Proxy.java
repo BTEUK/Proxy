@@ -18,6 +18,7 @@ import net.bteuk.proxy.eventing.listeners.CommandListener;
 import net.bteuk.proxy.eventing.listeners.ServerConnectListener;
 import net.bteuk.proxy.socket.ProxySocketHandler;
 import net.bteuk.proxy.sql.DatabaseInit;
+import net.bteuk.proxy.sql.DatabaseUpdates;
 import net.bteuk.proxy.sql.GlobalSQL;
 import net.bteuk.proxy.sql.PlotSQL;
 import net.bteuk.proxy.sql.RegionSQL;
@@ -160,6 +161,9 @@ public class Proxy {
             logger.error("Disabling Proxy");
             return;
         }
+
+        DatabaseUpdates databaseUpdates = new DatabaseUpdates(getLogger(), globalSQL, plotSQL, regionSQL);
+        databaseUpdates.updateDatabase();
 
         // To make sure no players were left online when the Proxy was closed, clear the list of online users.
         globalSQL.update("DELETE FROM online_users;");

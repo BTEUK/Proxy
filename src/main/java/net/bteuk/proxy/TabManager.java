@@ -105,11 +105,11 @@ public class TabManager {
             addPlayer(tabPlayer);
         } else {
             // Update the display name and ping.
-            String name = tabPlayer.getName();
+            String name = currentTabPlayer.getName();
             int ping = findPingForPlayer(tabPlayer.getUuid());
             if (ping > -1) {
                 currentTabPlayer.setPing(ping);
-                updatePlayerPing(name, tabPlayer.getPing());
+                updatePlayerPing(name, ping);
             }
             updatePlayerDisplayName(name, tabPlayer);
             // If the primary role has changed update the players team.

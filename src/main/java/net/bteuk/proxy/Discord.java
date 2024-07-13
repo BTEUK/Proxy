@@ -238,10 +238,6 @@ public class Discord {
         }
     }
 
-    public void handlePromoteEvent(PromoteEvent promoteEvent) {
-
-    }
-
     private MessageEmbed createEmbed(DiscordEmbed embed) {
 
         EmbedBuilder builder = new EmbedBuilder();

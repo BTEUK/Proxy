@@ -294,6 +294,8 @@ public class UserManager {
 
         if (update.getTabPlayer() != null && !update.getTabPlayer().getPrimaryGroup().equals(user.getPrimaryRole())) {
             user.setPrimaryRole(update.getTabPlayer().getPrimaryGroup());
+            // TODO: Notify servers that a primary role has changed.
+            // TODO: The player's server may not be aware due to this Update coming from elsewhere.
             Proxy.getInstance().getTabManager().updatePlayer(update.getTabPlayer());
         }
     }
