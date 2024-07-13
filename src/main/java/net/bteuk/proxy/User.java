@@ -8,9 +8,12 @@ import lombok.Setter;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.proxy.sql.GlobalSQL;
 import net.bteuk.proxy.utils.SwitchServer;
-import net.bteuk.proxy.utils.Time;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -152,7 +155,8 @@ public class User {
                 isTeleportEnabled(),
                 isNightvisionEnabled(),
                 getChatChannel(),
-                isTipsEnabled()
+                isTipsEnabled(),
+                getOfflineMessages()
         );
     }
 
@@ -198,5 +202,12 @@ public class User {
 
     private boolean isTipsEnabled() {
         return globalSQL.getBoolean("SELECT tips_enabled FROM player_data WHERE uuid='" + uuid + "';");
+    }
+
+    private List<Component> getOfflineMessages() {
+        List<Component> components = new ArrayList<>();
+        List<String> messages = globalSQL.getStringList("SELECT message FROM messages WHERE recipient='" + uuid + "';");
+        messages.forEach(message -> components.add(GsonComponentSerializer.gson().deserialize(message)));
+        return components;
     }
 }
