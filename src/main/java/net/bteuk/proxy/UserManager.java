@@ -41,6 +41,7 @@ public class UserManager {
 
     private final ProxyServer server;
 
+    @Getter
     private final List<User> users = new ArrayList<>();
 
     public UserManager(ProxyServer server) {

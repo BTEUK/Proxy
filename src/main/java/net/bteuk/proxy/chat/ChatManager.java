@@ -5,6 +5,8 @@ import net.bteuk.network.lib.dto.DirectMessage;
 import net.bteuk.proxy.Proxy;
 import net.bteuk.proxy.User;
 import net.bteuk.proxy.UserManager;
+import net.bteuk.proxy.utils.Analytics;
+import net.bteuk.proxy.utils.Time;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 import java.io.IOException;
@@ -32,6 +34,9 @@ public class ChatManager {
         // Send a direct message to all players
         for (User user : userManager.getUsers()) {
             handle(new DirectMessage(user.getUuid(), chatMessage.getSender(), chatMessage.getComponent()));
+        }
+        if (!chatMessage.getSender().equals("server")) {
+            Analytics.addMessage(chatMessage.getSender(), Time.getDate(Time.currentTime()));
         }
     }
 

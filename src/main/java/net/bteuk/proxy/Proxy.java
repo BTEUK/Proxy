@@ -22,8 +22,10 @@ import net.bteuk.proxy.sql.DatabaseUpdates;
 import net.bteuk.proxy.sql.GlobalSQL;
 import net.bteuk.proxy.sql.PlotSQL;
 import net.bteuk.proxy.sql.RegionSQL;
+import net.bteuk.proxy.utils.Analytics;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.utils.ReviewStatus;
+import net.bteuk.proxy.utils.Time;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
@@ -175,6 +177,8 @@ public class Proxy {
         new CommandListener(this);
         new ServerConnectListener(this, lastServer);
 
+        new Analytics(this);
+
         logger.info("Loaded Proxy");
 
     }
@@ -211,6 +215,9 @@ public class Proxy {
         if (!userManager.getUsers().isEmpty()) {
             getLogger().info("Sent disconnect message to online users!");
         }
+
+        //Update statistics
+        Analytics.saveAll();
 
         // Remove the user instance.
         userManager.removeAllUsers();

@@ -7,7 +7,9 @@ import lombok.Getter;
 import lombok.Setter;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.proxy.sql.GlobalSQL;
+import net.bteuk.proxy.utils.Analytics;
 import net.bteuk.proxy.utils.SwitchServer;
+import net.bteuk.proxy.utils.Time;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
@@ -59,13 +61,18 @@ public class User {
     private final Set<String> channels = new HashSet<>();
 
     @Getter
-    @Setter
     private boolean afk = false;
 
     private ScheduledTask disconnectTask;
 
     /** Utility reference to the database. */
     private final GlobalSQL globalSQL;
+
+    //Information for online-time logging.
+    //Records when the player online-time was last logged.
+    public long last_time_log = Time.currentTime();
+    //Total active time in current session.
+    public long active_time = 0L;
 
     @Getter
     @Setter
@@ -99,6 +106,7 @@ public class User {
      * Cancel the disconnect task that was scheduled.
      */
     public void reconnect() {
+        last_time_log = Time.currentTime();
         online = true;
         if (disconnectTask != null && disconnectTask.status() == TaskStatus.SCHEDULED) {
             disconnectTask.cancel();
@@ -160,6 +168,18 @@ public class User {
         );
     }
 
+    public void setAfk(boolean afk) {
+        this.afk = afk;
+        if (afk) {
+            long time = Time.currentTime();
+            //Update playtime, and pause it.
+            Analytics.save(this, Time.getDate(time), time);
+        } else {
+            //Reset last logged time.
+            last_time_log = Time.currentTime();
+        }
+    }
+
     public void clearJoinEvent() {
         globalSQL.update("DELETE FROM join_events WHERE uuid='" + uuid + "';");
     }
@@ -208,6 +228,8 @@ public class User {
         List<Component> components = new ArrayList<>();
         List<String> messages = globalSQL.getStringList("SELECT message FROM messages WHERE recipient='" + uuid + "';");
         messages.forEach(message -> components.add(GsonComponentSerializer.gson().deserialize(message)));
+        // Delete the messages.
+        globalSQL.update("DELETE FROM messages WHERE recipient='" + uuid + "'");
         return components;
     }
 }
