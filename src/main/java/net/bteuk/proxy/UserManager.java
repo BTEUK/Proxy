@@ -217,6 +217,11 @@ public class UserManager {
                 // Send connect message.
                 joinMessage = JOIN_MESSAGE;
             }
+
+            // If the user is a reviewer send messages for the number of submitted plots, region request and navigation requests.
+            if (request.isReviewer()) {
+                sendReviewerMessages(request.getUuid());
+            }
         }
 
         // Set the server.
@@ -333,7 +338,8 @@ public class UserManager {
     private void removeUser(User user, boolean shutdown) {
         // If the user is online, disconnect them first.
         if (user.isOnline()) {
-            user.disconnect(() -> {});
+            user.disconnect(() -> {
+            });
         }
 
         // Remove all plot, zone and region invites sent and received.
@@ -345,16 +351,41 @@ public class UserManager {
         // Remove the user from the list of muted users for all players, if they had this player muted.
         users.forEach(u -> u.unmute(user));
         UserRemove userRemoveEvent = new UserRemove(user.getUuid());
-        try {
-            ChatHandler.handle(userRemoveEvent);
-        } catch (IOException e) {
-            // TODO Exception handling
-        }
         if (!shutdown) {
             Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy, they have been offline for more than 5 minutes", user.getName()));
         } else {
             Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy due to shutdown", user.getName()));
 
+        }
+    }
+
+    private void sendReviewerMessages(String uuid) {
+        try {
+            //Show the number of submitted plots.
+            int plots = Proxy.getInstance().getPlotSQL().getInt("SELECT COUNT(id) FROM plot_data WHERE status='submitted';");
+            if (plots != 0) {
+                Component plotMessage = ChatUtils.success("There " + (plots == 1 ? "is" : "are") + " %s " + (plots == 1 ? "plot" : "plots") + " to review.", String.valueOf(plots));
+                DirectMessage directMessage = new DirectMessage(uuid, "server", plotMessage);
+                ChatHandler.handle(directMessage);
+            }
+
+            //Show the number of submitted regions requests.
+            int regions = Proxy.getInstance().getRegionSQL().getInt("SELECT COUNT(region) FROM region_requests WHERE staff_accept=0;");
+            if (regions != 0) {
+                Component regionMessage = ChatUtils.success("There " + (regions == 1 ? "is" : "are") + " %s region " + (regions == 1 ? "request" : "requests") + " to review.", String.valueOf(regions));
+                DirectMessage directMessage = new DirectMessage(uuid, "server", regionMessage);
+                ChatHandler.handle(directMessage);
+            }
+
+            //Show the number of submitted navigation requests;
+            int navigation = Proxy.getInstance().getGlobalSQL().getInt("SELECT COUNT(location) FROM location_requests;");
+            if (navigation != 0) {
+                Component navigationMessage = ChatUtils.success("There " + (navigation == 1 ? "is" : "are") + " %s navigation " + (navigation == 1 ? "request" : "requests") + " to review.", String.valueOf(navigation));
+                DirectMessage directMessage = new DirectMessage(uuid, "server", navigationMessage);
+                ChatHandler.handle(directMessage);
+            }
+        } catch (IOException e) {
+            Proxy.getInstance().getLogger().warn("Unable to send the reviewer information due to an exception while sending a DirectMessage.");
         }
     }
 

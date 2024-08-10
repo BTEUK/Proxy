@@ -161,11 +161,6 @@ public class User {
             newUser = false;
         }
 
-        // Get the list of offline messages.
-        getOfflineMessages();
-
-        // Add reviewer messages before the offline messages.
-
         // TODO: Add a potential join event.
 
         return new UserConnectReply(
