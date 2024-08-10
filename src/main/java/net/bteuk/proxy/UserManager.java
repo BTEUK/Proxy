@@ -17,6 +17,7 @@ import net.bteuk.proxy.eventing.listeners.ServerConnectListener;
 import net.bteuk.proxy.exceptions.ErrorMessage;
 import net.bteuk.proxy.exceptions.ServerNotFoundException;
 import net.bteuk.proxy.utils.SwitchServer;
+import net.bteuk.proxy.utils.Time;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
@@ -320,6 +321,8 @@ public class UserManager {
         while (!getUsers().isEmpty()) {
             removeUser(getUsers().get(0), true);
         }
+        // Log the player count (which should always be 0 at this point).
+        logPlayerCount(getUsers());
     }
 
     /**
@@ -328,6 +331,14 @@ public class UserManager {
      * @param user the user to remove
      */
     private void removeUser(User user, boolean shutdown) {
+        // If the user is online, disconnect them first.
+        if (user.isOnline()) {
+            user.disconnect(() -> {});
+        }
+
+        // Remove all plot, zone and region invites sent and received.
+        removeInvites(user.getUuid());
+
         // Remove the user from the list.
         users.remove(user);
         user.delete();
@@ -345,6 +356,16 @@ public class UserManager {
             Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy due to shutdown", user.getName()));
 
         }
+    }
+
+    private void removeInvites(String uuid) {
+        Proxy.getInstance().getPlotSQL().update("DELETE FROM plot_invites WHERE owner='" + uuid + "';");
+        Proxy.getInstance().getPlotSQL().update("DELETE FROM zone_invites WHERE owner='" + uuid + "';");
+        Proxy.getInstance().getRegionSQL().update("DELETE FROM region_invites WHERE owner='" + uuid + "';");
+
+        Proxy.getInstance().getPlotSQL().update("DELETE FROM plot_invites WHERE uuid='" + uuid + "';");
+        Proxy.getInstance().getPlotSQL().update("DELETE FROM zone_invites WHERE uuid='" + uuid + "';");
+        Proxy.getInstance().getRegionSQL().update("DELETE FROM region_invites WHERE uuid='" + uuid + "';");
     }
 
     private void sendConnectMessage(String message, User user, Color colour) {

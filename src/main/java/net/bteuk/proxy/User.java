@@ -94,6 +94,12 @@ public class User {
      */
     public void disconnect(Runnable runnable) {
         online = false;
+        long time = Time.currentTime();
+
+        //Set last_online time in playerdata.
+        Proxy.getInstance().getGlobalSQL().update("UPDATE player_data SET last_online=" + time + " WHERE UUID='" + uuid + "';");
+
+        Analytics.save(this, Time.getDate(time), time);
         // Run a delayed task to remove the user.
         disconnectTask = Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), runnable)
                 .delay(5L, TimeUnit.MINUTES)
@@ -124,12 +130,12 @@ public class User {
         }
     }
 
-    public boolean mute(User user) {
-        return mutedUsers.add(user);
+    public void mute(User user) {
+        mutedUsers.add(user);
     }
 
-    public boolean unmute(User user) {
-        return mutedUsers.remove(user);
+    public void unmute(User user) {
+        mutedUsers.remove(user);
     }
 
     /**
@@ -152,8 +158,13 @@ public class User {
 
         // Create database object if not exists.
         if (newUser && globalSQL.createUser(uuid, name, playerSkin)) {
-            setNewUser(false);
+            newUser = false;
         }
+
+        // Get the list of offline messages.
+        getOfflineMessages();
+
+        // Add reviewer messages before the offline messages.
 
         // TODO: Add a potential join event.
 
