@@ -71,7 +71,7 @@ public class UserManager {
         // Get the user.
         User user = getUserByUuid(disconnect.getUuid());
 
-        if (user != null) {
+        if (user != null && user.getSwitchServer() == null) {
             // Disconnect.
             disconnectUser(user);
 
@@ -119,7 +119,8 @@ public class UserManager {
             // Connect the user to the server.
             Proxy.getInstance().getServer().getServer(switchServerEvent.getTo_server()).ifPresentOrElse(server -> {
                 user.setSwitchServer(new SwitchServer(user, switchServerEvent.getFrom_server(), switchServerEvent.getTo_server()));
-                user.getPlayer().createConnectionRequest(server);
+                user.getPlayer().createConnectionRequest(server).fireAndForget();
+                Proxy.getInstance().getLogger().warn(String.format("Connecting player to %s.", server.getServerInfo().getName()));
             }, () -> {
                 // Send message that the server is not online.
                 DirectMessage directMessage = new DirectMessage(user.getUuid(), "server",

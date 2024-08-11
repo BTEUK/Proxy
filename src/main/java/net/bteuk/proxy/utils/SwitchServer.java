@@ -47,12 +47,14 @@ public class SwitchServer {
     public void cancelTimeout() {
         if (switchTask != null) {
             switchTask.cancel();
+            user.setSwitchServer(null);
         }
     }
 
     private void onTimeout() {
         if (user != null) {
             Proxy.getInstance().getUserManager().disconnectUser(user);
+            user.setSwitchServer(null);
         }
     }
 }
