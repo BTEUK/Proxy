@@ -1,6 +1,7 @@
 package net.bteuk.proxy;
 
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 import lombok.Getter;
 import net.bteuk.network.lib.dto.ChatMessage;
 import net.bteuk.network.lib.dto.DirectMessage;
@@ -115,7 +116,22 @@ public class UserManager {
                 // Cancel the existing switch server event.
                 switchServer.cancelTimeout();
             }
-            user.setSwitchServer(new SwitchServer(user, switchServerEvent.getFrom_server(), switchServerEvent.getTo_server()));
+            // Connect the user to the server.
+            Proxy.getInstance().getServer().getServer(switchServerEvent.getTo_server()).ifPresentOrElse(server -> {
+                user.setSwitchServer(new SwitchServer(user, switchServerEvent.getFrom_server(), switchServerEvent.getTo_server()));
+                user.getPlayer().createConnectionRequest(server);
+            }, () -> {
+                // Send message that the server is not online.
+                DirectMessage directMessage = new DirectMessage(user.getUuid(), "server",
+                        ChatUtils.error("The server %s is not available, please contact an admin!", switchServerEvent.getTo_server()),
+                        false);
+                try {
+                    ChatHandler.handle(directMessage);
+                } catch (IOException e) {
+                    Proxy.getInstance().getLogger().warn("Unable to send DirectMessage.");
+                }
+            });
+
         } else {
             Proxy.getInstance().getLogger().warn(String.format("Switch server event was received for non-existing user %s", switchServerEvent.getUuid()));
         }
@@ -164,7 +180,7 @@ public class UserManager {
             returnMessage = errorMessage.getError();
         }
 
-        DirectMessage directMessage = new DirectMessage(muteEvent.getUuid(), muteEvent.getUuid(), returnMessage);
+        DirectMessage directMessage = new DirectMessage(muteEvent.getUuid(), muteEvent.getUuid(), returnMessage, false);
         try {
             Proxy.getInstance().getChatManager().handle(directMessage);
         } catch (IOException e) {
@@ -365,7 +381,7 @@ public class UserManager {
             int plots = Proxy.getInstance().getPlotSQL().getInt("SELECT COUNT(id) FROM plot_data WHERE status='submitted';");
             if (plots != 0) {
                 Component plotMessage = ChatUtils.success("There " + (plots == 1 ? "is" : "are") + " %s " + (plots == 1 ? "plot" : "plots") + " to review.", String.valueOf(plots));
-                DirectMessage directMessage = new DirectMessage(uuid, "server", plotMessage);
+                DirectMessage directMessage = new DirectMessage(uuid, "server", plotMessage, false);
                 ChatHandler.handle(directMessage);
             }
 
@@ -373,7 +389,7 @@ public class UserManager {
             int regions = Proxy.getInstance().getRegionSQL().getInt("SELECT COUNT(region) FROM region_requests WHERE staff_accept=0;");
             if (regions != 0) {
                 Component regionMessage = ChatUtils.success("There " + (regions == 1 ? "is" : "are") + " %s region " + (regions == 1 ? "request" : "requests") + " to review.", String.valueOf(regions));
-                DirectMessage directMessage = new DirectMessage(uuid, "server", regionMessage);
+                DirectMessage directMessage = new DirectMessage(uuid, "server", regionMessage, false);
                 ChatHandler.handle(directMessage);
             }
 
@@ -381,7 +397,7 @@ public class UserManager {
             int navigation = Proxy.getInstance().getGlobalSQL().getInt("SELECT COUNT(location) FROM location_requests;");
             if (navigation != 0) {
                 Component navigationMessage = ChatUtils.success("There " + (navigation == 1 ? "is" : "are") + " %s navigation " + (navigation == 1 ? "request" : "requests") + " to review.", String.valueOf(navigation));
-                DirectMessage directMessage = new DirectMessage(uuid, "server", navigationMessage);
+                DirectMessage directMessage = new DirectMessage(uuid, "server", navigationMessage, false);
                 ChatHandler.handle(directMessage);
             }
         } catch (IOException e) {

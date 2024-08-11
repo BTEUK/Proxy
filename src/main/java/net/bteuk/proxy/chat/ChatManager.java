@@ -33,7 +33,7 @@ public class ChatManager {
     public void handle(ChatMessage chatMessage) throws IOException {
         // Send a direct message to all players
         for (User user : userManager.getUsers()) {
-            handle(new DirectMessage(user.getUuid(), chatMessage.getSender(), chatMessage.getComponent()));
+            handle(new DirectMessage(user.getUuid(), chatMessage.getSender(), chatMessage.getComponent(), false));
         }
         if (!chatMessage.getSender().equals("server")) {
             Analytics.addMessage(chatMessage.getSender(), Time.getDate(Time.currentTime()));
