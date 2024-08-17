@@ -140,8 +140,11 @@ public abstract class ConfigurationFile {
 
     public long getLong(String path, long defaultValue) {
         Object value = getObject(path, defaultValue);
-        if (value == null) return defaultValue;
-        return (long) value;
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return defaultValue;
+
     }
 
     public void set(String path, Object value) {

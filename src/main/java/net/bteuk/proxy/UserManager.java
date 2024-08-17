@@ -6,6 +6,11 @@ import lombok.Getter;
 import net.bteuk.network.lib.dto.ChatMessage;
 import net.bteuk.network.lib.dto.DirectMessage;
 import net.bteuk.network.lib.dto.MuteEvent;
+import net.bteuk.network.lib.dto.OnlineUser;
+import net.bteuk.network.lib.dto.OnlineUserAdd;
+import net.bteuk.network.lib.dto.OnlineUserRemove;
+import net.bteuk.network.lib.dto.OnlineUsersReply;
+import net.bteuk.network.lib.dto.OnlineUsersRequest;
 import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.network.lib.dto.UserConnectRequest;
@@ -25,7 +30,10 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static net.bteuk.network.lib.enums.ChatChannels.GLOBAL;
 import static net.bteuk.proxy.utils.Analytics.logPlayerCount;
@@ -46,6 +54,8 @@ public class UserManager {
     @Getter
     private final List<User> users = new ArrayList<>();
 
+    private final Set<OnlineUser> onlineUsers = new HashSet<>();
+
     public UserManager(ProxyServer server) {
         this.server = server;
     }
@@ -61,6 +71,10 @@ public class UserManager {
         // Send the reply to the server.
         try {
             ChatHandler.handle(reply, request.getServer());
+            OnlineUser onlineUser = new OnlineUser(user.getUuid(), user.getName(), user.getServer());
+            onlineUsers.remove(onlineUser);
+            onlineUsers.add(onlineUser);
+            ChatHandler.handle(new OnlineUserAdd(onlineUser));
         } catch (IOException | ServerNotFoundException e) {
             // TODO: Handle exception
         }
@@ -71,7 +85,12 @@ public class UserManager {
         // Get the user.
         User user = getUserByUuid(disconnect.getUuid());
 
-        if (user != null && user.getSwitchServer() == null) {
+        if (user == null) {
+            Proxy.getInstance().getLogger().warn(String.format("Disconnect event for %s was started, but no User exists by that uuid.", disconnect.getUuid()));
+            return;
+        }
+
+        if (user.getSwitchServer() == null && user.getServer().equals(disconnect.getServer())) {
             // Disconnect.
             disconnectUser(user);
 
@@ -81,8 +100,16 @@ public class UserManager {
             user.setTipsEnabled(disconnect.isTipsEnabled());
             user.setChatChannel(disconnect.getChatChannel());
             user.setTeleportEnabled(disconnect.isTeleportEnabled());
+
+            try {
+                Optional<OnlineUser> optionalOnlineUser = onlineUsers.stream().filter(onlineUser -> onlineUser.getUuid().equals(user.getUuid())).findFirst();
+                optionalOnlineUser.ifPresent(onlineUsers::remove);
+                ChatHandler.handle(new OnlineUserRemove(user.getUuid()));
+            } catch (IOException e) {
+                // TODO: Handle exception
+            }
         } else {
-            Proxy.getInstance().getLogger().warn(String.format("Disconnect event for %s was started, but no User exists by that uuid.", disconnect.getUuid()));
+            Proxy.getInstance().getLogger().warn(String.format("Disconnect event for %s cancelled due to switching server.", disconnect.getUuid()));
         }
     }
 
@@ -119,6 +146,8 @@ public class UserManager {
             // Connect the user to the server.
             Proxy.getInstance().getServer().getServer(switchServerEvent.getTo_server()).ifPresentOrElse(server -> {
                 user.setSwitchServer(new SwitchServer(user, switchServerEvent.getFrom_server(), switchServerEvent.getTo_server()));
+                // save disconnect info.
+                saveUserInfoFromDisconnect(user, switchServerEvent.getUserDisconnect());
                 user.getPlayer().createConnectionRequest(server).fireAndForget();
                 Proxy.getInstance().getLogger().warn(String.format("Connecting player to %s.", server.getServerInfo().getName()));
             }, () -> {
@@ -184,6 +213,14 @@ public class UserManager {
         DirectMessage directMessage = new DirectMessage(muteEvent.getUuid(), muteEvent.getUuid(), returnMessage, false);
         try {
             Proxy.getInstance().getChatManager().handle(directMessage);
+        } catch (IOException e) {
+            // TODO Error handling.
+        }
+    }
+
+    public void handleOnlineUsersRequest() {
+        try {
+            ChatHandler.handle(new OnlineUsersReply(onlineUsers));
         } catch (IOException e) {
             // TODO Error handling.
         }
@@ -283,6 +320,7 @@ public class UserManager {
         Proxy.getInstance().getTabManager().removePlayer(user.getUuid());
 
         sendConnectMessage(LEAVE_MESSAGE, user, Color.RED);
+        Proxy.getInstance().getLogger().info(String.format("User %s has disconnected.", user.getName()));
     }
 
     /**
@@ -318,8 +356,12 @@ public class UserManager {
 
         if (update.getTabPlayer() != null && !update.getTabPlayer().getPrimaryGroup().equals(user.getPrimaryRole())) {
             user.setPrimaryRole(update.getTabPlayer().getPrimaryGroup());
-            // TODO: Notify servers that a primary role has changed.
-            // TODO: The player's server may not be aware due to this Update coming from elsewhere.
+            // Send the user update back to the servers, so they can potentially update the primary role.
+            try {
+                ChatHandler.handle(update);
+            } catch (IOException e) {
+                // TODO: Exception handling.
+            }
             Proxy.getInstance().getTabManager().updatePlayer(update.getTabPlayer());
         }
     }
@@ -368,11 +410,18 @@ public class UserManager {
         // Remove the user from the list of muted users for all players, if they had this player muted.
         users.forEach(u -> u.unmute(user));
         UserRemove userRemoveEvent = new UserRemove(user.getUuid());
-        if (!shutdown) {
-            Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy, they have been offline for more than 5 minutes", user.getName()));
-        } else {
-            Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy due to shutdown", user.getName()));
-
+        try {
+            ChatHandler.handle(userRemoveEvent);
+            if (!shutdown) {
+                Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy, they have been offline for more than 5 minutes", user.getName()));
+            } else {
+                Optional<OnlineUser> optionalOnlineUser = onlineUsers.stream().filter(onlineUser -> onlineUser.getUuid().equals(user.getUuid())).findFirst();
+                optionalOnlineUser.ifPresent(onlineUsers::remove);
+                ChatHandler.handle(new OnlineUserRemove(user.getUuid()));
+                Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy due to shutdown", user.getName()));
+            }
+        } catch (IOException e) {
+            Proxy.getInstance().getLogger().info("Unable to send event to servers.");
         }
     }
 
@@ -430,5 +479,14 @@ public class UserManager {
         } catch (IOException e) {
             // TODO: Exception handling.
         }
+    }
+
+    private void saveUserInfoFromDisconnect(User user, UserDisconnect disconnect) {
+        // Save information about the user.
+        user.setNavigatorEnabled(disconnect.isNavigatorEnabled());
+        user.setNightvisionEnabled(disconnect.isNightvisionEnabled());
+        user.setTipsEnabled(disconnect.isTipsEnabled());
+        user.setChatChannel(disconnect.getChatChannel());
+        user.setTeleportEnabled(disconnect.isTeleportEnabled());
     }
 }

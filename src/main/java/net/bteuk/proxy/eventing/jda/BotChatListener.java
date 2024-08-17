@@ -49,6 +49,8 @@ public class BotChatListener extends ListenerAdapter {
 
                     ChatHandler.handle(discordLinking);
 
+                    Proxy.getInstance().getLogger().info(String.format("Linking Discord user of %s to Minecraft uuid %s", event.getAuthor().getName(), linked.uuid));
+
                     l = linked;
                 } catch (IOException e) {
                     // Ignored

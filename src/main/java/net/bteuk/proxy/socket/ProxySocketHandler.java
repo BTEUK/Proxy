@@ -8,6 +8,7 @@ import net.bteuk.network.lib.dto.DiscordEmbed;
 import net.bteuk.network.lib.dto.DiscordLinking;
 import net.bteuk.network.lib.dto.DiscordRole;
 import net.bteuk.network.lib.dto.MuteEvent;
+import net.bteuk.network.lib.dto.OnlineUsersRequest;
 import net.bteuk.network.lib.dto.PromoteEvent;
 import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectRequest;
@@ -62,6 +63,8 @@ public class ProxySocketHandler implements SocketHandler {
             Proxy.getInstance().getUserManager().handleSwitchServerEvent(switchServerEvent);
         } else if (abstractTransferObject instanceof MuteEvent muteEvent) {
             Proxy.getInstance().getUserManager().handleMuteEvent(muteEvent);
+        } else if (abstractTransferObject instanceof OnlineUsersRequest) {
+            Proxy.getInstance().getUserManager().handleOnlineUsersRequest();
         } else {
             Proxy.getInstance().getLogger().warn(String.format("Socket object has an unrecognised type %s", abstractTransferObject.getClass().getTypeName()));
         }

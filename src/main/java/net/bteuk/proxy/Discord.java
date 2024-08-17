@@ -275,15 +275,15 @@ public class Discord {
 
     public void unlinkUser(String uuid) {
         //Remove the user from the discord link table.
-        Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE uuid=" + uuid + ";");
+        Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE uuid='" + uuid + "';");
+        Proxy.getInstance().getLogger().info(String.format("Unlinked user with uuid %s", uuid));
     }
 
     public static void unlinkUser(long userId) {
         //Remove the user from the discord link table.
-        if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT discord_id FROM discord WHERE discord_id='" + userId + "';")) {
-            Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE discord_id=" + userId + ";");
-            Proxy.getInstance().getLogger().info(("Removed discord link for " + userId + ", they are no longer in the discord server."));
-        }
+        Proxy.getInstance().getGlobalSQL().update("DELETE FROM discord WHERE discord_id=" + userId + ";");
+        Proxy.getInstance().getLogger().info(("Removed discord link for " + userId + ", they are no longer in the discord server."));
+
         // Send an unlink message to the servers to make sure it's also unlinked there.
         DiscordLinking discordLinking = new DiscordLinking();
         discordLinking.setDiscordId(userId);

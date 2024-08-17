@@ -46,9 +46,10 @@ CREATE TABLE IF NOT EXISTS player_data
 
 CREATE TABLE IF NOT EXISTS messages
 (
+    id          INT         AUTO_INCREMENT,
     recipient   CHAR(36)    NOT NULL,
-    message     CLOB        NOT NULL,
-    PRIMARY KEY(recipient,message),
+    message     BLOB        NOT NULL,
+    PRIMARY KEY(id),
     CONSTRAINT fk_messages_1 FOREIGN KEY(recipient) REFERENCES player_data(uuid)
 );
 

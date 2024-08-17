@@ -100,10 +100,7 @@ public class TabManager {
     public void updatePlayer(TabPlayer tabPlayer) {
         // Find the tab player by uuid.
         TabPlayer currentTabPlayer = findTabPlayerByUuid(tabPlayer.getUuid());
-        // If null, add the tab player.
-        if (currentTabPlayer == null) {
-            addPlayer(tabPlayer);
-        } else {
+        if (currentTabPlayer != null) {
             // Update the display name and ping.
             String name = currentTabPlayer.getName();
             int ping = findPingForPlayer(tabPlayer.getUuid());
@@ -168,22 +165,26 @@ public class TabManager {
      */
     public void updatePlayerInTablistOfPlayer(User userToGetTablist, User userToUpdate) {
         TabPlayer tabPlayer = findTabPlayerByUuid(userToUpdate.getUuid());
-        TabListEntry tabEntry = findTabListEntryForPlayer(userToGetTablist.getPlayer().getTabList().getEntries(), userToUpdate.getName());
-        if (tabPlayer != null && tabEntry != null) {
-            // Update the display name.
-            tabEntry.setDisplayName(formattedName(userToGetTablist, tabPlayer));
-        }
+        Optional<TabListEntry> optionalTabEntry = findTabListEntryForPlayer(userToGetTablist.getPlayer().getTabList().getEntries(), userToUpdate.getName());
+        optionalTabEntry.ifPresent(tabEntry -> {
+            if (tabPlayer != null) {
+                // Update the display name.
+                tabEntry.setDisplayName(formattedName(userToGetTablist, tabPlayer));
+            }
+        });
     }
 
     /**
      * Update the ping in tab for all players.
      */
     private void updatePing() {
+        Proxy.getInstance().getLogger().info("Updating ping for all players.");
         server.getAllPlayers().forEach(player -> {
             TabPlayer tabPlayer = findTabPlayerByUuid(player.getUniqueId().toString());
             int ping = (int) player.getPing();
             if (tabPlayer != null && ping > -1) {
-                tabPlayer.setPing((int) player.getPing());
+                Proxy.getInstance().getLogger().info(String.format("Set ping for %s to %d.", tabPlayer.getName(), ping));
+                tabPlayer.setPing(ping);
             }
         });
         server.getAllPlayers().forEach(player -> updatePingForTabList(player.getTabList().getEntries()));
@@ -195,20 +196,20 @@ public class TabManager {
      */
     private void updatePlayerPing(String playerName, int ping) {
         server.getAllPlayers().forEach(player -> {
-            TabListEntry tabEntry = findTabListEntryForPlayer(player.getTabList().getEntries(), playerName);
-            if (tabEntry != null) {
-                tabEntry.setLatency(ping);
-            }
+            Optional<TabListEntry> optionalTabEntry = findTabListEntryForPlayer(player.getTabList().getEntries(), playerName);
+            optionalTabEntry.ifPresent(tabEntry -> tabEntry.setLatency(ping));
         });
     }
 
     private void updatePlayerDisplayName(String playerName, TabPlayer tabPlayer) {
         server.getAllPlayers().forEach(player -> {
-            TabListEntry tabEntry = findTabListEntryForPlayer(player.getTabList().getEntries(), playerName);
-            User user = Proxy.getInstance().getUserManager().getUserByUuid(String.valueOf(player.getUniqueId()));
-            if (tabEntry != null && user != null) {
-                updateDisplayName(tabEntry, formattedName(user, tabPlayer));
-            }
+            Optional<TabListEntry> optionalTabEntry = findTabListEntryForPlayer(player.getTabList().getEntries(), playerName);
+            optionalTabEntry.ifPresent(tabEntry -> {
+                User user = Proxy.getInstance().getUserManager().getUserByUuid(String.valueOf(player.getUniqueId()));
+                if (user != null) {
+                    updateDisplayName(tabEntry, formattedName(user, tabPlayer));
+                }
+            });
         });
     }
 
@@ -220,18 +221,19 @@ public class TabManager {
             }
         });
     }
-    
+
     private void updateDisplayName(TabListEntry tabEntry, Component displayName) {
         tabEntry.setDisplayName(displayName);
     }
 
-    private TabListEntry findTabListEntryForPlayer(Collection<TabListEntry> tabEntries, String playerName) {
-        return tabEntries.stream().filter(tabEntry -> tabEntry.getProfile().getName().equals(playerName)).findFirst().orElse(null);
+    private Optional<TabListEntry> findTabListEntryForPlayer(Collection<TabListEntry> tabEntries, String playerName) {
+        return tabEntries.stream().filter(tabEntry -> tabEntry.getProfile().getName().equals(playerName)).findFirst();
     }
 
     private int findPingForTabPlayer(String uuid) {
         return tabPlayers.stream().filter(tabPlayer -> tabPlayer.getUuid().equals(uuid)).mapToInt(TabPlayer::getPing).findFirst().orElse(-1);
     }
+
     private int findPingForPlayer(String uuid) {
         return (int) Proxy.getInstance().getServer().getAllPlayers().stream()
                 .filter(player -> player.getUniqueId().toString().equals(uuid))
