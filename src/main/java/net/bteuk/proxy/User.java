@@ -151,6 +151,14 @@ public class User {
     }
 
     /**
+     * Check whether this user is globally muted.
+     * @return boolean if the user is muted
+     */
+    public boolean isMuted() {
+        return (globalSQL.hasRow("SELECT uuid FROM moderation WHERE uuid='" + uuid + "' AND end_time>" + Time.currentTime() + " AND type='mute';"));
+    }
+
+    /**
      * Create a {@link UserConnectReply} for the user.
      * If the User object in the database is missing, create it.
      *

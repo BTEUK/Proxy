@@ -82,7 +82,8 @@ public class TabManager {
                 if (user.getPlayer() != null) {
                     // Find the entries that match the player name.
                     Collection<TabListEntry> tablist = user.getPlayer().getTabList().getEntries();
-                    List<TabListEntry> entriesToRemove = tablist.stream().filter(tabListEntry -> tabListEntry.getProfile().getName().equals(tabPlayer.getName())).toList();
+                    List<TabListEntry> entriesToRemove = tablist.stream()
+                            .filter(tabListEntry -> tabListEntry.getProfile().getName().equals(tabPlayer.getName()) && tabListEntry.isListed()).toList();
                     // Remove the entries by UUID.
                     entriesToRemove.forEach(tabListEntry -> user.getPlayer().getTabList().removeEntry(tabListEntry.getProfile().getId()));
                 }
@@ -102,19 +103,19 @@ public class TabManager {
         TabPlayer currentTabPlayer = findTabPlayerByUuid(tabPlayer.getUuid());
         if (currentTabPlayer != null) {
             // Update the display name and ping.
-            String name = currentTabPlayer.getName();
             int ping = findPingForPlayer(tabPlayer.getUuid());
             if (ping > -1) {
                 currentTabPlayer.setPing(ping);
-                updatePlayerPing(name, ping);
+                updatePlayerPing(currentTabPlayer.getName(), ping);
             }
-            updatePlayerDisplayName(name, tabPlayer);
             // If the primary role has changed update the players team.
+            // This must happen before the tab has updated, else the sorting won't update.
             if (!tabPlayer.getPrimaryGroup().equals(currentTabPlayer.getPrimaryGroup())) {
                 currentTabPlayer.setPrimaryGroup(tabPlayer.getPrimaryGroup());
                 currentTabPlayer.setPrefix(tabPlayer.getPrefix());
                 sendAddTeam(tabPlayer);
             }
+            updatePlayerDisplayName(currentTabPlayer.getName(), tabPlayer);
         }
     }
 
@@ -178,60 +179,44 @@ public class TabManager {
      * Update the ping in tab for all players.
      */
     private void updatePing() {
-        Proxy.getInstance().getLogger().info("Updating ping for all players.");
         server.getAllPlayers().forEach(player -> {
             TabPlayer tabPlayer = findTabPlayerByUuid(player.getUniqueId().toString());
             int ping = (int) player.getPing();
             if (tabPlayer != null && ping > -1) {
-                Proxy.getInstance().getLogger().info(String.format("Set ping for %s to %d.", tabPlayer.getName(), ping));
                 tabPlayer.setPing(ping);
             }
         });
         server.getAllPlayers().forEach(player -> updatePingForTabList(player.getTabList().getEntries()));
     }
 
-    /**
-     * Update the ping in tab for a specific player.
-     * @param playerName the name of the player
-     */
-    private void updatePlayerPing(String playerName, int ping) {
-        server.getAllPlayers().forEach(player -> {
-            Optional<TabListEntry> optionalTabEntry = findTabListEntryForPlayer(player.getTabList().getEntries(), playerName);
-            optionalTabEntry.ifPresent(tabEntry -> tabEntry.setLatency(ping));
-        });
+    private void updatePlayerPing(String name, int ping) {
+        server.getAllPlayers().forEach(player -> updateLatency(player, name, ping));
     }
 
-    private void updatePlayerDisplayName(String playerName, TabPlayer tabPlayer) {
+    private void updatePlayerDisplayName(String name, TabPlayer tabPlayer) {
         server.getAllPlayers().forEach(player -> {
-            Optional<TabListEntry> optionalTabEntry = findTabListEntryForPlayer(player.getTabList().getEntries(), playerName);
-            optionalTabEntry.ifPresent(tabEntry -> {
-                User user = Proxy.getInstance().getUserManager().getUserByUuid(String.valueOf(player.getUniqueId()));
-                if (user != null) {
-                    updateDisplayName(tabEntry, formattedName(user, tabPlayer));
-                }
-            });
+            User user = Proxy.getInstance().getUserManager().getUserByUuid(String.valueOf(player.getUniqueId()));
+            if (user != null) {
+                updateDisplayName(player, name, formattedName(user, tabPlayer));
+            }
         });
     }
 
     private void updatePingForTabList(Collection<TabListEntry> tabEntries) {
-        tabEntries.forEach(tabEntry -> {
-            int ping = findPingForTabPlayer(tabEntry.getProfile().getId().toString());
+        tabEntries.stream().filter(TabListEntry::isListed).forEach(tabEntry -> {
+            int ping = findPingForTabPlayer(tabEntry.getProfile().getName());
             if (ping > -1) {
                 tabEntry.setLatency(ping);
             }
         });
     }
 
-    private void updateDisplayName(TabListEntry tabEntry, Component displayName) {
-        tabEntry.setDisplayName(displayName);
-    }
-
     private Optional<TabListEntry> findTabListEntryForPlayer(Collection<TabListEntry> tabEntries, String playerName) {
-        return tabEntries.stream().filter(tabEntry -> tabEntry.getProfile().getName().equals(playerName)).findFirst();
+        return tabEntries.stream().filter(tabEntry -> tabEntry.getProfile().getName().equals(playerName) && tabEntry.isListed()).findFirst();
     }
 
-    private int findPingForTabPlayer(String uuid) {
-        return tabPlayers.stream().filter(tabPlayer -> tabPlayer.getUuid().equals(uuid)).mapToInt(TabPlayer::getPing).findFirst().orElse(-1);
+    private int findPingForTabPlayer(String name) {
+        return tabPlayers.stream().filter(tabPlayer -> tabPlayer.getName().equals(name)).mapToInt(TabPlayer::getPing).findFirst().orElse(-1);
     }
 
     private int findPingForPlayer(String uuid) {
@@ -271,7 +256,7 @@ public class TabManager {
         Component name = ChatUtils.line(tabPlayer.getName());
 
         if (userToAdd != null) {
-            if (user.isMuted(userToAdd) /* TODO: Check if player is globally muted */) {
+            if (user.isMuted(userToAdd) || userToAdd.isMuted()) {
                 name = name.color(NamedTextColor.RED);
             }
             if (userToAdd.isAfk()) {
@@ -287,5 +272,13 @@ public class TabManager {
         }
 
         return name;
+    }
+
+    private void updateLatency(Player player, String name, int latency) {
+        player.getTabList().getEntries().stream().filter(tabListEntry -> tabListEntry.getProfile().getName().equalsIgnoreCase(name) && tabListEntry.isListed()).findFirst().ifPresent(tabListEntry -> tabListEntry.setLatency(latency));
+    }
+
+    private void updateDisplayName(Player player, String name, Component displayName) {
+        player.getTabList().getEntries().stream().filter(tabListEntry -> tabListEntry.getProfile().getName().equalsIgnoreCase(name) && tabListEntry.isListed()).findFirst().ifPresent(tabListEntry -> tabListEntry.setDisplayName(displayName));
     }
 }

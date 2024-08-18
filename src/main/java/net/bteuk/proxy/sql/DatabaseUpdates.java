@@ -118,7 +118,8 @@ public class DatabaseUpdates {
 
         logger.info("Updating database from 1.5.0 to 1.6.0");
 
-        // TODO: Remove online users tables.
+        // Remove online users table.
+        globalSQL.update("DROP TABLE online_users;");
 
         // Convert messages message column from varchar(256) to clob type.
         // Add id column and use that for the primary key.

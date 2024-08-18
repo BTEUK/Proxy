@@ -2,6 +2,7 @@ package net.bteuk.proxy.chat;
 
 import net.bteuk.network.lib.dto.ChatMessage;
 import net.bteuk.network.lib.dto.DirectMessage;
+import net.bteuk.network.lib.enums.ChatChannels;
 import net.bteuk.proxy.Proxy;
 import net.bteuk.proxy.User;
 import net.bteuk.proxy.UserManager;
@@ -35,7 +36,7 @@ public class ChatManager {
     public void handle(ChatMessage chatMessage) throws IOException {
         // Send a direct message to all players
         for (User user : userManager.getUsers()) {
-            handle(new DirectMessage(user.getUuid(), chatMessage.getSender(), chatMessage.getComponent(), false));
+            handle(new DirectMessage(ChatChannels.GLOBAL.getChannelName(), user.getUuid(), chatMessage.getSender(), chatMessage.getComponent(), false));
         }
         if (!SERVER_USERS.contains(chatMessage.getSender())) {
             Analytics.addMessage(chatMessage.getSender(), Time.getDate(Time.currentTime()));

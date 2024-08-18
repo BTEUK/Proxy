@@ -25,7 +25,6 @@ import net.bteuk.proxy.sql.RegionSQL;
 import net.bteuk.proxy.utils.Analytics;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.utils.ReviewStatus;
-import net.bteuk.proxy.utils.Time;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 
@@ -166,9 +165,6 @@ public class Proxy {
 
         DatabaseUpdates databaseUpdates = new DatabaseUpdates(getLogger(), globalSQL, plotSQL, regionSQL);
         databaseUpdates.updateDatabase();
-
-        // To make sure no players were left online when the Proxy was closed, clear the list of online users.
-        globalSQL.update("DELETE FROM online_users;");
 
         //Setup review status message.
         new ReviewStatus();
