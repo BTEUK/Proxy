@@ -114,6 +114,8 @@ public class User {
     public void reconnect() {
         last_time_log = Time.currentTime();
         online = true;
+        // Can't be afk on reconnect.
+        afk = false;
         if (disconnectTask != null && disconnectTask.status() == TaskStatus.SCHEDULED) {
             disconnectTask.cancel();
         }

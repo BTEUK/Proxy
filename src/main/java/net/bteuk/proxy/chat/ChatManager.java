@@ -19,6 +19,8 @@ public class ChatManager {
 
     private final UserManager userManager;
 
+    private final List<String> SERVER_USERS = List.of(new String[]{"server", "discord"});
+
     public ChatManager(UserManager userManager) {
         this.userManager = userManager;
     }
@@ -35,7 +37,7 @@ public class ChatManager {
         for (User user : userManager.getUsers()) {
             handle(new DirectMessage(user.getUuid(), chatMessage.getSender(), chatMessage.getComponent(), false));
         }
-        if (!chatMessage.getSender().equals("server")) {
+        if (!SERVER_USERS.contains(chatMessage.getSender())) {
             Analytics.addMessage(chatMessage.getSender(), Time.getDate(Time.currentTime()));
         }
     }

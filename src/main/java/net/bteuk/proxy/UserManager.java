@@ -169,7 +169,6 @@ public class UserManager {
 
     public void handleMuteEvent(MuteEvent muteEvent) {
 
-        String muteType = muteEvent.isMute() ? "mute" : "unmute";
         Component returnMessage;
 
         try {
@@ -181,7 +180,7 @@ public class UserManager {
                 throw new ErrorMessage(ChatUtils.error("An error has occurred, please rejoin the server."));
             } else if (userToMute == null) {
                 Proxy.getInstance().getLogger().warn(String.format("Mute event was received for non-existing user %s", muteEvent.getUuidToMute()));
-                throw new ErrorMessage(ChatUtils.error("The selected player to %s is no longer online.", muteType));
+                throw new ErrorMessage(ChatUtils.error("The selected player is no longer online."));
             }
 
             // Check if the player is already muted or unmuted.
@@ -194,7 +193,7 @@ public class UserManager {
                 throw new ErrorMessage(ChatUtils.error("%s is not muted.", userToMute.getName()));
             }
 
-            if (muteEvent.isMute()) {
+            if (muteEvent.isMute() && !user.isMuted(userToMute)) {
                 user.mute(userToMute);
                 returnMessage = ChatUtils.success("Muted %s for this session.", userToMute.getName());
             } else {
