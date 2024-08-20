@@ -210,7 +210,7 @@ public class UserManager {
 
         DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), muteEvent.getUuid(), muteEvent.getUuid(), returnMessage, false);
         try {
-            Proxy.getInstance().getChatManager().handle(directMessage);
+            Proxy.getInstance().getChatManager().sendDirectMessage(directMessage);
         } catch (IOException e) {
             // TODO Error handling.
         }

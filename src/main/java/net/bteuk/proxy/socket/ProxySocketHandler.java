@@ -11,14 +11,12 @@ import net.bteuk.network.lib.dto.FocusEvent;
 import net.bteuk.network.lib.dto.ModerationEvent;
 import net.bteuk.network.lib.dto.MuteEvent;
 import net.bteuk.network.lib.dto.OnlineUsersRequest;
-import net.bteuk.network.lib.dto.PromoteEvent;
 import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectRequest;
 import net.bteuk.network.lib.dto.UserDisconnect;
 import net.bteuk.network.lib.dto.UserUpdate;
 import net.bteuk.network.lib.socket.SocketHandler;
 import net.bteuk.proxy.Proxy;
-import net.bteuk.proxy.User;
 import net.bteuk.proxy.chat.ChatManager;
 
 import java.io.IOException;
