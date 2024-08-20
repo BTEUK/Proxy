@@ -256,11 +256,16 @@ public class TabManager {
         Component name = ChatUtils.line(tabPlayer.getName());
 
         if (userToAdd != null) {
-            if (user.isMuted(userToAdd) || userToAdd.isMuted()) {
+            if (userToAdd.isMuted()) {
+                name = name.color(NamedTextColor.DARK_RED);
+            } else if (user.isMuted(userToAdd)) {
                 name = name.color(NamedTextColor.RED);
             }
             if (userToAdd.isAfk()) {
                 name = name.decorate(TextDecoration.ITALIC);
+            }
+            if (userToAdd.isFocusEnabled()) {
+                name = name.decorate(TextDecoration.OBFUSCATED);
             }
         }
 

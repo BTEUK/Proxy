@@ -78,6 +78,9 @@ public class User {
     @Setter
     private SwitchServer switchServer = null;
 
+    @Getter
+    private boolean focusEnabled;
+
     public User(String uuid, String name, String playerSkin, Set<String> channels) {
         this.uuid = uuid;
         this.name = name;
@@ -180,7 +183,8 @@ public class User {
                 isNightvisionEnabled(),
                 getChatChannel(),
                 isTipsEnabled(),
-                getOfflineMessages()
+                getOfflineMessages(),
+                focusEnabled
         );
     }
 
@@ -194,6 +198,12 @@ public class User {
             //Reset last logged time.
             last_time_log = Time.currentTime();
         }
+    }
+
+    public void setFocusEnabled(boolean focusEnabled) {
+        this.focusEnabled = focusEnabled;
+        // Update Tab for this player.
+        Proxy.getInstance().getTabManager().updatePlayerByUuid(uuid);
     }
 
     public void clearJoinEvent() {

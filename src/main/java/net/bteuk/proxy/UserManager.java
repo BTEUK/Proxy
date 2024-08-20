@@ -4,6 +4,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import lombok.Getter;
 import net.bteuk.network.lib.dto.ChatMessage;
 import net.bteuk.network.lib.dto.DirectMessage;
+import net.bteuk.network.lib.dto.FocusEvent;
 import net.bteuk.network.lib.dto.MuteEvent;
 import net.bteuk.network.lib.dto.OnlineUser;
 import net.bteuk.network.lib.dto.OnlineUserAdd;
@@ -107,7 +108,7 @@ public class UserManager {
                 // TODO: Handle exception
             }
         } else {
-            Proxy.getInstance().getLogger().warn(String.format("Disconnect event for %s cancelled due to switching server.", disconnect.getUuid()));
+            Proxy.getInstance().getLogger().info(String.format("Disconnect event for %s cancelled due to switching server.", disconnect.getUuid()));
         }
     }
 
@@ -147,7 +148,7 @@ public class UserManager {
                 // save disconnect info.
                 saveUserInfoFromDisconnect(user, switchServerEvent.getUserDisconnect());
                 user.getPlayer().createConnectionRequest(server).fireAndForget();
-                Proxy.getInstance().getLogger().warn(String.format("Connecting player to %s.", server.getServerInfo().getName()));
+                Proxy.getInstance().getLogger().info(String.format("Connecting player to %s.", server.getServerInfo().getName()));
             }, () -> {
                 // Send message that the server is not online.
                 DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), user.getUuid(), "server",
@@ -220,6 +221,13 @@ public class UserManager {
             ChatHandler.handle(new OnlineUsersReply(onlineUsers));
         } catch (IOException e) {
             // TODO Error handling.
+        }
+    }
+
+    public void handleFocusEvent(FocusEvent focusEvent) {
+        User user = getUserByUuid(focusEvent.getUuid());
+        if (user != null) {
+            user.setFocusEnabled(focusEvent.isEnable());
         }
     }
 

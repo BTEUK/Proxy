@@ -3,6 +3,7 @@ package net.bteuk.proxy.eventing.jda;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.bteuk.network.lib.dto.ChatMessage;
+import net.bteuk.network.lib.enums.ChatChannels;
 import net.bteuk.network.lib.utils.ChatUtils;
 import net.bteuk.proxy.Proxy;
 import net.bteuk.proxy.chat.ChatManager;
@@ -20,6 +21,8 @@ import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+
+import static net.bteuk.proxy.utils.Constants.DISCORD_SENDER;
 
 public class DiscordChatListener extends ListenerAdapter {
 
@@ -67,15 +70,15 @@ public class DiscordChatListener extends ListenerAdapter {
                         .append(SEPARATOR)
                         .append(ChatUtils.line(event.getMessage().getContentRaw()));
 
-                String channel = "global";
+                ChatChannels channel = ChatChannels.GLOBAL;
 
                 if (event.getChannel().getId().equals(staff_channel)) {
                     // Add the prefix for staff chat.
                     discordMessage = STAFF_PREFIX.append(discordMessage);
-                    channel = "staff";
+                    channel = ChatChannels.STAFF;
                 }
 
-                ChatMessage chatMessage = new ChatMessage(channel, "discord", discordMessage);
+                ChatMessage chatMessage = new ChatMessage(channel.getChannelName(), DISCORD_SENDER, discordMessage);
                 Proxy.getInstance().getChatManager().handle(chatMessage);
 
             } catch (IOException e) {

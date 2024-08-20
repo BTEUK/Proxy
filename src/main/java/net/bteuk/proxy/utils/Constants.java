@@ -11,4 +11,6 @@ public class Constants {
 
     public static final String SERVER_SENDER = "server";
 
+    public static final String DISCORD_SENDER = "discord";
+
 }
