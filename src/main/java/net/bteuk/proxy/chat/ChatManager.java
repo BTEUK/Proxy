@@ -24,9 +24,9 @@ public class ChatManager {
 
     private final UserManager userManager;
 
-    private final List<String> SERVER_USERS = List.of(new String[]{SERVER_SENDER, DISCORD_SENDER});
+    private static final List<String> SERVER_USERS = List.of(new String[]{SERVER_SENDER, DISCORD_SENDER});
 
-    private final String FOCUS_ENABLED_PRESET = "%s is in focus mode, unable to send message.";
+    private static final String FOCUS_ENABLED_PRESET = "%s is in focus mode, unable to send message.";
 
     public ChatManager(UserManager userManager) {
         this.userManager = userManager;
@@ -81,8 +81,9 @@ public class ChatManager {
         // If the sender is muted for the recipient, don't send the message.
         if (!userManager.isMutedForUser(directMessage.getRecipient(), directMessage.getSender())) {
             User user = userManager.getUserByUuid(directMessage.getRecipient());
-            if (userManager.getUserByUuid(directMessage.getRecipient()) != null) {
-                if (!user.isFocusEnabled() || SERVER_USERS.contains(directMessage.getSender())) {
+            if (user != null) {
+                // Block the message is the player is in focus mode and the server is not the server. (Discord should also be blocked)
+                if (!user.isFocusEnabled() || directMessage.getSender().equals(SERVER_SENDER)) {
                     ChatHandler.handle(directMessage);
                 }
             } else if (directMessage.isOffline()) {
