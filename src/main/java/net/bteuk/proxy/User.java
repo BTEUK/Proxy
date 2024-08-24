@@ -1,8 +1,12 @@
 package net.bteuk.proxy;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.api.scheduler.TaskStatus;
+import com.velocitypowered.api.util.GameProfile;
 import lombok.Getter;
 import lombok.Setter;
 import net.bteuk.network.lib.dto.UserConnectReply;
@@ -12,10 +16,15 @@ import net.bteuk.proxy.utils.SwitchServer;
 import net.bteuk.proxy.utils.Time;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -238,6 +247,20 @@ public class User {
         globalSQL.update("UPDATE player_data SET chat_channel='" + channel + "' WHERE uuid='" + uuid + "';");
     }
 
+    public void setName(String name) {
+        // Check if the name is not in use with another user, else correct that.
+        String uuidForName = globalSQL.getString("SELECT uuid FROM player_data WHERE name='" + name + "';");
+        if (uuidForName != null && !StringUtils.equals(uuid, uuidForName)) {
+            // Another user has this username, fix that.
+            // Get the new name asynchronously.
+            updateNameAsync(uuidForName);
+            globalSQL.update("UPDATE player_data SET name='" + name + "' WHERE uuid='" + uuid + "';");
+        } else if (uuidForName == null && !newUser) {
+            // No user exists with this name, set the name.
+            globalSQL.update("UPDATE player_data SET name='" + name + "' WHERE uuid='" + uuid + "';");
+        }
+    }
+
     private String getChatChannel() {
         return globalSQL.getString("SELECT chat_channel FROM player_data WHERE uuid='" + uuid + "';");
     }
@@ -257,5 +280,52 @@ public class User {
         // Delete the messages.
         globalSQL.update("DELETE FROM messages WHERE recipient='" + uuid + "'");
         return components;
+    }
+
+    private void updateNameAsync(String uuid) {
+        Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), () -> {
+            String stringUrl = "https://api.mojang.com/user/profiles/"+uuid.replace("-", "")+"/names";
+            try {
+                URL url = new URL(stringUrl);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.connect();
+
+                //Getting the response code
+                int responsecode = connection.getResponseCode();
+
+                if (responsecode != 200) {
+                    throw new RuntimeException("HttpResponseCode: " + responsecode);
+                } else {
+                    JsonNode jsonArrayNode = getJsonNodeFromUrl(url);
+
+                    // Get last node.
+                    JsonNode lastNode = jsonArrayNode.get(jsonArrayNode.size() - 1);
+                    JsonNode nameNode = lastNode.get("name");
+                    String name = nameNode.asText();
+
+                    globalSQL.update("UPDATE player_data SET name='" + name + "' WHERE uuid='" + uuid + "';");
+                }
+
+            } catch (IOException  e) {
+                Proxy.getInstance().getLogger().warn("Error occurred while fetching username for " + uuid + ": " + e.getMessage());
+            }
+        }).schedule();
+    }
+
+    private static JsonNode getJsonNodeFromUrl(URL url) throws IOException {
+        StringBuilder inline = new StringBuilder();
+        Scanner scanner = new Scanner(url.openStream());
+
+        //Write all the JSON data into a string using a scanner
+        while (scanner.hasNext()) {
+            inline.append(scanner.nextLine());
+        }
+
+        //Close the scanner
+        scanner.close();
+
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readTree(inline.toString());
     }
 }

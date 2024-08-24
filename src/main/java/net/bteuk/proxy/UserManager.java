@@ -283,6 +283,10 @@ public class UserManager {
             }
         }
 
+        // Make sure the username is correct.
+        // It is possible that the name is used by another user.
+        user.setName(request.getName());
+
         // Set the server.
         user.setServer(request.getServer());
 
