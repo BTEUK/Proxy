@@ -265,7 +265,7 @@ public class TabManager {
                 name = name.decorate(TextDecoration.ITALIC);
             }
             if (userToAdd.isFocusEnabled()) {
-                name = name.decorate(TextDecoration.OBFUSCATED);
+                name = name.decorate(TextDecoration.STRIKETHROUGH);
             }
         }
 

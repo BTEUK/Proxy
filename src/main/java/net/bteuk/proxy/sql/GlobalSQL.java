@@ -18,10 +18,11 @@ public class GlobalSQL extends AbstractSQL {
         try (
                 Connection conn = conn();
                 PreparedStatement statement = conn.prepareStatement(
-                        "INSERT INTO player_data(uuid,name,last_online,player_skin) VALUES('" +
+                        "INSERT INTO player_data(uuid,name,last_online,last_submit,player_skin) VALUES('" +
                                 uuid + "','" +
                                 name + "'," +
-                                Time.currentTime() + ",'" +
+                                Time.currentTime() + "," +
+                                0 + ",'" +
                                 playerSkin + "');"
                 )
         ) {

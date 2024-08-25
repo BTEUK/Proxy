@@ -252,7 +252,7 @@ public class User {
         String uuidForName = globalSQL.getString("SELECT uuid FROM player_data WHERE name='" + name + "';");
         if (uuidForName != null && !StringUtils.equals(uuid, uuidForName)) {
             // Another user has this username, fix that.
-            // Get the new name asynchronously.
+            // Update the new name asynchronously.
             updateNameAsync(uuidForName);
             globalSQL.update("UPDATE player_data SET name='" + name + "' WHERE uuid='" + uuid + "';");
         } else if (uuidForName == null && !newUser) {
@@ -284,7 +284,7 @@ public class User {
 
     private void updateNameAsync(String uuid) {
         Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), () -> {
-            String stringUrl = "https://api.mojang.com/user/profiles/"+uuid.replace("-", "")+"/names";
+            String stringUrl = "https://sessionserver.mojang.com/session/minecraft/profile/"+uuid.replace("-", "");
             try {
                 URL url = new URL(stringUrl);
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -295,13 +295,12 @@ public class User {
                 int responsecode = connection.getResponseCode();
 
                 if (responsecode != 200) {
-                    throw new RuntimeException("HttpResponseCode: " + responsecode);
+                    Proxy.getInstance().getLogger().error(String.format("Unable to fetch username for %s, please update the name manually.", uuid));
+                    Proxy.getInstance().getLogger().warn(String.format("Setting the default name 'x' for user %s.", uuid));
+                    globalSQL.update("UPDATE player_data SET name='x' WHERE uuid='" + uuid + "';");
                 } else {
-                    JsonNode jsonArrayNode = getJsonNodeFromUrl(url);
-
-                    // Get last node.
-                    JsonNode lastNode = jsonArrayNode.get(jsonArrayNode.size() - 1);
-                    JsonNode nameNode = lastNode.get("name");
+                    JsonNode jsonNode = getJsonNodeFromUrl(url);
+                    JsonNode nameNode = jsonNode.get("name");
                     String name = nameNode.asText();
 
                     globalSQL.update("UPDATE player_data SET name='" + name + "' WHERE uuid='" + uuid + "';");

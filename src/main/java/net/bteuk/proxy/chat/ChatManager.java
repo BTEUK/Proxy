@@ -64,7 +64,7 @@ public class ChatManager {
                 return;
             }
             // Send message to both the send and recipient.
-            sendDirectMessage(new DirectMessage(GLOBAL.getChannelName(), directMessage.getSender(), directMessage.getRecipient(), directMessage.getComponent(), false));
+            sendDirectMessage(new DirectMessage(GLOBAL.getChannelName(), directMessage.getRecipient(), directMessage.getSender(), directMessage.getComponent(), false));
             sendDirectMessage(new DirectMessage(GLOBAL.getChannelName(), directMessage.getSender(), directMessage.getSender(), directMessage.getComponent(), false));
             return;
         }
@@ -81,7 +81,7 @@ public class ChatManager {
         // If the sender is muted for the recipient, don't send the message.
         if (!userManager.isMutedForUser(directMessage.getRecipient(), directMessage.getSender())) {
             User user = userManager.getUserByUuid(directMessage.getRecipient());
-            if (user != null) {
+            if (user != null && user.isOnline()) {
                 // Block the message is the player is in focus mode and the server is not the server. (Discord should also be blocked)
                 if (!user.isFocusEnabled() || directMessage.getSender().equals(SERVER_SENDER)) {
                     ChatHandler.handle(directMessage);

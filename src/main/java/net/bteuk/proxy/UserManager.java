@@ -186,8 +186,6 @@ public class UserManager {
             // Prevent from muting yourself.
             if (muteEvent.isMute() && user == userToMute) {
                 throw new ErrorMessage(ChatUtils.error("You can't mute yourself, just stop sending messages."));
-            } else if (muteEvent.isMute() && user.isMuted(userToMute)) {
-                throw new ErrorMessage(ChatUtils.error("%s is already muted.", userToMute.getName()));
             } else if (!muteEvent.isMute() && !user.isMuted(userToMute)) {
                 throw new ErrorMessage(ChatUtils.error("%s is not muted.", userToMute.getName()));
             }
