@@ -1,12 +1,14 @@
 package net.bteuk.proxy.sql;
 
-import net.bteuk.network.lib.dto.UserConnectRequest;
 import net.bteuk.proxy.utils.Time;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GlobalSQL extends AbstractSQL {
     public GlobalSQL(BasicDataSource datasource) {
@@ -34,6 +36,45 @@ public class GlobalSQL extends AbstractSQL {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public boolean insertMessage(String recipient, String message) {
+        try (
+                Connection conn = conn();
+                PreparedStatement statement = conn.prepareStatement(
+                        "INSERT INTO messages(recipient,message) VALUES(?,?);"
+                )
+        ) {
+            statement.setString(1, recipient);
+            statement.setString(2, message);
+
+            statement.executeUpdate();
+            return true;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public List<String> getOfflineMessages(String uuid) {
+        List<String> messages = new ArrayList<>();
+        try (
+                Connection conn = conn();
+                PreparedStatement statement = conn.prepareStatement(
+                        "SELECT message FROM messages WHERE recipient=?;"
+                )
+        ) {
+            statement.setString(1, uuid);
+            ResultSet results = statement.executeQuery();
+
+            while (results.next()) {
+                messages.add(results.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return messages;
     }
 }
 

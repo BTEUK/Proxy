@@ -126,7 +126,7 @@ public class DatabaseUpdates {
         globalSQL.update("ALTER TABLE messages DROP CONSTRAINT fk_messages_1;");
         globalSQL.update("ALTER TABLE messages DROP PRIMARY KEY;");
         globalSQL.update("ALTER TABLE messages ADD id INT NOT NULL AUTO_INCREMENT PRIMARY KEY;");
-        globalSQL.update("ALTER TABLE messages MODIFY message BLOB NOT NULL;");
+        globalSQL.update("ALTER TABLE messages MODIFY message TEXT NOT NULL;");
         globalSQL.update("ALTER TABLE messages ADD CONSTRAINT fk_messages_1 FOREIGN KEY (recipient) REFERENCES player_data(uuid);");
 
         // Remove staff_chat column in player_data.

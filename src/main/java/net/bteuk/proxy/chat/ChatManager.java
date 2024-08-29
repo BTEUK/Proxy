@@ -88,9 +88,7 @@ public class ChatManager {
                 }
             } else if (directMessage.isOffline()) {
                 // Send offline message.
-                Proxy.getInstance().getGlobalSQL().update("INSERT INTO messages(recipient,message) VALUES(" +
-                        directMessage.getRecipient() + "," +
-                        GsonComponentSerializer.gson().serialize(directMessage.getComponent()) + ");");
+                Proxy.getInstance().getGlobalSQL().insertMessage(directMessage.getRecipient(), GsonComponentSerializer.gson().serialize(directMessage.getComponent()));
             }
         }
     }

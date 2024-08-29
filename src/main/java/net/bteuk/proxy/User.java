@@ -1,12 +1,10 @@
 package net.bteuk.proxy;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.scheduler.ScheduledTask;
 import com.velocitypowered.api.scheduler.TaskStatus;
-import com.velocitypowered.api.util.GameProfile;
 import lombok.Getter;
 import lombok.Setter;
 import net.bteuk.network.lib.dto.UserConnectReply;
@@ -105,13 +103,13 @@ public class User {
      * This allows their local settings to remain stored in case they reconnect.
      */
     public void disconnect(Runnable runnable) {
-        online = false;
         long time = Time.currentTime();
 
         //Set last_online time in playerdata.
         Proxy.getInstance().getGlobalSQL().update("UPDATE player_data SET last_online=" + time + " WHERE UUID='" + uuid + "';");
 
         Analytics.save(this, Time.getDate(time), time);
+        online = false;
         // Run a delayed task to remove the user.
         disconnectTask = Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), runnable)
                 .delay(5L, TimeUnit.MINUTES)
@@ -198,7 +196,6 @@ public class User {
     }
 
     public void setAfk(boolean afk) {
-        this.afk = afk;
         if (afk) {
             long time = Time.currentTime();
             //Update playtime, and pause it.
@@ -207,6 +204,7 @@ public class User {
             //Reset last logged time.
             last_time_log = Time.currentTime();
         }
+        this.afk = afk;
     }
 
     public void setFocusEnabled(boolean focusEnabled) {
@@ -275,7 +273,7 @@ public class User {
 
     private List<Component> getOfflineMessages() {
         List<Component> components = new ArrayList<>();
-        List<String> messages = globalSQL.getStringList("SELECT message FROM messages WHERE recipient='" + uuid + "';");
+        List<String> messages = globalSQL.getOfflineMessages(uuid);
         messages.forEach(message -> components.add(GsonComponentSerializer.gson().deserialize(message)));
         // Delete the messages.
         globalSQL.update("DELETE FROM messages WHERE recipient='" + uuid + "'");

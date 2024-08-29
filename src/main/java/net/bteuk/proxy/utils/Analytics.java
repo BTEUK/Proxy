@@ -34,20 +34,21 @@ public class Analytics {
     }
 
     //Saves the online-time of player from previous save till now.
-    public static void save(User u, String date, long time) {
+    public static void save(User user, String date, long time) {
+        if (user.isOnline() && !user.isAfk()) {
+            //Get time difference from previous save and set previous save to current time.
+            long time_diff = time - user.last_time_log;
+            user.last_time_log = time;
 
-        //Get time difference from previous save and set previous save to current time.
-        long time_diff = time - u.last_time_log;
-        u.last_time_log = time;
+            //Add time difference to active session.
+            user.active_time += time_diff;
 
-        //Add time difference to active session.
-        u.active_time += time_diff;
-
-        //Add time to database, if date doesn't exist, create it.
-        if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT uuid FROM statistics WHERE uuid='" + u.getUuid() + "' AND on_date='" + date + "';")) {
-            Proxy.getInstance().getGlobalSQL().update("UPDATE statistics SET playtime=playtime+" + time_diff + " WHERE uuid='" + u.getUuid() + "' AND on_date='" + date + "';");
-        } else {
-            Proxy.getInstance().getGlobalSQL().update("INSERT INTO statistics(uuid,on_date,playtime) VALUES('" + u.getUuid() + "','" + date + "'," + time_diff + ");");
+            //Add time to database, if date doesn't exist, create it.
+            if (Proxy.getInstance().getGlobalSQL().hasRow("SELECT uuid FROM statistics WHERE uuid='" + user.getUuid() + "' AND on_date='" + date + "';")) {
+                Proxy.getInstance().getGlobalSQL().update("UPDATE statistics SET playtime=playtime+" + time_diff + " WHERE uuid='" + user.getUuid() + "' AND on_date='" + date + "';");
+            } else {
+                Proxy.getInstance().getGlobalSQL().update("INSERT INTO statistics(uuid,on_date,playtime) VALUES('" + user.getUuid() + "','" + date + "'," + time_diff + ");");
+            }
         }
     }
 
@@ -63,10 +64,7 @@ public class Analytics {
         //Iterate through online users.
         //If player is afk, skip.
         for (User user : Proxy.getInstance().getUserManager().getUsers()) {
-            if (user.isOnline() && !user.isAfk()) {
-                save(user, date, time);
-            }
+            save(user, date, time);
         }
     }
-
 }
