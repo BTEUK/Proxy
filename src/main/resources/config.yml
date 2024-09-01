@@ -38,9 +38,6 @@ custom_messages:
 #Message ID in discord.
 message:
   reviewer: 1234
-#Reviewer role id.
-role:
-  reviewer: 1234
 
 #Role syncing will give all users with any of the 'has' roles the 'give' roles.
 #Roles must be the role id.

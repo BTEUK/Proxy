@@ -50,9 +50,6 @@ public class Discord {
     private TextChannel staff;
     private TextChannel supportInfo;
     private TextChannel supportChat;
-
-    private final String reviewer;
-
     private List<Long> hasRoles;
     private List<Long> giveRoles;
 
@@ -69,8 +66,6 @@ public class Discord {
         String support_info = Proxy.getInstance().getConfig().getString("chat.support.info");
         String support_chat = Proxy.getInstance().getConfig().getString("chat.support.chat");
         String staff_channel = Proxy.getInstance().getConfig().getString("chat.staff");
-
-        reviewer = Proxy.getInstance().getConfig().getString("role.reviewer");
 
         //Create JDABuilder.
         JDABuilder builder = JDABuilder.createDefault(token);
@@ -160,7 +155,7 @@ public class Discord {
         }
 
         // Get the user, cancel if not exists.
-        long userId = Proxy.getInstance().getGlobalSQL().getLong("SELECT discord_id FROM discord WHERE uuid='" + role.getUuid() + "';");
+        long userId = getRoleID(role.getRole());
         if (userId == 0) {
             return;
         }
@@ -454,7 +449,7 @@ public class Discord {
     }
 
     public String getReviewerRoleID() {
-        return reviewer;
+        return String.valueOf(getRoleID("reviewer"));
     }
 
     private void enableRoleSyncing() {
@@ -579,5 +574,9 @@ public class Discord {
             message = message.substring(0, 1997) + "...";
         }
         return message;
+    }
+
+    private long getRoleID(String role) {
+        return Proxy.getInstance().getConfig().getLong("discord_roles." + role);
     }
 }
