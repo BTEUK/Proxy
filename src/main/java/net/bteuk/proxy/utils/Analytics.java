@@ -11,9 +11,9 @@ import java.util.concurrent.TimeUnit;
  * The reason for gathering this information is, so we can tell what the behaviour of a player is like
  * and tailor the experience of the server to better accommodate their style of play.
  */
-public class Analytics {
+public final class Analytics {
 
-    public Analytics(Proxy instance) {
+    public static void enableAnalytics(Proxy instance) {
         instance.getServer().getScheduler().buildTask(instance, Analytics::saveAll)
                 .repeat(1L, TimeUnit.MINUTES)
                 .schedule();

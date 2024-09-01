@@ -39,15 +39,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.awt.Color.RED;
+import static net.bteuk.proxy.utils.Analytics.enableAnalytics;
 import static net.bteuk.proxy.utils.Constants.LEAVE_MESSAGE;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.7.2",
+@Plugin(id = "proxy", name = "Proxy", version = "1.8.0",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
 
@@ -173,7 +173,7 @@ public class Proxy {
         new CommandListener(this);
         new ServerConnectListener(this, lastServer);
 
-        new Analytics(this);
+        enableAnalytics(this);
 
         logger.info("Loaded Proxy");
 
@@ -367,21 +367,5 @@ public class Proxy {
         } else {
             return dataFolder;
         }
-    }
-
-    public String getAvatarUrl(String uuid, String texture) {
-        return constructAvatarUrl(uuid, texture);
-    }
-
-    private String constructAvatarUrl(String uuid, String texture) {
-
-        String defaultUrl = "https://crafatar.com/avatars/{uuid-nodashes}.png?size={size}&overlay#{texture}";
-
-        defaultUrl = defaultUrl
-                .replace("{texture}", texture != null ? texture : "")
-                .replace("{uuid-nodashes}", Objects.requireNonNull(uuid).replace("-", ""))
-                .replace("{size}", "128");
-
-        return defaultUrl;
     }
 }
