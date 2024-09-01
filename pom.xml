@@ -6,7 +6,7 @@
 
     <groupId>me.bteuk</groupId>
     <artifactId>Proxy</artifactId>
-    <version>1.7.1</version>
+    <version>1.8.0</version>
 
     <name>Proxy</name>
 
@@ -52,6 +52,10 @@
 
     <repositories>
         <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+        <repository>
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
@@ -65,14 +69,25 @@
         <dependency>
             <groupId>com.velocitypowered</groupId>
             <artifactId>velocity-api</artifactId>
-            <version>3.1.1</version>
+            <version>3.3.0-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.32</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.BTEUK</groupId>
+            <artifactId>NetworkLib</artifactId>
+            <version>8ceed1741b</version>
+        </dependency>
+
         <!-- jda -->
         <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
-            <version>5.0.0-beta.10</version>
+            <version>5.0.0-beta.23</version>
             <exclusions>
                 <exclusion>
                     <groupId>club.minnced</groupId>
@@ -115,7 +130,7 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>8.0.32</version>
+            <version>8.4.0</version>
         </dependency>
         <!--Test dependencies-->
         <dependency>
