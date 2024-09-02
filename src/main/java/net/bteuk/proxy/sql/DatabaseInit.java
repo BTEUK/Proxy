@@ -20,7 +20,7 @@ public class DatabaseInit {
 
         BasicDataSource dataSource = new BasicDataSource();
 
-        dataSource.setUrl("jdbc:mysql://" + host + ":" + port + "/" + database + "?&useSSL=false&");
+        dataSource.setUrl("jdbc:mysql://" + host + ":" + port + "/" + database + "?&allowPublicKeyRetrieval=true&useSSL=false&");
         dataSource.setUsername(username);
         dataSource.setPassword(password);
 

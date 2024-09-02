@@ -52,6 +52,13 @@ public class TabManager {
     }
 
     /**
+     * Send an add team event for all players.
+     */
+    public void sendAddTeam() {
+        tabPlayers.forEach(this::sendAddTeam);
+    }
+
+    /**
      * Add the new user to the tablist.
      * Send the new player to all other users, excluding themselves.
      *
