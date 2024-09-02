@@ -30,7 +30,7 @@ public class ProxySocketHandler implements SocketHandler {
     }
 
     @Override
-    public AbstractTransferObject handle(AbstractTransferObject abstractTransferObject) {
+    public synchronized AbstractTransferObject handle(AbstractTransferObject abstractTransferObject) {
         // Handle the different objects.
         if (abstractTransferObject instanceof ChatMessage chatMessage) {
             try {

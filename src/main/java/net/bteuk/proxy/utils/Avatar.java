@@ -2,8 +2,6 @@ package net.bteuk.proxy.utils;
 
 import net.bteuk.proxy.Proxy;
 
-import java.util.Objects;
-
 public class Avatar {
 
     public static String getAvatarUrl(String uuid, String texture) {
@@ -12,8 +10,7 @@ public class Avatar {
 
     private static String constructAvatarUrl(String uuid, String texture) {
 
-        String url = "https://crafatar.com/avatars/{uuid}.png?size={size}&overlay#{texture}";
-
+        String url = "https://crafthead.net/helm/{uuid}/{size}#{texture}";
         url = url
                 .replace("{texture}", texture != null ? texture : "")
                 .replace("{uuid}", uuid != null ? uuid.replace("-", "") : "")

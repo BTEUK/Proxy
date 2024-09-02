@@ -10,8 +10,10 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import lombok.Getter;
+import net.bteuk.network.lib.dto.OnlineUserRemove;
 import net.bteuk.network.lib.socket.InputSocket;
 import net.bteuk.network.lib.socket.SocketHandler;
+import net.bteuk.proxy.chat.ChatHandler;
 import net.bteuk.proxy.chat.ChatManager;
 import net.bteuk.proxy.config.Config;
 import net.bteuk.proxy.eventing.listeners.CommandListener;
@@ -47,7 +49,7 @@ import static java.awt.Color.RED;
 import static net.bteuk.proxy.utils.Analytics.enableAnalytics;
 import static net.bteuk.proxy.utils.Constants.LEAVE_MESSAGE;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.8.0",
+@Plugin(id = "proxy", name = "Proxy", version = "1.8.1",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
 
@@ -217,6 +219,15 @@ public class Proxy {
 
         // Remove the user instance.
         userManager.removeAllUsers();
+
+        // Tell the server to remove all online users.
+        userManager.getOnlineUsers().forEach(user -> {
+            try {
+                ChatHandler.handle(new OnlineUserRemove(user.getUuid()));
+            } catch (IOException e) {
+                // Ignored
+            }
+        });
 
         // Clear JDA listeners
         if (discord.getJda() != null) {

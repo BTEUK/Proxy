@@ -71,7 +71,6 @@ public class UserManager {
         try {
             ChatHandler.handle(reply, request.getServer());
             OnlineUser onlineUser = new OnlineUser(user.getUuid(), user.getName(), user.getServer());
-            onlineUsers.remove(onlineUser);
             onlineUsers.add(onlineUser);
             ChatHandler.handle(new OnlineUserAdd(onlineUser));
         } catch (IOException | ServerNotFoundException e) {
@@ -86,6 +85,12 @@ public class UserManager {
 
         if (user == null) {
             Proxy.getInstance().getLogger().warn(String.format("Disconnect event for %s was started, but no User exists by that uuid.", disconnect.getUuid()));
+            return;
+        }
+
+        if (user.isBlockNextDisconnect()) {
+            Proxy.getInstance().getLogger().warn("User has already reconnected, cancelling disconnect.");
+            user.setBlockNextDisconnect(false);
             return;
         }
 
@@ -217,6 +222,7 @@ public class UserManager {
     public void handleOnlineUsersRequest() {
         try {
             ChatHandler.handle(new OnlineUsersReply(onlineUsers));
+            Proxy.getInstance().getTabManager().sendAddTeam();
         } catch (IOException e) {
             // TODO Error handling.
         }
@@ -251,6 +257,10 @@ public class UserManager {
                 user.setSwitchServer(null);
 
             } else {
+                // If the user is still online, quickly cancel the disconnect event.
+                if (user.isOnline()) {
+                    user.setBlockNextDisconnect(true);
+                }
                 // Cancel disconnect task.
                 user.reconnect();
 

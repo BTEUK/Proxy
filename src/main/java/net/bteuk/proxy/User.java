@@ -88,6 +88,10 @@ public class User {
     @Getter
     private boolean focusEnabled;
 
+    @Getter
+    @Setter
+    private boolean blockNextDisconnect = false;
+
     public User(String uuid, String name, String playerSkin, Set<String> channels) {
         this.uuid = uuid;
         this.name = name;
