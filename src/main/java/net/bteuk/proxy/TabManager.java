@@ -4,15 +4,14 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.player.TabListEntry;
 import com.velocitypowered.api.util.GameProfile;
+import lombok.Getter;
 import net.bteuk.network.lib.dto.AddTeamEvent;
 import net.bteuk.network.lib.dto.TabPlayer;
 import net.bteuk.network.lib.utils.ChatUtils;
-import net.bteuk.proxy.chat.ChatHandler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -29,6 +28,7 @@ public class TabManager {
 
     private final ProxyServer server;
 
+    @Getter
     private final Set<TabPlayer> tabPlayers = new HashSet<>();
 
     private static final Component HEADER = Component.text("BTE ", NamedTextColor.AQUA, TextDecoration.BOLD)
@@ -157,11 +157,7 @@ public class TabManager {
     }
 
     public void sendAddTeam(TabPlayer tabPlayer) {
-        try {
-            ChatHandler.handle(new AddTeamEvent(tabPlayer.getName(), tabPlayer.getPrimaryGroup()));
-        } catch (IOException e) {
-            // TODO: Exception handling.
-        }
+        Proxy.getInstance().getChatHandler().handle(new AddTeamEvent(tabPlayer.getName(), tabPlayer.getPrimaryGroup()));
     }
 
     /**

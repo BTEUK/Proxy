@@ -152,13 +152,13 @@ public class Discord {
         }
 
         // Get the user, cancel if not exists.
-        long userId = getRoleID(role.getRole());
+        long userId = Proxy.getInstance().getGlobalSQL().getLong("SELECT discord_id FROM discord WHERE uuid='" + role.getUuid() + "';");
         if (userId == 0) {
             return;
         }
 
         // Get the role, cancel if not exists.
-        long roleId = Proxy.getInstance().getConfig().getLong("discord_roles." + role.getRole());
+        long roleId = getRoleID(role.getRole());
         if (roleId == 0) {
             return;
         }
@@ -280,11 +280,7 @@ public class Discord {
         DiscordLinking discordLinking = new DiscordLinking();
         discordLinking.setDiscordId(userId);
         discordLinking.setUnlink(true);
-        try {
-            ChatHandler.handle(discordLinking);
-        } catch (IOException e) {
-            // Ignored
-        }
+        Proxy.getInstance().getChatHandler().handle(discordLinking);
 
     }
 

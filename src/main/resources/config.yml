@@ -25,7 +25,23 @@ discord_roles:
   applicant: 955520858577850458
 
 #Chat Socket Port
-socket_port: 30589
+socket:
+  input:
+    port: 30589
+  output:
+    - server:
+      IP:
+      port:
+    - server:
+      IP:
+      port:
+    - server:
+      IP:
+      port:
+    - server:
+      IP:
+      port:
+
 
 #Network messages
 #%player% is a placeholder for the player name.
@@ -42,8 +58,8 @@ message:
 #Role syncing will give all users with any of the 'has' roles the 'give' roles.
 #Roles must be the role id.
 role_syncing:
-  has: []
-  give: []
+  has: [ ]
+  give: [ ]
 
 
 #Database login

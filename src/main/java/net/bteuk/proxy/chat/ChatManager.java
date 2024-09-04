@@ -10,7 +10,6 @@ import net.bteuk.proxy.utils.Analytics;
 import net.bteuk.proxy.utils.Time;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
-import java.io.IOException;
 import java.util.List;
 
 import static net.bteuk.network.lib.enums.ChatChannels.GLOBAL;
@@ -39,7 +38,7 @@ public class ChatManager {
      *
      * @param chatMessage the chat message
      */
-    public void handle(ChatMessage chatMessage) throws IOException {
+    public void handle(ChatMessage chatMessage) {
         // Send a direct message to all players
         for (User user : userManager.getUsers()) {
             sendDirectMessage(new DirectMessage(chatMessage.getChannel(), user.getUuid(), chatMessage.getSender(), chatMessage.getComponent(), false));
@@ -55,7 +54,7 @@ public class ChatManager {
      *
      * @param directMessage the direct message
      */
-    public void handle(DirectMessage directMessage) throws IOException {
+    public void handle(DirectMessage directMessage) {
         // If the message is sent a by a player, and the recipient is in focus mode, block the message and let the sender know.
         if (!SERVER_USERS.contains(directMessage.getSender())) {
             User user = userManager.getUserByUuid(directMessage.getRecipient());
@@ -77,14 +76,14 @@ public class ChatManager {
      *
      * @param directMessage the direct message
      */
-    public void sendDirectMessage(DirectMessage directMessage) throws IOException {
+    public void sendDirectMessage(DirectMessage directMessage) {
         // If the sender is muted for the recipient, don't send the message.
         if (!userManager.isMutedForUser(directMessage.getRecipient(), directMessage.getSender())) {
             User user = userManager.getUserByUuid(directMessage.getRecipient());
             if (user != null && user.isOnline()) {
                 // Block the message is the player is in focus mode and the server is not the server. (Discord should also be blocked)
                 if (!user.isFocusEnabled() || directMessage.getSender().equals(SERVER_SENDER)) {
-                    ChatHandler.handle(directMessage);
+                    Proxy.getInstance().getChatHandler().handle(directMessage);
                 }
             } else if (directMessage.isOffline()) {
                 // Send offline message.

@@ -18,7 +18,6 @@ import net.bteuk.network.lib.dto.UserRemove;
 import net.bteuk.network.lib.dto.UserUpdate;
 import net.bteuk.network.lib.enums.ChatChannels;
 import net.bteuk.network.lib.utils.ChatUtils;
-import net.bteuk.proxy.chat.ChatHandler;
 import net.bteuk.proxy.eventing.listeners.ServerConnectListener;
 import net.bteuk.proxy.exceptions.ErrorMessage;
 import net.bteuk.proxy.exceptions.ServerNotFoundException;
@@ -27,7 +26,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import java.awt.Color;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -69,11 +67,11 @@ public class UserManager {
 
         // Send the reply to the server.
         try {
-            ChatHandler.handle(reply, request.getServer());
+            Proxy.getInstance().getChatHandler().handle(reply, request.getServer());
             OnlineUser onlineUser = new OnlineUser(user.getUuid(), user.getName(), user.getServer());
             onlineUsers.add(onlineUser);
-            ChatHandler.handle(new OnlineUserAdd(onlineUser));
-        } catch (IOException | ServerNotFoundException e) {
+            Proxy.getInstance().getChatHandler().handle(new OnlineUserAdd(onlineUser));
+        } catch (ServerNotFoundException e) {
             // TODO: Handle exception
         }
     }
@@ -105,13 +103,11 @@ public class UserManager {
             user.setChatChannel(disconnect.getChatChannel());
             user.setTeleportEnabled(disconnect.isTeleportEnabled());
 
-            try {
-                Optional<OnlineUser> optionalOnlineUser = onlineUsers.stream().filter(onlineUser -> onlineUser.getUuid().equals(user.getUuid())).findFirst();
-                optionalOnlineUser.ifPresent(onlineUsers::remove);
-                ChatHandler.handle(new OnlineUserRemove(user.getUuid()));
-            } catch (IOException e) {
-                // TODO: Handle exception
-            }
+
+            Optional<OnlineUser> optionalOnlineUser = onlineUsers.stream().filter(onlineUser -> onlineUser.getUuid().equals(user.getUuid())).findFirst();
+            optionalOnlineUser.ifPresent(onlineUsers::remove);
+            Proxy.getInstance().getChatHandler().handle(new OnlineUserRemove(user.getUuid()));
+
         } else {
             Proxy.getInstance().getLogger().info(String.format("Disconnect event for %s cancelled due to switching server.", disconnect.getUuid()));
         }
@@ -159,11 +155,9 @@ public class UserManager {
                 DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), user.getUuid(), "server",
                         ChatUtils.error("The server %s is not available, please contact an admin!", switchServerEvent.getTo_server()),
                         false);
-                try {
-                    ChatHandler.handle(directMessage);
-                } catch (IOException e) {
-                    Proxy.getInstance().getLogger().warn("Unable to send DirectMessage.");
-                }
+
+                Proxy.getInstance().getChatHandler().handle(directMessage);
+
             });
 
         } else {
@@ -212,20 +206,12 @@ public class UserManager {
         }
 
         DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), muteEvent.getUuid(), muteEvent.getUuid(), returnMessage, false);
-        try {
-            Proxy.getInstance().getChatManager().sendDirectMessage(directMessage);
-        } catch (IOException e) {
-            // TODO Error handling.
-        }
+        Proxy.getInstance().getChatManager().sendDirectMessage(directMessage);
     }
 
     public void handleOnlineUsersRequest() {
-        try {
-            ChatHandler.handle(new OnlineUsersReply(onlineUsers));
-            Proxy.getInstance().getTabManager().sendAddTeam();
-        } catch (IOException e) {
-            // TODO Error handling.
-        }
+        Proxy.getInstance().getChatHandler().handle(new OnlineUsersReply(onlineUsers));
+        Proxy.getInstance().getTabManager().sendAddTeam();
     }
 
     public void handleFocusEvent(FocusEvent focusEvent) {
@@ -374,11 +360,7 @@ public class UserManager {
         if (update.getTabPlayer() != null && !update.getTabPlayer().getPrimaryGroup().equals(user.getPrimaryRole())) {
             user.setPrimaryRole(update.getTabPlayer().getPrimaryGroup());
             // Send the user update back to the servers, so they can potentially update the primary role.
-            try {
-                ChatHandler.handle(update);
-            } catch (IOException e) {
-                // TODO: Exception handling.
-            }
+            Proxy.getInstance().getChatHandler().handle(update);
             Proxy.getInstance().getTabManager().updatePlayer(update.getTabPlayer());
         }
     }
@@ -427,48 +409,41 @@ public class UserManager {
         // Remove the user from the list of muted users for all players, if they had this player muted.
         users.forEach(u -> u.unmute(user));
         UserRemove userRemoveEvent = new UserRemove(user.getUuid());
-        try {
-            ChatHandler.handle(userRemoveEvent);
-            if (!shutdown) {
-                Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy, they have been offline for more than 5 minutes", user.getName()));
-            } else {
-                Optional<OnlineUser> optionalOnlineUser = onlineUsers.stream().filter(onlineUser -> onlineUser.getUuid().equals(user.getUuid())).findFirst();
-                optionalOnlineUser.ifPresent(onlineUsers::remove);
-                ChatHandler.handle(new OnlineUserRemove(user.getUuid()));
-                Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy due to shutdown", user.getName()));
-            }
-        } catch (IOException e) {
-            Proxy.getInstance().getLogger().info("Unable to send event to servers.");
+
+        Proxy.getInstance().getChatHandler().handle(userRemoveEvent);
+        if (!shutdown) {
+            Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy, they have been offline for more than 5 minutes", user.getName()));
+        } else {
+            Optional<OnlineUser> optionalOnlineUser = onlineUsers.stream().filter(onlineUser -> onlineUser.getUuid().equals(user.getUuid())).findFirst();
+            optionalOnlineUser.ifPresent(onlineUsers::remove);
+            Proxy.getInstance().getChatHandler().handle(new OnlineUserRemove(user.getUuid()));
+            Proxy.getInstance().getLogger().info(String.format("Removed user %s from the proxy due to shutdown", user.getName()));
         }
     }
 
     private void sendReviewerMessages(String uuid) {
-        try {
-            //Show the number of submitted plots.
-            int plots = Proxy.getInstance().getPlotSQL().getInt("SELECT COUNT(id) FROM plot_data WHERE status='submitted';");
-            if (plots != 0) {
-                Component plotMessage = ChatUtils.success("There " + (plots == 1 ? "is" : "are") + " %s " + (plots == 1 ? "plot" : "plots") + " to review.", String.valueOf(plots));
-                DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
-                ChatHandler.handle(directMessage);
-            }
+        //Show the number of submitted plots.
+        int plots = Proxy.getInstance().getPlotSQL().getInt("SELECT COUNT(id) FROM plot_data WHERE status='submitted';");
+        if (plots != 0) {
+            Component plotMessage = ChatUtils.success("There " + (plots == 1 ? "is" : "are") + " %s " + (plots == 1 ? "plot" : "plots") + " to review.", String.valueOf(plots));
+            DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
+            Proxy.getInstance().getChatHandler().handle(directMessage);
+        }
 
-            //Show the number of submitted regions requests.
-            int regions = Proxy.getInstance().getRegionSQL().getInt("SELECT COUNT(region) FROM region_requests WHERE staff_accept=0;");
-            if (regions != 0) {
-                Component regionMessage = ChatUtils.success("There " + (regions == 1 ? "is" : "are") + " %s region " + (regions == 1 ? "request" : "requests") + " to review.", String.valueOf(regions));
-                DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", regionMessage, false);
-                ChatHandler.handle(directMessage);
-            }
+        //Show the number of submitted regions requests.
+        int regions = Proxy.getInstance().getRegionSQL().getInt("SELECT COUNT(region) FROM region_requests WHERE staff_accept=0;");
+        if (regions != 0) {
+            Component regionMessage = ChatUtils.success("There " + (regions == 1 ? "is" : "are") + " %s region " + (regions == 1 ? "request" : "requests") + " to review.", String.valueOf(regions));
+            DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", regionMessage, false);
+            Proxy.getInstance().getChatHandler().handle(directMessage);
+        }
 
-            //Show the number of submitted navigation requests;
-            int navigation = Proxy.getInstance().getGlobalSQL().getInt("SELECT COUNT(location) FROM location_requests;");
-            if (navigation != 0) {
-                Component navigationMessage = ChatUtils.success("There " + (navigation == 1 ? "is" : "are") + " %s navigation " + (navigation == 1 ? "request" : "requests") + " to review.", String.valueOf(navigation));
-                DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", navigationMessage, false);
-                ChatHandler.handle(directMessage);
-            }
-        } catch (IOException e) {
-            Proxy.getInstance().getLogger().warn("Unable to send the reviewer information due to an exception while sending a DirectMessage.");
+        //Show the number of submitted navigation requests;
+        int navigation = Proxy.getInstance().getGlobalSQL().getInt("SELECT COUNT(location) FROM location_requests;");
+        if (navigation != 0) {
+            Component navigationMessage = ChatUtils.success("There " + (navigation == 1 ? "is" : "are") + " %s navigation " + (navigation == 1 ? "request" : "requests") + " to review.", String.valueOf(navigation));
+            DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", navigationMessage, false);
+            Proxy.getInstance().getChatHandler().handle(directMessage);
         }
     }
 
@@ -491,11 +466,7 @@ public class UserManager {
         // Construct a chat message to send to the servers.
         Component component = Component.text(message.replace("%player%", name), NamedTextColor.YELLOW);
         ChatMessage chatMessage = new ChatMessage(GLOBAL.getChannelName(), SERVER_SENDER, component);
-        try {
-            Proxy.getInstance().getChatManager().handle(chatMessage);
-        } catch (IOException e) {
-            // TODO: Exception handling.
-        }
+        Proxy.getInstance().getChatManager().handle(chatMessage);
     }
 
     private void saveUserInfoFromDisconnect(User user, UserDisconnect disconnect) {

@@ -19,8 +19,6 @@ import net.bteuk.network.lib.socket.SocketHandler;
 import net.bteuk.proxy.Proxy;
 import net.bteuk.proxy.chat.ChatManager;
 
-import java.io.IOException;
-
 public class ProxySocketHandler implements SocketHandler {
 
     private final ChatManager manager;
@@ -33,19 +31,10 @@ public class ProxySocketHandler implements SocketHandler {
     public synchronized AbstractTransferObject handle(AbstractTransferObject abstractTransferObject) {
         // Handle the different objects.
         if (abstractTransferObject instanceof ChatMessage chatMessage) {
-            try {
-                manager.handle(chatMessage);
-                // Send the chat message to discord.
-                Proxy.getInstance().getDiscord().handle(chatMessage);
-            } catch (IOException e) {
-                // Ignored
-            }
+            manager.handle(chatMessage);
+            Proxy.getInstance().getDiscord().handle(chatMessage);
         } else if (abstractTransferObject instanceof DirectMessage directMessage) {
-            try {
-                manager.handle(directMessage);
-            } catch (IOException e) {
-                // Ignored
-            }
+            manager.handle(directMessage);
         } else if (abstractTransferObject instanceof DiscordDirectMessage discordDirectMessage) {
             Proxy.getInstance().getDiscord().handle(discordDirectMessage);
         } else if (abstractTransferObject instanceof DiscordEmbed discordEmbed) {

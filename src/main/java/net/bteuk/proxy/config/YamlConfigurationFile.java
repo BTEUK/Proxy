@@ -7,7 +7,10 @@ import org.yaml.snakeyaml.error.YAMLException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 public class YamlConfigurationFile extends ConfigurationFile {
 
@@ -47,5 +50,23 @@ public class YamlConfigurationFile extends ConfigurationFile {
         } catch (IOException e) {
             Proxy.getInstance().getLogger().warn("Failed to save config.yml");
         }
+    }
+
+    public List<ConfigSocket> getSockets(String path) {
+        List<ConfigSocket> sockets = new ArrayList<>();
+        Object value = getObject(path, null);
+        if (value instanceof List<?> list) {
+            for (Object item : list) {
+                String yamlDumped = yaml.dump(item);
+                HashMap<String, Object> socketValues = yaml.load(yamlDumped);
+                ConfigSocket socket = new ConfigSocket();
+                socket.setServer((String) socketValues.get("server"));
+                socket.setIP((String) socketValues.get("IP"));
+                socket.setPort((Integer) socketValues.get("port"));
+                sockets.add(socket);
+            }
+        }
+        System.out.println(sockets);
+        return sockets;
     }
 }

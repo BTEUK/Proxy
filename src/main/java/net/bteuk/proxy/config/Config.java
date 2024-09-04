@@ -33,4 +33,8 @@ public class Config {
     public long getLong(String path) {
         return config.getLong(path);
     }
+
+    public List<ConfigSocket> getSockets(String path) {
+        return config.getSockets(path);
+    }
 }

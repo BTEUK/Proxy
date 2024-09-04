@@ -1,15 +1,12 @@
 package net.bteuk.proxy.eventing.jda;
 
 import net.bteuk.network.lib.dto.DiscordLinking;
-import net.bteuk.proxy.chat.ChatHandler;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.Proxy;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.apache.commons.lang3.StringUtils;
-
-import java.io.IOException;
 
 public class BotChatListener extends ListenerAdapter {
 
@@ -40,21 +37,16 @@ public class BotChatListener extends ListenerAdapter {
 
             // Check message
             if (event.getMessage().getContentRaw().equalsIgnoreCase(linked.token)) {
+                // Link accounts.
+                DiscordLinking discordLinking = new DiscordLinking();
+                discordLinking.setUuid(linked.uuid);
+                discordLinking.setDiscordId(event.getAuthor().getIdLong());
 
-                try {
-                    // Link accounts.
-                    DiscordLinking discordLinking = new DiscordLinking();
-                    discordLinking.setUuid(linked.uuid);
-                    discordLinking.setDiscordId(event.getAuthor().getIdLong());
+                Proxy.getInstance().getChatHandler().handle(discordLinking);
 
-                    ChatHandler.handle(discordLinking);
+                Proxy.getInstance().getLogger().info(String.format("Linking Discord user of %s to Minecraft uuid %s", event.getAuthor().getName(), linked.uuid));
 
-                    Proxy.getInstance().getLogger().info(String.format("Linking Discord user of %s to Minecraft uuid %s", event.getAuthor().getName(), linked.uuid));
-
-                    l = linked;
-                } catch (IOException e) {
-                    // Ignored
-                }
+                l = linked;
             }
         }
 

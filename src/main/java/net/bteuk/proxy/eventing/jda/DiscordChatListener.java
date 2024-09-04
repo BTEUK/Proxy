@@ -12,8 +12,6 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
-
 import static net.bteuk.proxy.utils.Constants.DISCORD_SENDER;
 
 public class DiscordChatListener extends ListenerAdapter {
@@ -54,28 +52,23 @@ public class DiscordChatListener extends ListenerAdapter {
 
         // Block from all channels except linked.
         if (event.getChannel().getId().equals(chat_channel) || event.getChannel().getId().equals(staff_channel)) {
-            try {
-                TextColor nameColour = TextColor.color(event.getMember().getColorRaw());
+            TextColor nameColour = TextColor.color(event.getMember().getColorRaw());
 
-                Component discordMessage = DISCORD_PREFIX
-                        .append(Component.text(event.getMember().getEffectiveName(), nameColour))
-                        .append(SEPARATOR)
-                        .append(ChatUtils.line(event.getMessage().getContentRaw()));
+            Component discordMessage = DISCORD_PREFIX
+                    .append(Component.text(event.getMember().getEffectiveName(), nameColour))
+                    .append(SEPARATOR)
+                    .append(ChatUtils.line(event.getMessage().getContentRaw()));
 
-                ChatChannels channel = ChatChannels.GLOBAL;
+            ChatChannels channel = ChatChannels.GLOBAL;
 
-                if (event.getChannel().getId().equals(staff_channel)) {
-                    // Add the prefix for staff chat.
-                    discordMessage = STAFF_PREFIX.append(discordMessage);
-                    channel = ChatChannels.STAFF;
-                }
-
-                ChatMessage chatMessage = new ChatMessage(channel.getChannelName(), DISCORD_SENDER, discordMessage);
-                Proxy.getInstance().getChatManager().handle(chatMessage);
-
-            } catch (IOException e) {
-                Proxy.getInstance().getLogger().warn("An error occurred while sending a message received from Discord!");
+            if (event.getChannel().getId().equals(staff_channel)) {
+                // Add the prefix for staff chat.
+                discordMessage = STAFF_PREFIX.append(discordMessage);
+                channel = ChatChannels.STAFF;
             }
+
+            ChatMessage chatMessage = new ChatMessage(channel.getChannelName(), DISCORD_SENDER, discordMessage);
+            Proxy.getInstance().getChatManager().handle(chatMessage);
         }
     }
 }

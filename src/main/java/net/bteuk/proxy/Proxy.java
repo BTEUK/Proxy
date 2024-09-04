@@ -49,7 +49,7 @@ import static java.awt.Color.RED;
 import static net.bteuk.proxy.utils.Analytics.enableAnalytics;
 import static net.bteuk.proxy.utils.Constants.LEAVE_MESSAGE;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.8.1",
+@Plugin(id = "proxy", name = "Proxy", version = "1.8.2",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
 
@@ -91,6 +91,9 @@ public class Proxy {
     @Getter
     private TabManager tabManager;
 
+    @Getter
+    private ChatHandler chatHandler;
+
     @Inject
     public Proxy(ProxyServer server, Logger logger) {
         this.server = server;
@@ -109,13 +112,15 @@ public class Proxy {
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
 
+        chatHandler = new ChatHandler(this, config);
+
         discord = new Discord();
 
         linking = new ArrayList<>();
 
         lastServer = new HashMap<>();
 
-        int socket_port = Proxy.getInstance().getConfig().getInt("socket_port");
+        int inputSocketPort = Proxy.getInstance().getConfig().getInt("socket.input.port");
 
         userManager = new UserManager(server);
 
@@ -124,14 +129,14 @@ public class Proxy {
         tabManager = new TabManager(server);
 
         // Start socket.
-        if (socket_port == 0) {
+        if (inputSocketPort == 0) {
             logger.error("Socket port is not set in config or is set to 0. Please set a valid port!");
         } else {
             // Create the socket handler.
             SocketHandler handler = new ProxySocketHandler(chatManager);
 
             // Create the input socket.
-            inputSocket = new InputSocket(socket_port);
+            inputSocket = new InputSocket(inputSocketPort);
             inputSocket.start(handler);
         }
 
@@ -221,13 +226,7 @@ public class Proxy {
         userManager.removeAllUsers();
 
         // Tell the server to remove all online users.
-        userManager.getOnlineUsers().forEach(user -> {
-            try {
-                ChatHandler.handle(new OnlineUserRemove(user.getUuid()));
-            } catch (IOException e) {
-                // Ignored
-            }
-        });
+        userManager.getOnlineUsers().forEach(user -> Proxy.getInstance().getChatHandler().handle(new OnlineUserRemove(user.getUuid())));
 
         // Clear JDA listeners
         if (discord.getJda() != null) {

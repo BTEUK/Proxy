@@ -1,12 +1,16 @@
 package net.bteuk.proxy.commands;
 
+import net.bteuk.network.lib.dto.OnlineUser;
+import net.bteuk.network.lib.dto.TabPlayer;
 import net.bteuk.proxy.Proxy;
-import net.bteuk.proxy.sql.GlobalSQL;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Optional;
+import java.util.Set;
 
 public class Playerlist extends AbstractCommand {
 
@@ -24,22 +28,25 @@ public class Playerlist extends AbstractCommand {
     public void onCommand(SlashCommandInteractionEvent event) {
 
         String playerListMessage;
-        GlobalSQL globalSQL = Proxy.getInstance().getGlobalSQL();
 
         //Create list of players.
-        ArrayList<String> players = globalSQL.getStringList("SELECT uuid FROM online_users;");
+        Set<OnlineUser> onlineUsers = Proxy.getInstance().getUserManager().getOnlineUsers();
         ArrayList<String> playerFormat = new ArrayList<>();
 
         //Set initial line and default message for empty server.
-        if (players.isEmpty()) {
+        if (onlineUsers.isEmpty()) {
             playerListMessage = "**There are currently no players online!**";
         } else {
-            playerListMessage = "**Online players on UKnet (" + players.size() + ")**";
+            playerListMessage = "**Online players on UKnet (" + onlineUsers.size() + ")**";
 
-            for (String uuid : players) {
+            for (OnlineUser onlineUser : onlineUsers) {
                 //Get primary role and name.
-                playerFormat.add("[" + globalSQL.getString("SELECT primary_role FROM online_users WHERE uuid='" + uuid + "';") + "] " +
-                        globalSQL.getString("SELECT name FROM player_data WHERE uuid='" + uuid + "';"));
+                String primaryRole = "[?]";
+                Optional<TabPlayer> optionalTabPlayer = Proxy.getInstance().getTabManager().getTabPlayers().stream().filter(tabPlayer -> tabPlayer.getUuid().equals(onlineUser.getUuid())).findFirst();
+                if (optionalTabPlayer.isPresent()) {
+                    primaryRole = PlainTextComponentSerializer.plainText().serialize(optionalTabPlayer.get().getPrefix());
+                }
+                playerFormat.add(primaryRole + " " + onlineUser.getName());
             }
 
             playerListMessage += "\n```\n";
