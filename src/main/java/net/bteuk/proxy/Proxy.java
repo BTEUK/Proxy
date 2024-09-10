@@ -49,7 +49,7 @@ import static java.awt.Color.RED;
 import static net.bteuk.proxy.utils.Analytics.enableAnalytics;
 import static net.bteuk.proxy.utils.Constants.LEAVE_MESSAGE;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.8.2",
+@Plugin(id = "proxy", name = "Proxy", version = "1.8.3",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
 
@@ -94,6 +94,9 @@ public class Proxy {
     @Getter
     private ChatHandler chatHandler;
 
+    @Getter
+    private ServerManager serverManager;
+
     @Inject
     public Proxy(ProxyServer server, Logger logger) {
         this.server = server;
@@ -111,6 +114,8 @@ public class Proxy {
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+
+        serverManager = new ServerManager(this);
 
         chatHandler = new ChatHandler(this, config);
 

@@ -6,7 +6,7 @@
 
     <groupId>me.bteuk</groupId>
     <artifactId>Proxy</artifactId>
-    <version>1.8.2</version>
+    <version>1.8.3</version>
 
     <name>Proxy</name>
 
@@ -80,7 +80,7 @@
         <dependency>
             <groupId>com.github.BTEUK</groupId>
             <artifactId>NetworkLib</artifactId>
-            <version>8ceed1741b</version>
+            <version>e53a43d801</version>
         </dependency>
 
         <!-- jda -->

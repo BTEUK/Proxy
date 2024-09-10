@@ -97,12 +97,21 @@ public class UserManager {
             disconnectUser(user);
 
             // Save information about the user.
-            user.setNavigatorEnabled(disconnect.isNavigatorEnabled());
-            user.setNightvisionEnabled(disconnect.isNightvisionEnabled());
-            user.setTipsEnabled(disconnect.isTipsEnabled());
-            user.setChatChannel(disconnect.getChatChannel());
-            user.setTeleportEnabled(disconnect.isTeleportEnabled());
-
+            if (disconnect.getNavigatorEnabled() != null) {
+                user.setNavigatorEnabled(disconnect.getNavigatorEnabled());
+            }
+            if (disconnect.getNightvisionEnabled() != null) {
+                user.setNightvisionEnabled(disconnect.getNightvisionEnabled());
+            }
+            if (disconnect.getTipsEnabled()) {
+                user.setTipsEnabled(disconnect.getTipsEnabled());
+            }
+            if (disconnect.getChatChannel() != null) {
+                user.setChatChannel(disconnect.getChatChannel());
+            }
+            if (disconnect.getTeleportEnabled()) {
+                user.setTeleportEnabled(disconnect.getTeleportEnabled());
+            }
 
             Optional<OnlineUser> optionalOnlineUser = onlineUsers.stream().filter(onlineUser -> onlineUser.getUuid().equals(user.getUuid())).findFirst();
             optionalOnlineUser.ifPresent(onlineUsers::remove);
@@ -471,10 +480,10 @@ public class UserManager {
 
     private void saveUserInfoFromDisconnect(User user, UserDisconnect disconnect) {
         // Save information about the user.
-        user.setNavigatorEnabled(disconnect.isNavigatorEnabled());
-        user.setNightvisionEnabled(disconnect.isNightvisionEnabled());
-        user.setTipsEnabled(disconnect.isTipsEnabled());
+        user.setNavigatorEnabled(disconnect.getNavigatorEnabled());
+        user.setNightvisionEnabled(disconnect.getNightvisionEnabled());
+        user.setTipsEnabled(disconnect.getTipsEnabled());
         user.setChatChannel(disconnect.getChatChannel());
-        user.setTeleportEnabled(disconnect.isTeleportEnabled());
+        user.setTeleportEnabled(disconnect.getTeleportEnabled());
     }
 }

@@ -1,14 +1,13 @@
 package net.bteuk.proxy.chat;
 
-import com.velocitypowered.api.proxy.server.RegisteredServer;
 import net.bteuk.network.lib.dto.AbstractTransferObject;
 import net.bteuk.network.lib.socket.OutputSocket;
 import net.bteuk.proxy.Proxy;
 import net.bteuk.proxy.config.Config;
 import net.bteuk.proxy.exceptions.ServerNotFoundException;
 import net.bteuk.proxy.config.ConfigSocket;
+import net.bteuk.proxy.utils.Server;
 
-import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,32 +55,27 @@ public class ChatHandler {
      * @param message the {@link AbstractTransferObject} to send
      */
     private void sendProxyMessage(AbstractTransferObject message) {
-        instance.getServer().getAllServers().forEach(server -> {
-            OutputSocket socket = sockets.get(server.getServerInfo().getName());
+        instance.getServerManager().getServers().forEach(server -> {
+            OutputSocket socket = sockets.get(server.getName());
             if (socket == null) {
-                instance.getLogger().error(String.format("Server %s exists but no Socket has been configured.", server.getServerInfo().getName()));
+                instance.getLogger().error(String.format("Server %s exists but no Socket has been configured.", server.getName()));
             } else {
-                try {
-                    socket.sendSocketMessage(message);
-                    //instance.getLogger().info(String.format("Sent %s to server %s", message.getClass().getTypeName(), server.getServerInfo().getName()));
-                } catch (Exception e) {
-                    instance.getLogger().warn(String.format("Unable to send %s to server %s, it is probably offline.", message.getClass().getTypeName(), server.getServerInfo().getName()));
+                if (!socket.sendSocketMessage(message)) {
+                    instance.getLogger().warn(String.format("Unable to send %s to server %s, it is probably offline.", message.getClass().getTypeName(), server.getName()));
                 }
             }
         });
     }
 
     private void sendProxyMessage(AbstractTransferObject message, String serverName) throws ServerNotFoundException {
-        Optional<RegisteredServer> optionalServer = instance.getServer().getServer(serverName);
+        Optional<Server> optionalServer = instance.getServerManager().getServers().stream().filter(server -> server.getName().equals(serverName)).findFirst();
         if (optionalServer.isPresent()) {
             OutputSocket socket = sockets.get(serverName);
             if (socket == null) {
                 throw new ServerNotFoundException(serverName);
             } else {
-                try {
-                    socket.sendSocketMessage(message);
-                } catch (Exception e) {
-                    // Ignored, server may be offline.
+                if (!socket.sendSocketMessage(message)) {
+                    instance.getLogger().warn(String.format("Unable to send %s to server %s, it is probably offline.", message.getClass().getTypeName(), optionalServer.get().getName()));
                 }
             }
         } else {
