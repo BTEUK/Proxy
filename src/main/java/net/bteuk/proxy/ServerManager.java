@@ -34,8 +34,6 @@ public class ServerManager {
         servers = Collections.synchronizedList(new ArrayList<>());
         threadExecutor = Executors.newSingleThreadExecutor();
 
-        initOnlineServers();
-
         // Ping all servers every 10 seconds.
         Proxy.getInstance().getServer().getScheduler().buildTask(Proxy.getInstance(), this::pingServers)
                 .repeat(10L, TimeUnit.SECONDS)
@@ -63,7 +61,7 @@ public class ServerManager {
     /**
      * Add all online servers, since it is possible servers are already available on Proxy start.
      */
-    private void initOnlineServers() {
+    public void initOnlineServers() {
         proxy.getServer().getAllServers().forEach(registeredServer -> threadExecutor.submit(() -> addServerIfOnline(registeredServer)));
     }
 
@@ -76,6 +74,10 @@ public class ServerManager {
     }
 
     private void addServerIfOnline(RegisteredServer registeredServer) {
+        // Skip if the server is already added.
+        if (servers.stream().anyMatch(server -> server.getRegisteredServer().equals(registeredServer))) {
+            return;
+        }
         try {
             registeredServer.ping().get();
             servers.add(new Server(registeredServer));
@@ -87,6 +89,7 @@ public class ServerManager {
             proxy.getUserManager().handleOnlineUsersRequest();
         } catch (Exception e) {
             // The server is not online.
+            proxy.getLogger().warn(String.format("Server %s is not online, exception %s.", registeredServer.getServerInfo().getName(), e.getMessage()));
         }
     }
 
@@ -96,6 +99,7 @@ public class ServerManager {
             server.setLastPing(Time.currentTime());
         } catch (Exception e) {
             // The server is not online.
+            proxy.getLogger().warn(String.format("Server %s is not online.", server.getName()));
         }
     }
 

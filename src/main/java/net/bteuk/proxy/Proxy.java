@@ -115,40 +115,6 @@ public class Proxy {
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
 
-        serverManager = new ServerManager(this);
-
-        chatHandler = new ChatHandler(this, config);
-
-        discord = new Discord();
-
-        linking = new ArrayList<>();
-
-        lastServer = new HashMap<>();
-
-        int inputSocketPort = Proxy.getInstance().getConfig().getInt("socket.input.port");
-
-        userManager = new UserManager(server);
-
-        chatManager = new ChatManager(userManager);
-
-        tabManager = new TabManager(server);
-
-        // Start socket.
-        if (inputSocketPort == 0) {
-            logger.error("Socket port is not set in config or is set to 0. Please set a valid port!");
-        } else {
-            // Create the socket handler.
-            SocketHandler handler = new ProxySocketHandler(chatManager);
-
-            // Create the input socket.
-            inputSocket = new InputSocket(inputSocketPort);
-            inputSocket.start(handler);
-        }
-
-        this.dataFolder = getDataFolder();
-
-        loadLastServer();
-
         //Setup MySQL
         try {
 
@@ -178,6 +144,40 @@ public class Proxy {
         DatabaseUpdates databaseUpdates = new DatabaseUpdates(getLogger(), globalSQL, plotSQL, regionSQL);
         databaseUpdates.updateDatabase();
 
+        userManager = new UserManager(server);
+
+        chatManager = new ChatManager(userManager);
+
+        tabManager = new TabManager(server);
+
+        serverManager = new ServerManager(this);
+
+        chatHandler = new ChatHandler(this, config);
+
+        discord = new Discord();
+
+        linking = new ArrayList<>();
+
+        lastServer = new HashMap<>();
+
+        int inputSocketPort = Proxy.getInstance().getConfig().getInt("socket.input.port");
+
+        // Start socket.
+        if (inputSocketPort == 0) {
+            logger.error("Socket port is not set in config or is set to 0. Please set a valid port!");
+        } else {
+            // Create the socket handler.
+            SocketHandler handler = new ProxySocketHandler(chatManager);
+
+            // Create the input socket.
+            inputSocket = new InputSocket(inputSocketPort);
+            inputSocket.start(handler);
+        }
+
+        this.dataFolder = getDataFolder();
+
+        loadLastServer();
+
         //Setup review status message.
         new ReviewStatus();
 
@@ -186,6 +186,8 @@ public class Proxy {
         new ServerConnectListener(this, lastServer);
 
         enableAnalytics(this);
+
+        serverManager.initOnlineServers();
 
         logger.info("Loaded Proxy");
 

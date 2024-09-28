@@ -103,13 +103,13 @@ public class UserManager {
             if (disconnect.getNightvisionEnabled() != null) {
                 user.setNightvisionEnabled(disconnect.getNightvisionEnabled());
             }
-            if (disconnect.getTipsEnabled()) {
+            if (disconnect.getTipsEnabled() != null) {
                 user.setTipsEnabled(disconnect.getTipsEnabled());
             }
             if (disconnect.getChatChannel() != null) {
                 user.setChatChannel(disconnect.getChatChannel());
             }
-            if (disconnect.getTeleportEnabled()) {
+            if (disconnect.getTeleportEnabled() != null) {
                 user.setTeleportEnabled(disconnect.getTeleportEnabled());
             }
 
