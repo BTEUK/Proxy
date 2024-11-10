@@ -7,11 +7,9 @@ import net.bteuk.network.lib.dto.DiscordDirectMessage;
 import net.bteuk.network.lib.dto.DiscordEmbed;
 import net.bteuk.network.lib.dto.DiscordLinking;
 import net.bteuk.network.lib.dto.DiscordRole;
-import net.bteuk.proxy.chat.ChatHandler;
 import net.bteuk.proxy.commands.CommandManager;
 import net.bteuk.proxy.eventing.jda.BotChatListener;
 import net.bteuk.proxy.eventing.jda.DiscordChatListener;
-import net.bteuk.proxy.log4j.JdaFilter;
 import net.bteuk.proxy.utils.Avatar;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.utils.UnknownUserErrorHandler;
@@ -30,7 +28,6 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import java.awt.Color;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,11 +48,6 @@ public class Discord {
     private List<Long> giveRoles;
 
     public Discord() {
-
-        // add log4j filter for JDA messages
-        JdaFilter jdaFilter = new JdaFilter();
-        ((org.apache.logging.log4j.core.Logger) org.apache.logging.log4j.LogManager.getRootLogger()).addFilter(jdaFilter);
-        Proxy.getInstance().getLogger().debug("JdaFilter applied");
 
         //Get token from config.
         String token = Proxy.getInstance().getConfig().getString("token");
