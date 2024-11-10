@@ -69,11 +69,21 @@ public class DatabaseUpdates {
         if (oldVersionInt <= 6) {
             update6_7();
         }
+
+        // 1.6.0 -> 1.7.0
+        if (oldVersionInt <= 7) {
+            update7_8();
+        }
     }
 
     private int getVersionInt(String version) {
 
         switch(version) {
+
+            // 1.7.0 = 8
+            case "1.7.0" -> {
+                return 8;
+            }
 
             // 1.6.0 = 7
             case "1.6.0" -> {
@@ -111,6 +121,18 @@ public class DatabaseUpdates {
             }
 
         }
+
+    }
+
+    private void update7_8() {
+
+        logger.info("Updating database from 1.6.0 to 1.7.0");
+
+        // Add pinned column in region_members.
+        regionSQL.update("ALTER TABLE region_members ADD COLUMN pinned TINYINT(1) NOT NULL DEFAULT 0;");
+
+        // Version 1.7.0
+        globalSQL.update("UPDATE unique_data SET data_value='1.7.0' WHERE data_key='version';");
 
     }
 
