@@ -65,6 +65,15 @@ public class ServerManager {
         proxy.getServer().getAllServers().forEach(registeredServer -> threadExecutor.submit(() -> addServerIfOnline(registeredServer)));
     }
 
+    /**
+     * Removes all server on proxy shutdown.
+     */
+    public void shutdown() {
+        // Set the servers offline in the database.
+        proxy.getGlobalSQL().update("UPDATE server_data SET online=0;");
+        servers.clear();
+    }
+
     private void pingServers() {
         servers.forEach(server -> threadExecutor.submit(() -> updatePing(server)));
         // If any server has a ping of more than 120 seconds, set the server to offline and remove all online players that were connected to the server.

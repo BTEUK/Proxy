@@ -249,6 +249,9 @@ public class Proxy {
             } catch (NoClassDefFoundError ignored) {
             }
         }
+
+        // Set all servers as offline.
+        serverManager.shutdown();
     }
 
     @Subscribe

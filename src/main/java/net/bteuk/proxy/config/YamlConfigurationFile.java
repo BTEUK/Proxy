@@ -66,7 +66,6 @@ public class YamlConfigurationFile extends ConfigurationFile {
                 sockets.add(socket);
             }
         }
-        System.out.println(sockets);
         return sockets;
     }
 }
