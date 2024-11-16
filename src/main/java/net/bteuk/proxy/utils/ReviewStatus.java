@@ -96,11 +96,9 @@ public class ReviewStatus {
 
                         }
                     }
-
                 })
                 .repeat(1L, TimeUnit.MINUTES)
                 .schedule();
-
     }
 
     private void createMessage() {

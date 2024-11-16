@@ -14,9 +14,10 @@ CREATE TABLE IF NOT EXISTS plot_data
 CREATE TABLE IF NOT EXISTS plot_members
 (
     id          INT         NOT NULL,
-    uuid        CHAR(36)    NOT NULL,
+    uiuid        CHAR(36)    NOT NULL,
     is_owner    TINYINT(1)  NULL DEFAULT 0,
     last_enter  BIGINT      NOT NULL,
+    inactivity_notice  TINYINT(1)  NOT NULL DEFAULT 0,
     PRIMARY KEY(id, uuid)
 );
 

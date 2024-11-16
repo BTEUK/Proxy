@@ -80,6 +80,11 @@ public class DatabaseUpdates {
 
         switch(version) {
 
+            // 1.7.1 = 9
+            case "1.7.1" -> {
+                return 9;
+            }
+
             // 1.7.0 = 8
             case "1.7.0" -> {
                 return 8;
@@ -121,6 +126,18 @@ public class DatabaseUpdates {
             }
 
         }
+
+    }
+
+    private void update8_9() {
+
+        logger.info("Updating database from 1.7.0 to 1.7.1");
+
+        // Add pinned column in region_members.
+        plotSQL.update("ALTER TABLE plot_members ADD COLUMN inactivity_notice TINYINT(1) NOT NULL DEFAULT 0;");
+
+        // Version 1.7.1
+        globalSQL.update("UPDATE unique_data SET data_value='1.7.1' WHERE data_key='version';");
 
     }
 
