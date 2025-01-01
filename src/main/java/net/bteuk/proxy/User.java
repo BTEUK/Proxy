@@ -195,7 +195,8 @@ public class User {
                 getChatChannel(),
                 isTipsEnabled(),
                 getOfflineMessages(),
-                focusEnabled
+                focusEnabled,
+                getReviewerReputation()
         );
     }
 
@@ -328,5 +329,9 @@ public class User {
 
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readTree(inline.toString());
+    }
+
+    private Double getReviewerReputation() {
+        return Proxy.getInstance().getPlotSQL().getReviewerReputation(uuid);
     }
 }

@@ -131,3 +131,11 @@ CREATE TABLE IF NOT EXISTS zone_corners
     z           INT         NOT NULL,
     PRIMARY KEY(id,corner)
 );
+
+CREATE TABLE IF NOT EXISTS reviewers
+(
+    id          INT         AUTO_INCREMENT,
+    uuid        CHAR(36)    NOT NULL,
+    reputation  DECIMAL(5,2)    NOT NULL DEFAULT 0,
+    PRIMARY KEY(id)
+);

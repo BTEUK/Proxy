@@ -28,7 +28,7 @@ public class DatabaseUpdates {
             version = globalSQL.getString("SELECT data_value FROM unique_data WHERE data_key='version';");
         } else {
             //Insert the current database version as version.
-            globalSQL.update("INSERT INTO unique_data(data_key, data_value) VALUES('version','1.6.0')");
+            globalSQL.update("INSERT INTO unique_data(data_key, data_value) VALUES('version','1.7.1')");
         }
 
         //Check for specific table columns that could be missing,
@@ -73,6 +73,11 @@ public class DatabaseUpdates {
         // 1.6.0 -> 1.7.0
         if (oldVersionInt <= 7) {
             update7_8();
+        }
+
+        // 1.7.0 -> 1.7.1
+        if (oldVersionInt <= 8) {
+            update8_9();
         }
     }
 
