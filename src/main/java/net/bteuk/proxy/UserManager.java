@@ -281,9 +281,7 @@ public class UserManager {
             }
 
             // If the user is a reviewer send messages for the number of submitted plots, region request and navigation requests.
-            if (request.isReviewer()) {
-                sendReviewerMessages(request.getUuid());
-            }
+            sendReviewerMessages(request);
         }
 
         // Make sure the username is correct.
@@ -430,29 +428,34 @@ public class UserManager {
         }
     }
 
-    private void sendReviewerMessages(String uuid) {
+    private void sendReviewerMessages(UserConnectRequest request) {
         //Show the number of submitted plots.
-        int plots = Proxy.getInstance().getPlotSQL().getInt("SELECT COUNT(id) FROM plot_data WHERE status='submitted';");
-        if (plots != 0) {
-            Component plotMessage = ChatUtils.success("There " + (plots == 1 ? "is" : "are") + " %s " + (plots == 1 ? "plot" : "plots") + " to review.", String.valueOf(plots));
-            DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
-            Proxy.getInstance().getChatHandler().handle(directMessage);
+        String uuid = request.getUuid();
+        if (request.isArchitect() || request.isReviewer()) {
+            int plots = Proxy.getInstance().getPlotSQL().getAvailablePlots(uuid, request.isReviewer(), request.isArchitect());
+            if (plots != 0) {
+                Component plotMessage = ChatUtils.success("There " + (plots == 1 ? "is" : "are") + " %s " + (plots == 1 ? "plot" : "plots") + " to review.", String.valueOf(plots));
+                DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
+                Proxy.getInstance().getChatHandler().handle(directMessage);
+            }
         }
 
         //Show the number of submitted regions requests.
-        int regions = Proxy.getInstance().getRegionSQL().getInt("SELECT COUNT(region) FROM region_requests WHERE staff_accept=0;");
-        if (regions != 0) {
-            Component regionMessage = ChatUtils.success("There " + (regions == 1 ? "is" : "are") + " %s region " + (regions == 1 ? "request" : "requests") + " to review.", String.valueOf(regions));
-            DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", regionMessage, false);
-            Proxy.getInstance().getChatHandler().handle(directMessage);
-        }
+        if (request.isReviewer()) {
+            int regions = Proxy.getInstance().getRegionSQL().getInt("SELECT COUNT(region) FROM region_requests WHERE staff_accept=0;");
+            if (regions != 0) {
+                Component regionMessage = ChatUtils.success("There " + (regions == 1 ? "is" : "are") + " %s region " + (regions == 1 ? "request" : "requests") + " to review.", String.valueOf(regions));
+                DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", regionMessage, false);
+                Proxy.getInstance().getChatHandler().handle(directMessage);
+            }
 
-        //Show the number of submitted navigation requests;
-        int navigation = Proxy.getInstance().getGlobalSQL().getInt("SELECT COUNT(location) FROM location_requests;");
-        if (navigation != 0) {
-            Component navigationMessage = ChatUtils.success("There " + (navigation == 1 ? "is" : "are") + " %s navigation " + (navigation == 1 ? "request" : "requests") + " to review.", String.valueOf(navigation));
-            DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", navigationMessage, false);
-            Proxy.getInstance().getChatHandler().handle(directMessage);
+            //Show the number of submitted navigation requests;
+            int navigation = Proxy.getInstance().getGlobalSQL().getInt("SELECT COUNT(location) FROM location_requests;");
+            if (navigation != 0) {
+                Component navigationMessage = ChatUtils.success("There " + (navigation == 1 ? "is" : "are") + " %s navigation " + (navigation == 1 ? "request" : "requests") + " to review.", String.valueOf(navigation));
+                DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", navigationMessage, false);
+                Proxy.getInstance().getChatHandler().handle(directMessage);
+            }
         }
     }
 
