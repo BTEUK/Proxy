@@ -183,6 +183,9 @@ public class DatabaseUpdates {
         // Rename the accept_data and deny_data tables to indicate they are old.
         plotSQL.update("RENAME TABLE accept_data TO old_accept_data;");
         plotSQL.update("RENAME TABLE deny_data TO old_deny_data;");
+
+        // Version 1.7.2
+        globalSQL.update("UPDATE unique_data SET data_value='1.7.2' WHERE data_key='version';");
     }
 
     private void update8_9() {
