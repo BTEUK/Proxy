@@ -1,17 +1,21 @@
 package net.bteuk.proxy.sql;
 
+import net.bteuk.proxy.sql.migration.AcceptData;
+import net.bteuk.proxy.sql.migration.DenyData;
 import org.slf4j.Logger;
 
+import java.util.List;
+
 public class DatabaseUpdates {
-    
+
     private final Logger logger;
-    
+
     private final GlobalSQL globalSQL;
-    
+
     private final PlotSQL plotSQL;
-    
+
     private final RegionSQL regionSQL;
-    
+
     public DatabaseUpdates(Logger logger, GlobalSQL globalSQL, PlotSQL plotSQL, RegionSQL regionSQL) {
         this.logger = logger;
         this.globalSQL = globalSQL;
@@ -28,7 +32,7 @@ public class DatabaseUpdates {
             version = globalSQL.getString("SELECT data_value FROM unique_data WHERE data_key='version';");
         } else {
             //Insert the current database version as version.
-            globalSQL.update("INSERT INTO unique_data(data_key, data_value) VALUES('version','1.7.1')");
+            globalSQL.update("INSERT INTO unique_data(data_key, data_value) VALUES('version','1.7.2')");
         }
 
         //Check for specific table columns that could be missing,
@@ -79,11 +83,21 @@ public class DatabaseUpdates {
         if (oldVersionInt <= 8) {
             update8_9();
         }
+
+        // 1.7.1 -> 1.7.2
+        if (oldVersionInt <= 9) {
+            update9_10();
+        }
     }
 
     private int getVersionInt(String version) {
 
         switch(version) {
+
+            // 1.7.2 = 10
+            case "1.7.2" -> {
+                return 10;
+            }
 
             // 1.7.1 = 9
             case "1.7.1" -> {
@@ -132,6 +146,43 @@ public class DatabaseUpdates {
 
         }
 
+    }
+
+    private void update9_10() {
+
+        logger.info("Updating database from 1.7.1 to 1.7.2");
+
+        plotSQL.update("ALTER TABLE plot_data MODIFY status ENUM('unclaimed','claimed','submitted','completed','deleted')  NOT NULL");
+
+        plotSQL.update("RENAME TABLE plot_submissions TO plot_submission;");
+        plotSQL.update("ALTER TABLE plot_submission DROP PRIMARY KEY;");
+        plotSQL.update("ALTER TABLE plot_submission RENAME COLUMN id TO plot_id;");
+        plotSQL.update("ALTER TABLE plot_submission ADD COLUMN status ENUM('submitted','under review','awaiting verification','under verification') NOT NULL;");
+        plotSQL.update("ALTER TABLE plot_submission ADD PRIMARY KEY (plot_id);");
+        plotSQL.update("ALTER TABLE plot_submission ADD CONSTRAINT fk_plot_submission_1 FOREIGN KEY (plot_id) REFERENCES plot_data(id);");
+
+        // Migrate existing data from accept_data and deny_data to new plot_review table.
+        List<DenyData> denyData = plotSQL.getDenyData();
+        for (DenyData deny : denyData) {
+            plotSQL.update("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,book_id " +
+                    "VALUES(" + deny.id() + ",'" + deny.uuid() + "','" + deny.reviewer() + "'," +
+                    deny.attempt() + "," + deny.denyTime() + "," + "0" + "," + deny.bookId() + ");");
+        }
+        List<AcceptData> acceptData = plotSQL.getAcceptData();
+        for (AcceptData accept : acceptData) {
+            // Get the highest denied attempt for the user, the accept attempt will be that +1.
+            int attempt = 1 + plotSQL.getInt("SELECT MAX(attempt) FROM deny_data WHERE id=" + accept.id() + " AND uuid='" + accept.uuid() + "';");
+            int id = plotSQL.insertReturnId("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,book_id " +
+                    "VALUES(" + accept.id() + ",'" + accept.uuid() + "','" + accept.reviewer() + "'," +
+                    attempt + "," + accept.acceptTime() + "," + "1" + "," + accept.bookId() + ");");
+            // Insert an accepted plot row for the review.
+            plotSQL.update("INSERT INTO accepted_plot(review_id,accuracy,quality) " +
+                    "VALUES(" + id + "," + accept.accuracy() + "," + accept.quality() + ");");
+        }
+
+        // Rename the accept_data and deny_data tables to indicate they are old.
+        plotSQL.update("RENAME TABLE accept_data TO old_accept_data;");
+        plotSQL.update("RENAME TABLE deny_data TO old_deny_data;");
     }
 
     private void update8_9() {

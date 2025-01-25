@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS plot_data
 (
 	id          INT         AUTO_INCREMENT,
 	status      ENUM('unclaimed',
-	'claimed','submitted','reviewing',
+	'claimed','submitted',
 	'completed','deleted')  NOT NULL,
 	size        INT         NOT NULL,
 	difficulty  INT         NOT NULL,
@@ -38,35 +38,38 @@ CREATE TABLE IF NOT EXISTS plot_invites
     PRIMARY KEY(id,uuid)
 );
 
-CREATE TABLE IF NOT EXISTS plot_submissions
+CREATE TABLE IF NOT EXISTS plot_submission
 (
-    id          INT         NOT NULL,
+    plot_id     INT         NOT NULL,
     submit_time BIGINT      NOT NULL,
+    status      ENUM('submitted','under review','awaiting verification','under verification') NOT NULL,
     last_query  BIGINT      NULL DEFAULT 0,
-    PRIMARY KEY (id)
+    PRIMARY KEY (plot_id),
+    CONSTRAINT fk_plot_submission_1 FOREIGN KEY(plot_id) REFERENCES plot_data(id)
 );
 
-CREATE TABLE IF NOT EXISTS accept_data
+CREATE TABLE IF NOT EXISTS plot_review
 (
-    id          INT         NOT NULL,
+    id          INT         AUTO_INCREMENT,
+    plot_id     INT         NOT NULL,
     uuid        CHAR(36)    NOT NULL,
     reviewer    CHAR(36)    NOT NULL,
-    book_id     INT         NULL DEFAULT 0,
+    attempt     INT         NOT NULL,
+    review_time BIGINT      NOT NULL,
+    accepted    TINYINT(1)  NOT NULL,
+    book_id     INT         NOT NULL DEFAULT 0,
+    PRIMARY KEY(plot_id,uuid,attempt),
+    CONSTRAINT fk_plot_review_1 FOREIGN KEY(plot_id) REFERENCES plot_data(id),
+    CONSTRAINT fk_plot_review_2 FOREIGN KEY(book_data) REFERENCES book_data(id)
+);
+
+CREATE TABLE IF NOT EXISTS accepted_plot
+(
+    review_id   INT         NOT NULL,
     accuracy    INT         NOT NULL,
     quality     INT         NOT NULL,
-    accept_time BIGINT      NOT NULL,
-    PRIMARY KEY(id)
-);
-
-CREATE TABLE IF NOT EXISTS deny_data
-(
-    id          INT         NOT NULL,
-    uuid        CHAR(36)    NOT NULL,
-    reviewer    CHAR(36)    NOT NULL,
-    book_id     INT         NOT NULL,
-    attempt     INT         NOT NULL,
-    deny_time   BIGINT      NOT NULL,
-    PRIMARY KEY(id, uuid, attempt)
+    PRIMARY KEY(review_id),
+    CONSTRAINT fk_accepted_plot_1 FOREIGN KEY(review_id) REFERENCES plot_review(id),
 );
 
 CREATE TABLE IF NOT EXISTS book_data

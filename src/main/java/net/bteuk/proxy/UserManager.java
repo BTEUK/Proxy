@@ -432,7 +432,7 @@ public class UserManager {
         //Show the number of submitted plots.
         String uuid = request.getUuid();
         if (request.isArchitect() || request.isReviewer()) {
-            int plots = Proxy.getInstance().getPlotSQL().getAvailablePlots(uuid, request.isReviewer(), request.isArchitect());
+            int plots = Proxy.getInstance().getPlotSQL().getReviewablePlotCount(uuid, request.isArchitect(), request.isReviewer());
             if (plots != 0) {
                 Component plotMessage = ChatUtils.success("There " + (plots == 1 ? "is" : "are") + " %s " + (plots == 1 ? "plot" : "plots") + " to review.", String.valueOf(plots));
                 DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
