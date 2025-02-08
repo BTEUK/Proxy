@@ -8,6 +8,7 @@ import com.velocitypowered.api.scheduler.TaskStatus;
 import lombok.Getter;
 import lombok.Setter;
 import net.bteuk.network.lib.dto.UserConnectReply;
+import net.bteuk.network.lib.dto.UserConnectRequest;
 import net.bteuk.proxy.sql.GlobalSQL;
 import net.bteuk.proxy.utils.Analytics;
 import net.bteuk.proxy.utils.SwitchServer;
@@ -92,11 +93,11 @@ public class User {
     @Setter
     private boolean blockNextDisconnect = false;
 
-    public User(String uuid, String name, String playerSkin, Set<String> channels) {
-        this.uuid = uuid;
-        this.name = name;
-        this.playerSkin = playerSkin;
-        this.channels.addAll(channels);
+    public User(UserConnectRequest request) {
+        this.uuid = request.getUuid();
+        this.name = request.getName();
+        this.playerSkin = request.getPlayerSkin();
+        this.channels.addAll(request.getChannels());
 
         this.globalSQL = Proxy.getInstance().getGlobalSQL();
     }
@@ -195,8 +196,7 @@ public class User {
                 getChatChannel(),
                 isTipsEnabled(),
                 getOfflineMessages(),
-                focusEnabled,
-                getReviewerReputation()
+                focusEnabled
         );
     }
 
@@ -329,9 +329,5 @@ public class User {
 
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readTree(inline.toString());
-    }
-
-    private Double getReviewerReputation() {
-        return Proxy.getInstance().getPlotSQL().getReviewerReputation(uuid);
     }
 }

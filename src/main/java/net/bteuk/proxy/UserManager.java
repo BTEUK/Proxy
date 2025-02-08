@@ -266,7 +266,7 @@ public class UserManager {
         } else {
 
             // Add user.
-            user = new User(request.getUuid(), request.getName(), request.getPlayerSkin(), request.getChannels());
+            user = new User(request);
             users.add(user);
 
             if (!Proxy.getInstance().getGlobalSQL().hasRow("SELECT uuid FROM player_data WHERE uuid='" + request.getUuid() + "';")) {

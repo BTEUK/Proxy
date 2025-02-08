@@ -40,11 +40,11 @@ public class PlotSQL extends AbstractSQL {
         return 0;
     }
 
-    public Double getReviewerReputation(String uuid) {
+    public double getReviewerReputation(String uuid) {
         try (
                 Connection conn = conn();
                 PreparedStatement statement = conn.prepareStatement(
-                        "SELECT reputation FROM plot_reviewer WHERE uuid=?;"
+                        "SELECT reputation FROM reviewers WHERE uuid=?;"
                 )
         ) {
             statement.setString(1, uuid);
@@ -56,10 +56,11 @@ public class PlotSQL extends AbstractSQL {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        return 0;
     }
 
     public List<Integer> getReviewablePlots(String uuid, boolean isArchitect, boolean isReviewer) {
+        addReviewerIfNotExists(uuid, isArchitect, isReviewer); // Add an entry for relevant users.
         List<PlotDifficulties> difficulties = Reviewing.getAvailablePlotDifficulties(isArchitect, isReviewer, getReviewerReputation(uuid));
 
         List<Integer> submitted_plots = new ArrayList<>();
@@ -121,5 +122,14 @@ public class PlotSQL extends AbstractSQL {
             Proxy.getInstance().getLogger().error("An error occurred while fetching deny_data", e);
         }
         return denyData;
+    }
+
+    public void addReviewerIfNotExists(String uuid, boolean isArchitect, boolean isReviewer) {
+        if ((!isArchitect && !isReviewer) || hasRow("SELECT uuid FROM reviewers FROM uuid'" + uuid + "';")) {
+            return;
+        }
+
+        double initialValue = isReviewer ? 5 : 0;
+        update("INSERT INTO reviewers(uuid,reputation) VALUES('" + uuid + "'," + initialValue + ");");
     }
 }
