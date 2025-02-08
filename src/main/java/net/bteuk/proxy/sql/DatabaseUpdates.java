@@ -164,17 +164,17 @@ public class DatabaseUpdates {
         // Migrate existing data from accept_data and deny_data to new plot_review table.
         List<DenyData> denyData = plotSQL.getDenyData();
         for (DenyData deny : denyData) {
-            plotSQL.update("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,book_id " +
+            plotSQL.update("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,book_id,completed) " +
                     "VALUES(" + deny.id() + ",'" + deny.uuid() + "','" + deny.reviewer() + "'," +
-                    deny.attempt() + "," + deny.denyTime() + "," + "0" + "," + deny.bookId() + ");");
+                    deny.attempt() + "," + deny.denyTime() + "," + "0" + "," + deny.bookId() + ",1);");
         }
         List<AcceptData> acceptData = plotSQL.getAcceptData();
         for (AcceptData accept : acceptData) {
             // Get the highest denied attempt for the user, the accept attempt will be that +1.
             int attempt = 1 + plotSQL.getInt("SELECT MAX(attempt) FROM deny_data WHERE id=" + accept.id() + " AND uuid='" + accept.uuid() + "';");
-            int id = plotSQL.insertReturnId("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,book_id " +
+            int id = plotSQL.insertReturnId("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,book_id,completed) " +
                     "VALUES(" + accept.id() + ",'" + accept.uuid() + "','" + accept.reviewer() + "'," +
-                    attempt + "," + accept.acceptTime() + "," + "1" + "," + accept.bookId() + ");");
+                    attempt + "," + accept.acceptTime() + "," + "1" + "," + accept.bookId() + ",1);");
             // Insert an accepted plot row for the review.
             plotSQL.update("INSERT INTO accepted_plot(review_id,accuracy,quality) " +
                     "VALUES(" + id + "," + accept.accuracy() + "," + accept.quality() + ");");

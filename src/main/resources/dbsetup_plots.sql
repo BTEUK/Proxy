@@ -57,7 +57,8 @@ CREATE TABLE IF NOT EXISTS plot_review
     attempt     INT         NOT NULL,
     review_time BIGINT      NOT NULL,
     accepted    TINYINT(1)  NOT NULL,
-    book_id     INT         NOT NULL DEFAULT 0,
+    book_id     INT         NOT NULL DEFAULT NULL,
+    completed   TINYINT(1)  NOT NULL,
     PRIMARY KEY(plot_id,uuid,attempt),
     CONSTRAINT fk_plot_review_1 FOREIGN KEY(plot_id) REFERENCES plot_data(id),
     CONSTRAINT fk_plot_review_2 FOREIGN KEY(book_data) REFERENCES book_data(id)
