@@ -57,20 +57,35 @@ CREATE TABLE IF NOT EXISTS plot_review
     attempt     INT         NOT NULL,
     review_time BIGINT      NOT NULL,
     accepted    TINYINT(1)  NOT NULL,
-    book_id     INT         NOT NULL DEFAULT NULL,
     completed   TINYINT(1)  NOT NULL,
     PRIMARY KEY(plot_id,uuid,attempt),
     CONSTRAINT fk_plot_review_1 FOREIGN KEY(plot_id) REFERENCES plot_data(id),
-    CONSTRAINT fk_plot_review_2 FOREIGN KEY(book_data) REFERENCES book_data(id)
 );
 
-CREATE TABLE IF NOT EXISTS accepted_plot
+CREATE TABLE IF NOT EXISTS plot_category_feedback
 (
-    review_id   INT         NOT NULL,
-    accuracy    INT         NOT NULL,
-    quality     INT         NOT NULL,
-    PRIMARY KEY(review_id),
-    CONSTRAINT fk_accepted_plot_1 FOREIGN KEY(review_id) REFERENCES plot_review(id),
+    review_id   INT                         NOT NULL,
+    category    VARCHAR(64)                 NOT NULL,
+    selection   ENUM('GOOD','OK','POOR')    NOT NULL,
+    book_id     INT                         NOT NULL DEFAULT 0,
+    PRIMARY KEY(review_id,category),
+    CONSTRAINT fk_plot_category_feedback_1 FOREIGN KEY(review_id) REFERENCES plot_review(id),
+    CONSTRAINT fk_plot_category_feedback_2 FOREIGN KEY(book_id) REFERENCES book_data(id)
+);
+
+CREATE TABLE IF NOT EXISTS plot_verification_feedback
+(
+    review_id       INT                         NOT NULL,
+    category        VARCHAR(64)                 NOT NULL,
+    verifier        CHAR(36)                    NOT NULL,
+    selection_old   ENUM('GOOD','OK','POOR')    NOT NULL,
+    selection_new   ENUM('GOOD','OK','POOR')    NOT NULL,
+    book_id_old     INT                         NOT NULL,
+    book_id_new     INT                         NOT NULL,
+    PRIMARY KEY(review_id,category),
+    CONSTRAINT fk_plot_verification_feedback_1 FOREIGN KEY(review_id) REFERENCES plot_review(id),
+    CONSTRAINT fk_plot_verification_feedback_2 FOREIGN KEY(book_id_old) REFERENCES book_data(id),
+    CONSTRAINT fk_plot_verification_feedback_3 FOREIGN KEY(book_id_new) REFERENCES book_data(id)
 );
 
 CREATE TABLE IF NOT EXISTS book_data
