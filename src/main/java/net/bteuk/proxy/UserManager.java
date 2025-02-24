@@ -389,10 +389,18 @@ public class UserManager {
      */
     public void removeAllUsers() {
         while (!getUsers().isEmpty()) {
-            removeUser(getUsers().get(0), true);
+            removeUser(getUsers().getFirst(), true);
         }
         // Log the player count (which should always be 0 at this point).
         logPlayerCount(getUsers());
+    }
+
+    public void sendPlotMessageToAll(String messageTemplate) {
+        Proxy.getInstance().getServerManager().getServers().forEach(server ->
+                server.getRegisteredServer().getPlayersConnected().forEach(player ->
+                        sendPlotMessage(player.hasPermission("group.architect"), player.hasPermission("group.reviewer"), player.getUniqueId().toString(), messageTemplate)
+                )
+        );
     }
 
     /**
@@ -431,14 +439,7 @@ public class UserManager {
     private void sendReviewerMessages(UserConnectRequest request) {
         //Show the number of submitted plots.
         String uuid = request.getUuid();
-        if (request.isArchitect() || request.isReviewer()) {
-            int plots = Proxy.getInstance().getPlotSQL().getReviewablePlotCount(uuid, request.isArchitect(), request.isReviewer());
-            if (plots != 0) {
-                Component plotMessage = ChatUtils.success("There " + (plots == 1 ? "is" : "are") + " %s " + (plots == 1 ? "plot" : "plots") + " to review.", String.valueOf(plots));
-                DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
-                Proxy.getInstance().getChatHandler().handle(directMessage);
-            }
-        }
+        sendPlotMessage(request.isArchitect(), request.isReviewer(), uuid, "There %s %d %s to review.");
 
         //Show the number of submitted regions requests.
         if (request.isReviewer()) {
@@ -454,6 +455,17 @@ public class UserManager {
             if (navigation != 0) {
                 Component navigationMessage = ChatUtils.success("There " + (navigation == 1 ? "is" : "are") + " %s navigation " + (navigation == 1 ? "request" : "requests") + " to review.", String.valueOf(navigation));
                 DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", navigationMessage, false);
+                Proxy.getInstance().getChatHandler().handle(directMessage);
+            }
+        }
+    }
+
+    private void sendPlotMessage(boolean isArchitect, boolean isReviewer, String uuid, String messageTemplate) {
+        if (isArchitect || isReviewer) {
+            int plots = Proxy.getInstance().getPlotSQL().getReviewablePlotCount(uuid, isArchitect, isReviewer);
+            if (plots != 0) {
+                Component plotMessage = ChatUtils.success(String.format(messageTemplate, (plots == 1 ? "is" : "are"), plots, (plots == 1 ? "plot" : "plots")));
+                DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
                 Proxy.getInstance().getChatHandler().handle(directMessage);
             }
         }

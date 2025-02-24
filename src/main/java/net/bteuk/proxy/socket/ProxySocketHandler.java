@@ -10,6 +10,7 @@ import net.bteuk.network.lib.dto.DiscordRole;
 import net.bteuk.network.lib.dto.FocusEvent;
 import net.bteuk.network.lib.dto.ModerationEvent;
 import net.bteuk.network.lib.dto.MuteEvent;
+import net.bteuk.network.lib.dto.PlotMessage;
 import net.bteuk.network.lib.dto.ServerShutdown;
 import net.bteuk.network.lib.dto.ServerStartup;
 import net.bteuk.network.lib.dto.SwitchServerEvent;
@@ -31,40 +32,33 @@ public class ProxySocketHandler implements SocketHandler {
     @Override
     public synchronized AbstractTransferObject handle(AbstractTransferObject abstractTransferObject) {
         // Handle the different objects.
-        if (abstractTransferObject instanceof ChatMessage chatMessage) {
-            manager.handle(chatMessage);
-            Proxy.getInstance().getDiscord().handle(chatMessage);
-        } else if (abstractTransferObject instanceof DirectMessage directMessage) {
-            manager.handle(directMessage);
-        } else if (abstractTransferObject instanceof DiscordDirectMessage discordDirectMessage) {
-            Proxy.getInstance().getDiscord().handle(discordDirectMessage);
-        } else if (abstractTransferObject instanceof DiscordEmbed discordEmbed) {
-            Proxy.getInstance().getDiscord().handle(discordEmbed);
-        } else if (abstractTransferObject instanceof DiscordLinking discordLinking) {
-            Proxy.getInstance().getDiscord().handle(discordLinking);
-        } else if (abstractTransferObject instanceof DiscordRole discordRole) {
-            Proxy.getInstance().getDiscord().handle(discordRole);
-        } else if (abstractTransferObject instanceof UserConnectRequest userConnect) {
-            Proxy.getInstance().getUserManager().handleUserConnect(userConnect);
-        } else if (abstractTransferObject instanceof UserDisconnect userDisconnect) {
-            Proxy.getInstance().getUserManager().handleUserDisconnect(userDisconnect);
-        } else if (abstractTransferObject instanceof UserUpdate userUpdate) {
-            Proxy.getInstance().getUserManager().handleUserUpdate(userUpdate);
-        } else if (abstractTransferObject instanceof SwitchServerEvent switchServerEvent) {
-            Proxy.getInstance().getUserManager().handleSwitchServerEvent(switchServerEvent);
-        } else if (abstractTransferObject instanceof MuteEvent muteEvent) {
-            Proxy.getInstance().getUserManager().handleMuteEvent(muteEvent);
-        } else if (abstractTransferObject instanceof ModerationEvent moderationEvent) {
-            // Currently the moderation is handled on the servers, this is event is purely to update Tab for (un)muting.
-            Proxy.getInstance().getTabManager().updatePlayerByUuid(moderationEvent.getUuid());
-        } else if (abstractTransferObject instanceof FocusEvent focusEvent) {
-            Proxy.getInstance().getUserManager().handleFocusEvent(focusEvent);
-        } else if (abstractTransferObject instanceof ServerStartup serverStart) {
-            Proxy.getInstance().getServerManager().addServer(serverStart);
-        } else if (abstractTransferObject instanceof ServerShutdown serverClose) {
-            Proxy.getInstance().getServerManager().removeServer(serverClose);
-        } else {
-            Proxy.getInstance().getLogger().warn(String.format("Socket object has an unrecognised type %s", abstractTransferObject.getClass().getTypeName()));
+        switch (abstractTransferObject) {
+            case ChatMessage chatMessage -> {
+                manager.handle(chatMessage);
+                Proxy.getInstance().getDiscord().handle(chatMessage);
+            }
+            case DirectMessage directMessage -> manager.handle(directMessage);
+            case DiscordDirectMessage discordDirectMessage ->
+                    Proxy.getInstance().getDiscord().handle(discordDirectMessage);
+            case DiscordEmbed discordEmbed -> Proxy.getInstance().getDiscord().handle(discordEmbed);
+            case DiscordLinking discordLinking -> Proxy.getInstance().getDiscord().handle(discordLinking);
+            case DiscordRole discordRole -> Proxy.getInstance().getDiscord().handle(discordRole);
+            case UserConnectRequest userConnect -> Proxy.getInstance().getUserManager().handleUserConnect(userConnect);
+            case UserDisconnect userDisconnect ->
+                    Proxy.getInstance().getUserManager().handleUserDisconnect(userDisconnect);
+            case UserUpdate userUpdate -> Proxy.getInstance().getUserManager().handleUserUpdate(userUpdate);
+            case SwitchServerEvent switchServerEvent ->
+                    Proxy.getInstance().getUserManager().handleSwitchServerEvent(switchServerEvent);
+            case MuteEvent muteEvent -> Proxy.getInstance().getUserManager().handleMuteEvent(muteEvent);
+            case ModerationEvent moderationEvent -> // Currently the moderation is handled on the servers, this is event is purely to update Tab for (un)muting.
+                    Proxy.getInstance().getTabManager().updatePlayerByUuid(moderationEvent.getUuid());
+            case FocusEvent focusEvent -> Proxy.getInstance().getUserManager().handleFocusEvent(focusEvent);
+            case ServerStartup serverStart -> Proxy.getInstance().getServerManager().addServer(serverStart);
+            case ServerShutdown serverClose -> Proxy.getInstance().getServerManager().removeServer(serverClose);
+            case PlotMessage plotMessage ->
+                    Proxy.getInstance().getUserManager().sendPlotMessageToAll(plotMessage.getMessageTemplate());
+            default ->
+                    Proxy.getInstance().getLogger().warn(String.format("Socket object has an unrecognised type %s", abstractTransferObject.getClass().getTypeName()));
         }
         return null;
     }
