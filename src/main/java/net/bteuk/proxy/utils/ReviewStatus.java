@@ -69,30 +69,36 @@ public class ReviewStatus {
                     long time = Time.currentTime();
 
                     //Get all plots that have not been reviewed in the last 24 hours, and have not already been queried.
-                    plots = plotSQL.getIntList("SELECT id FROM plot_submissions WHERE last_query<" + (time - day) + ";");
+                    plots = plotSQL.getIntList("SELECT id FROM plot_submission WHERE last_query<" + (time - day) + ";");
 
                     //Update the last query time for the same plots.
-                    plotSQL.update("UPDATE plot_submissions SET last_query=" + time + " WHERE last_query<" + (time - day) + ";");
+                    plotSQL.update("UPDATE plot_submission SET last_query=" + time + " WHERE last_query<" + (time - day) + ";");
 
                     //For each plot post in the support-chat how long they've not been reviewed.
                     //If longer that 3 days ping reviewers.
                     for (int id : plots) {
 
                         //Get time since submission.
-                        long submit_time = plotSQL.getLong("SELECT submit_time FROM plot_submissions WHERE id=" + id + ";");
+                        long submit_time = plotSQL.getLong("SELECT submit_time FROM plot_submission WHERE id=" + id + ";");
                         int days = (int) ((time - submit_time) / 1000L / 60L / 60L / 24L);
+
+                        String status = plotSQL.getString("SELECT status FROM plot_submission WHERE plot_id=" + id + ";");
+                        String textStatus = switch (status) {
+                            case "awaiting verification", "under verification" -> "verify";
+                            default -> "review";
+                        };
 
                         if (time - (3 * day) > submit_time) {
 
-                            supportChatChannel.sendMessage("<@&" + Proxy.getInstance().getDiscord().getReviewerRoleID() + "> Plot " + id + " has been submitted for " + days + " days, please review it as soon as possible!").queue();
+                            supportChatChannel.sendMessage("<@&" + Proxy.getInstance().getDiscord().getReviewerRoleID() + "> Plot " + id + " has been submitted for " + days + " days, please " + textStatus + " it as soon as possible!").queue();
 
                         } else if (days == 1) {
 
-                            supportChatChannel.sendMessage("Plot " + id + " has been submitted for " + days + " day, please review it soon.").queue();
+                            supportChatChannel.sendMessage("Plot " + id + " has been submitted for " + days + " day, please " + textStatus + " it soon.").queue();
 
                         } else {
 
-                            supportChatChannel.sendMessage("Plot " + id + " has been submitted for " + days + " days, please review it soon.").queue();
+                            supportChatChannel.sendMessage("Plot " + id + " has been submitted for " + days + " days, please " + textStatus + " it soon.").queue();
 
                         }
                     }
@@ -136,11 +142,11 @@ public class ReviewStatus {
 
         //Submitted plots, show up to 5 in a list.
         //Order by submit time ascending, as the oldest plots get reviewed first, this way it is always clear to see if plots are currently being reviewed.
-        ArrayList<Integer> plots = plotSQL.getIntList("SELECT id FROM plot_submissions ORDER BY submit_time ASC;");
+        ArrayList<Integer> plots = plotSQL.getIntList("SELECT id FROM plot_submission ORDER BY submit_time ASC;");
         StringBuilder plot_message = new StringBuilder();
 
         if (plots.isEmpty()) {
-            plot_message = new StringBuilder("There are 0 plots waiting to be reviewed!");
+            plot_message = new StringBuilder("There are 0 plots waiting to be reviewed/verified!");
         } else {
 
             //Add up to 5 plots to the list.
@@ -148,13 +154,14 @@ public class ReviewStatus {
             for (int plot : plots) {
 
                 //If plot status is 'reviewing', then add additional info that the plot is currently under review.
-                if (plotSQL.hasRow("SELECT id FROM plot_data WHERE id=" + plot + " AND status='reviewing';")) {
-                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Discord.escapeDiscordFormatting(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
-                            plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';"))).append(" (under review)");
-                } else {
-                    plot_message.append("• Plot ").append(plot).append(" submitted by ").append(Discord.escapeDiscordFormatting(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
-                            plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';")));
-                }
+                String status = plotSQL.getString("SELECT status FROM plot_submission WHERE plot_id=" + plot + ";");
+                plot_message.append("• Plot ")
+                        .append(plot).append(" submitted by ")
+                        .append(Discord.escapeDiscordFormatting(globalSQL.getString("SELECT name FROM player_data WHERE uuid='" +
+                        plotSQL.getString("SELECT uuid FROM plot_members WHERE id=" + plot + " AND is_owner=1;") + "';")))
+                        .append(" (")
+                        .append(status)
+                        .append(")");
 
                 counter++;
 

@@ -152,32 +152,39 @@ public class DatabaseUpdates {
 
         logger.info("Updating database from 1.7.1 to 1.7.2");
 
-        plotSQL.update("ALTER TABLE plot_data MODIFY status ENUM('unclaimed','claimed','submitted','completed','deleted')  NOT NULL");
+        plotSQL.update("ALTER TABLE plot_data MODIFY status ENUM('unclaimed','claimed','submitted','completed','deleted') NOT NULL");
 
         plotSQL.update("RENAME TABLE plot_submissions TO plot_submission;");
         plotSQL.update("ALTER TABLE plot_submission DROP PRIMARY KEY;");
         plotSQL.update("ALTER TABLE plot_submission RENAME COLUMN id TO plot_id;");
-        plotSQL.update("ALTER TABLE plot_submission ADD COLUMN status ENUM('submitted','under review','awaiting verification','under verification') NOT NULL;");
+        // Add the status column with a default, then remove the default.
+        plotSQL.update("ALTER TABLE plot_submission ADD COLUMN status ENUM('submitted','under review','awaiting verification','under verification') NOT NULL DEFAULT 'submitted';");
+        plotSQL.update("ALTER TABLE plot_submission ALTER status DROP DEFAULT;");
         plotSQL.update("ALTER TABLE plot_submission ADD PRIMARY KEY (plot_id);");
         plotSQL.update("ALTER TABLE plot_submission ADD CONSTRAINT fk_plot_submission_1 FOREIGN KEY (plot_id) REFERENCES plot_data(id);");
 
         // Migrate existing data from accept_data and deny_data to new plot_review table.
         List<DenyData> denyData = plotSQL.getDenyData();
         for (DenyData deny : denyData) {
-            plotSQL.update("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,book_id,completed) " +
+            int reviewId = plotSQL.insertReturnId("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,completed) " +
                     "VALUES(" + deny.id() + ",'" + deny.uuid() + "','" + deny.reviewer() + "'," +
-                    deny.attempt() + "," + deny.denyTime() + "," + "0" + "," + deny.bookId() + ",1);");
+                    deny.attempt() + "," + deny.denyTime() + "," + "0,1);");
+            // Insert the feedback as category feedback for the GENERAL category.
+            plotSQL.update("INSERT INTO plot_category_feedback(review_id,category,selection,book_id) " +
+                    "VALUES(" + reviewId + ",'GENERAL','NONE'," + deny.bookId() + ");");
         }
         List<AcceptData> acceptData = plotSQL.getAcceptData();
         for (AcceptData accept : acceptData) {
             // Get the highest denied attempt for the user, the accept attempt will be that +1.
             int attempt = 1 + plotSQL.getInt("SELECT MAX(attempt) FROM deny_data WHERE id=" + accept.id() + " AND uuid='" + accept.uuid() + "';");
-            int id = plotSQL.insertReturnId("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,book_id,completed) " +
+            int reviewId = plotSQL.insertReturnId("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,completed) " +
                     "VALUES(" + accept.id() + ",'" + accept.uuid() + "','" + accept.reviewer() + "'," +
-                    attempt + "," + accept.acceptTime() + "," + "1" + "," + accept.bookId() + ",1);");
-            // Insert an accepted plot row for the review.
-            plotSQL.update("INSERT INTO accepted_plot(review_id,accuracy,quality) " +
-                    "VALUES(" + id + "," + accept.accuracy() + "," + accept.quality() + ");");
+                    attempt + "," + accept.acceptTime() + "," + "1,1);");
+            if (accept.bookId() != 0) {
+                // Insert the feedback as category feedback for the GENERAL category.
+                plotSQL.update("INSERT INTO plot_category_feedback(review_id,category,selection,book_id) " +
+                        "VALUES(" + reviewId + ",'GENERAL','NONE'," + accept.bookId() + ");");
+            }
         }
 
         // Rename the accept_data and deny_data tables to indicate they are old.

@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS plot_category_feedback
 (
     review_id   INT                         NOT NULL,
     category    VARCHAR(64)                 NOT NULL,
-    selection   ENUM('GOOD','OK','POOR')    NOT NULL,
+    selection   ENUM('GOOD','OK','POOR','NONE')    NOT NULL,
     book_id     INT                         NOT NULL DEFAULT 0,
     PRIMARY KEY(review_id,category),
     CONSTRAINT fk_plot_category_feedback_1 FOREIGN KEY(review_id) REFERENCES plot_review(id)
