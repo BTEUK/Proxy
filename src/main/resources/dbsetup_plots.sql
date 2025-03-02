@@ -69,8 +69,7 @@ CREATE TABLE IF NOT EXISTS plot_category_feedback
     selection   ENUM('GOOD','OK','POOR')    NOT NULL,
     book_id     INT                         NOT NULL DEFAULT 0,
     PRIMARY KEY(review_id,category),
-    CONSTRAINT fk_plot_category_feedback_1 FOREIGN KEY(review_id) REFERENCES plot_review(id),
-    CONSTRAINT fk_plot_category_feedback_2 FOREIGN KEY(book_id) REFERENCES book_data(id)
+    CONSTRAINT fk_plot_category_feedback_1 FOREIGN KEY(review_id) REFERENCES plot_review(id)
 );
 
 CREATE TABLE IF NOT EXISTS plot_verification_feedback
@@ -80,12 +79,10 @@ CREATE TABLE IF NOT EXISTS plot_verification_feedback
     verifier        CHAR(36)                    NOT NULL,
     selection_old   ENUM('GOOD','OK','POOR')    NOT NULL,
     selection_new   ENUM('GOOD','OK','POOR')    NOT NULL,
-    book_id_old     INT                         NOT NULL,
-    book_id_new     INT                         NOT NULL,
+    book_id_old     INT                         NOT NULL DEFAULT 0,
+    book_id_new     INT                         NOT NULL DEFAULT 0,
     PRIMARY KEY(review_id,category),
-    CONSTRAINT fk_plot_verification_feedback_1 FOREIGN KEY(review_id) REFERENCES plot_review(id),
-    CONSTRAINT fk_plot_verification_feedback_2 FOREIGN KEY(book_id_old) REFERENCES book_data(id),
-    CONSTRAINT fk_plot_verification_feedback_3 FOREIGN KEY(book_id_new) REFERENCES book_data(id)
+    CONSTRAINT fk_plot_verification_feedback_1 FOREIGN KEY(review_id) REFERENCES plot_review(id)
 );
 
 CREATE TABLE IF NOT EXISTS book_data

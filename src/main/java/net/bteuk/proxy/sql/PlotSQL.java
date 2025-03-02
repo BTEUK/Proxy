@@ -81,6 +81,31 @@ public class PlotSQL extends AbstractSQL {
         return getReviewablePlots(uuid, isArchitect, isReviewer).size();
     }
 
+    private List<Integer> getVerifiablePlots(String uuid, boolean isReviewer) {
+        List<PlotDifficulties> difficulties = Reviewing.getAvailablePlotDifficulties(isReviewer, isReviewer, getReviewerReputation(uuid));
+
+        List<Integer> plots_awaiting_verification = new ArrayList<>();
+
+        for (PlotDifficulties difficulty : difficulties) {
+            plots_awaiting_verification.addAll(getIntList("SELECT pd.id FROM plot_data AS pd INNER JOIN plot_submission AS ps ON pd.id=ps.id WHERE ps.status='awaiting verification' AND pd.difficulty=" + difficulty.getValue() + " ORDER BY ps.submit_time ASC;"));
+        }
+
+        // Get all plots that the user is the owner or a member of, don't use those in the count.
+        List<Integer> member_plots = getIntList("SELECT id FROM plot_members WHERE uuid='" + uuid + "';");
+
+        // Get all plots that the user has reviewed, don't use those in the count.
+        List<Integer> reviewed_plots = getIntList("SELECT id FROM plot_review WHERE reviewer='" + uuid + "' AND completed=0;");
+
+        plots_awaiting_verification.removeAll(member_plots);
+        plots_awaiting_verification.removeAll(reviewed_plots);
+
+        return plots_awaiting_verification;
+    }
+
+    public int getVerifiablePlotCount(String uuid, boolean isReviewer) {
+        return getVerifiablePlots(uuid, isReviewer).size();
+    }
+
     public List<AcceptData> getAcceptData() {
         List<AcceptData> acceptData = new ArrayList<>();
 

@@ -10,6 +10,7 @@ import net.bteuk.network.lib.dto.OnlineUser;
 import net.bteuk.network.lib.dto.OnlineUserAdd;
 import net.bteuk.network.lib.dto.OnlineUserRemove;
 import net.bteuk.network.lib.dto.OnlineUsersReply;
+import net.bteuk.network.lib.dto.PlotMessage;
 import net.bteuk.network.lib.dto.SwitchServerEvent;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.network.lib.dto.UserConnectRequest;
@@ -395,10 +396,15 @@ public class UserManager {
         logPlayerCount(getUsers());
     }
 
-    public void sendPlotMessageToAll(String messageTemplate) {
+    public void sendPlotMessageToAll(PlotMessage plotMessage) {
         Proxy.getInstance().getServerManager().getServers().forEach(server ->
-                server.getRegisteredServer().getPlayersConnected().forEach(player ->
-                        sendPlotMessage(player.hasPermission("group.architect"), player.hasPermission("group.reviewer"), player.getUniqueId().toString(), messageTemplate)
+                server.getRegisteredServer().getPlayersConnected().forEach(player -> {
+                            if (plotMessage.isVerify()) {
+                                sendPlotVerifyMessage(player.hasPermission("group.reviewer"), player.getUniqueId().toString(), plotMessage.getMessageTemplate());
+                            } else {
+                                sendPlotReviewMessage(player.hasPermission("group.architect"), player.hasPermission("group.reviewer"), player.getUniqueId().toString(), plotMessage.getMessageTemplate());
+                            }
+                        }
                 )
         );
     }
@@ -439,7 +445,7 @@ public class UserManager {
     private void sendReviewerMessages(UserConnectRequest request) {
         //Show the number of submitted plots.
         String uuid = request.getUuid();
-        sendPlotMessage(request.isArchitect(), request.isReviewer(), uuid, "There %s %d %s to review.");
+        sendPlotReviewMessage(request.isArchitect(), request.isReviewer(), uuid, "There %s %d %s to review.");
 
         //Show the number of submitted regions requests.
         if (request.isReviewer()) {
@@ -460,9 +466,21 @@ public class UserManager {
         }
     }
 
-    private void sendPlotMessage(boolean isArchitect, boolean isReviewer, String uuid, String messageTemplate) {
+    private void sendPlotReviewMessage(boolean isArchitect, boolean isReviewer, String uuid, String
+            messageTemplate) {
         if (isArchitect || isReviewer) {
             int plots = Proxy.getInstance().getPlotSQL().getReviewablePlotCount(uuid, isArchitect, isReviewer);
+            if (plots != 0) {
+                Component plotMessage = ChatUtils.success(String.format(messageTemplate, (plots == 1 ? "is" : "are"), plots, (plots == 1 ? "plot" : "plots")));
+                DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
+                Proxy.getInstance().getChatHandler().handle(directMessage);
+            }
+        }
+    }
+
+    private void sendPlotVerifyMessage(boolean isReviewer, String uuid, String messageTemplate) {
+        if (isReviewer) {
+            int plots = Proxy.getInstance().getPlotSQL().getVerifiablePlotCount(uuid, true);
             if (plots != 0) {
                 Component plotMessage = ChatUtils.success(String.format(messageTemplate, (plots == 1 ? "is" : "are"), plots, (plots == 1 ? "plot" : "plots")));
                 DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
