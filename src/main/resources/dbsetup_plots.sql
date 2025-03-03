@@ -58,8 +58,8 @@ CREATE TABLE IF NOT EXISTS plot_review
     review_time BIGINT      NOT NULL,
     accepted    TINYINT(1)  NOT NULL,
     completed   TINYINT(1)  NOT NULL,
-    PRIMARY KEY(plot_id,uuid,attempt),
-    CONSTRAINT fk_plot_review_1 FOREIGN KEY(plot_id) REFERENCES plot_data(id),
+    PRIMARY KEY(id),
+    CONSTRAINT fk_plot_review_1 FOREIGN KEY(plot_id) REFERENCES plot_data(id)
 );
 
 CREATE TABLE IF NOT EXISTS plot_category_feedback

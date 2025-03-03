@@ -5,6 +5,7 @@ import net.bteuk.network.lib.utils.Reviewing;
 import net.bteuk.proxy.Proxy;
 import net.bteuk.proxy.sql.migration.AcceptData;
 import net.bteuk.proxy.sql.migration.DenyData;
+import net.bteuk.proxy.sql.migration.PlotSubmissions;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 import java.sql.Connection;
@@ -139,7 +140,7 @@ public class PlotSQL extends AbstractSQL {
                         new DenyData(
                                 results.getInt("id"), results.getString("uuid"),
                                 results.getString("reviewer"), results.getInt("book_id"),
-                                results.getInt("attempt"), results.getLong("accept_time")
+                                results.getInt("attempt"), results.getLong("deny_time")
                         )
                 );
             }
@@ -147,6 +148,26 @@ public class PlotSQL extends AbstractSQL {
             Proxy.getInstance().getLogger().error("An error occurred while fetching deny_data", e);
         }
         return denyData;
+    }
+
+    public List<PlotSubmissions> getPlotSubmissions() {
+        List<PlotSubmissions> plotSubmissions = new ArrayList<>();
+
+        try (Connection conn = conn();
+             PreparedStatement statement = conn.prepareStatement("SELECT * FROM plot_submissions;");
+             ResultSet results = statement.executeQuery()) {
+            while (results.next()) {
+                plotSubmissions.add(
+                        new PlotSubmissions(
+                                results.getInt("id"), results.getLong("submit_time"),
+                                results.getLong("last_query")
+                        )
+                );
+            }
+        } catch (SQLException e) {
+            Proxy.getInstance().getLogger().error("An error occurred while fetching plot_submissions", e);
+        }
+        return plotSubmissions;
     }
 
     public void addReviewerIfNotExists(String uuid, boolean isArchitect, boolean isReviewer) {

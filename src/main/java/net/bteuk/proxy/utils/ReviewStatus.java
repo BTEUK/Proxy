@@ -69,7 +69,7 @@ public class ReviewStatus {
                     long time = Time.currentTime();
 
                     //Get all plots that have not been reviewed in the last 24 hours, and have not already been queried.
-                    plots = plotSQL.getIntList("SELECT id FROM plot_submission WHERE last_query<" + (time - day) + ";");
+                    plots = plotSQL.getIntList("SELECT plot_id FROM plot_submission WHERE last_query<" + (time - day) + ";");
 
                     //Update the last query time for the same plots.
                     plotSQL.update("UPDATE plot_submission SET last_query=" + time + " WHERE last_query<" + (time - day) + ";");
@@ -142,7 +142,7 @@ public class ReviewStatus {
 
         //Submitted plots, show up to 5 in a list.
         //Order by submit time ascending, as the oldest plots get reviewed first, this way it is always clear to see if plots are currently being reviewed.
-        ArrayList<Integer> plots = plotSQL.getIntList("SELECT id FROM plot_submission ORDER BY submit_time ASC;");
+        ArrayList<Integer> plots = plotSQL.getIntList("SELECT plot_id FROM plot_submission ORDER BY submit_time ASC;");
         StringBuilder plot_message = new StringBuilder();
 
         if (plots.isEmpty()) {

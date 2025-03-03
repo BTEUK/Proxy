@@ -2,6 +2,7 @@ package net.bteuk.proxy.sql;
 
 import net.bteuk.proxy.sql.migration.AcceptData;
 import net.bteuk.proxy.sql.migration.DenyData;
+import net.bteuk.proxy.sql.migration.PlotSubmissions;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -92,7 +93,7 @@ public class DatabaseUpdates {
 
     private int getVersionInt(String version) {
 
-        switch(version) {
+        switch (version) {
 
             // 1.7.2 = 10
             case "1.7.2" -> {
@@ -120,7 +121,7 @@ public class DatabaseUpdates {
             }
 
             // 1.4.4 = 5
-            case "1.4.4" ->  {
+            case "1.4.4" -> {
                 return 5;
             }
 
@@ -154,16 +155,7 @@ public class DatabaseUpdates {
 
         plotSQL.update("ALTER TABLE plot_data MODIFY status ENUM('unclaimed','claimed','submitted','completed','deleted') NOT NULL");
 
-        plotSQL.update("RENAME TABLE plot_submissions TO plot_submission;");
-        plotSQL.update("ALTER TABLE plot_submission DROP PRIMARY KEY;");
-        plotSQL.update("ALTER TABLE plot_submission RENAME COLUMN id TO plot_id;");
-        // Add the status column with a default, then remove the default.
-        plotSQL.update("ALTER TABLE plot_submission ADD COLUMN status ENUM('submitted','under review','awaiting verification','under verification') NOT NULL DEFAULT 'submitted';");
-        plotSQL.update("ALTER TABLE plot_submission ALTER status DROP DEFAULT;");
-        plotSQL.update("ALTER TABLE plot_submission ADD PRIMARY KEY (plot_id);");
-        plotSQL.update("ALTER TABLE plot_submission ADD CONSTRAINT fk_plot_submission_1 FOREIGN KEY (plot_id) REFERENCES plot_data(id);");
-
-        // Migrate existing data from accept_data and deny_data to new plot_review table.
+        // Migrate existing data from accept_data and deny_data to the new plot_review table.
         List<DenyData> denyData = plotSQL.getDenyData();
         for (DenyData deny : denyData) {
             int reviewId = plotSQL.insertReturnId("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,completed) " +
@@ -187,9 +179,17 @@ public class DatabaseUpdates {
             }
         }
 
-        // Rename the accept_data and deny_data tables to indicate they are old.
+        // Migrate existing data from plot_submissions to the new plot_submission tabel.
+        List<PlotSubmissions> plotSubmissions = plotSQL.getPlotSubmissions();
+        for (PlotSubmissions plotSubmission : plotSubmissions) {
+            plotSQL.update("INSERT INTO plot_submission(id,submit_time,status,last_query) " +
+                    "VALUES(" + plotSubmission.id() + "," + plotSubmission.submit_time() + ",'submitted'," + plotSubmission.last_query() + ");");
+        }
+
+        // Rename the accept_data, deny_data and plot_submissions tables to indicate they are old.
         plotSQL.update("RENAME TABLE accept_data TO old_accept_data;");
         plotSQL.update("RENAME TABLE deny_data TO old_deny_data;");
+        plotSQL.update("RENAME TABLE plot_submissions TO old_plot_submissions");
 
         // Version 1.7.2
         globalSQL.update("UPDATE unique_data SET data_value='1.7.2' WHERE data_key='version';");
