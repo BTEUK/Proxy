@@ -445,7 +445,7 @@ public class UserManager {
     private void sendReviewerMessages(UserConnectRequest request) {
         //Show the number of submitted plots.
         String uuid = request.getUuid();
-        sendPlotReviewMessage(request.isArchitect(), request.isReviewer(), uuid, "There %s %d %s to review.");
+        sendPlotReviewMessage(request.isArchitect(), request.isReviewer(), uuid, "There %s %s %s to review.");
 
         //Show the number of submitted regions requests.
         if (request.isReviewer()) {
@@ -471,7 +471,7 @@ public class UserManager {
         if (isArchitect || isReviewer) {
             int plots = Proxy.getInstance().getPlotSQL().getReviewablePlotCount(uuid, isArchitect, isReviewer);
             if (plots != 0) {
-                Component plotMessage = ChatUtils.success(String.format(messageTemplate, (plots == 1 ? "is" : "are"), plots, (plots == 1 ? "plot" : "plots")));
+                Component plotMessage = ChatUtils.success(messageTemplate, (plots == 1 ? "is" : "are"), String.valueOf(plots), (plots == 1 ? "plot" : "plots"));
                 DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
                 Proxy.getInstance().getChatHandler().handle(directMessage);
             }
@@ -482,7 +482,7 @@ public class UserManager {
         if (isReviewer) {
             int plots = Proxy.getInstance().getPlotSQL().getVerifiablePlotCount(uuid, true);
             if (plots != 0) {
-                Component plotMessage = ChatUtils.success(String.format(messageTemplate, (plots == 1 ? "is" : "are"), plots, (plots == 1 ? "plot" : "plots")));
+                Component plotMessage = ChatUtils.success(messageTemplate, (plots == 1 ? "is" : "are"), String.valueOf(plots), (plots == 1 ? "plot" : "plots"));
                 DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
                 Proxy.getInstance().getChatHandler().handle(directMessage);
             }

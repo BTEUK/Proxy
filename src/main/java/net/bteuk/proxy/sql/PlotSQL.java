@@ -67,7 +67,7 @@ public class PlotSQL extends AbstractSQL {
         List<Integer> submitted_plots = new ArrayList<>();
 
         for (PlotDifficulties difficulty : difficulties) {
-            submitted_plots.addAll(getIntList("SELECT pd.id FROM plot_data AS pd INNER JOIN plot_submission AS ps ON pd.id=ps.id WHERE ps.status='submitted' AND pd.difficulty=" + difficulty.getValue() + ";"));
+            submitted_plots.addAll(getIntList("SELECT pd.id FROM plot_data AS pd INNER JOIN plot_submission AS ps ON pd.id=ps.plot_id WHERE ps.status='submitted' AND pd.difficulty=" + difficulty.getValue() + ";"));
         }
 
         // Get all plots that the user is the owner or a member of, don't use those in the count.
@@ -171,7 +171,7 @@ public class PlotSQL extends AbstractSQL {
     }
 
     public void addReviewerIfNotExists(String uuid, boolean isArchitect, boolean isReviewer) {
-        if ((!isArchitect && !isReviewer) || hasRow("SELECT uuid FROM reviewers FROM uuid'" + uuid + "';")) {
+        if ((!isArchitect && !isReviewer) || hasRow("SELECT uuid FROM reviewers WHERE uuid='" + uuid + "';")) {
             return;
         }
 
