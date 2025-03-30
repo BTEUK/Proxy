@@ -93,6 +93,14 @@ public class User {
     @Setter
     private boolean blockNextDisconnect = false;
 
+    @Getter
+    @Setter
+    private int previousPlotSubmissionCount = 0;
+
+    @Getter
+    @Setter
+    private int previousPlotVerificationCount = 0;
+
     public User(UserConnectRequest request) {
         this.uuid = request.getUuid();
         this.name = request.getName();

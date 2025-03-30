@@ -72,17 +72,27 @@ CREATE TABLE IF NOT EXISTS plot_category_feedback
     CONSTRAINT fk_plot_category_feedback_1 FOREIGN KEY(review_id) REFERENCES plot_review(id)
 );
 
-CREATE TABLE IF NOT EXISTS plot_verification_feedback
+CREATE TABLE IF NOT EXISTS plot_verification
 (
-    review_id       INT                         NOT NULL,
-    category        VARCHAR(64)                 NOT NULL,
-    verifier        CHAR(36)                    NOT NULL,
-    selection_old   ENUM('GOOD','OK','POOR')    NOT NULL,
-    selection_new   ENUM('GOOD','OK','POOR')    NOT NULL,
-    book_id_old     INT                         NOT NULL DEFAULT 0,
-    book_id_new     INT                         NOT NULL DEFAULT 0,
-    PRIMARY KEY(review_id,category),
-    CONSTRAINT fk_plot_verification_feedback_1 FOREIGN KEY(review_id) REFERENCES plot_review(id)
+    id              INT             AUTO_INCREMENT,
+    review_id       INT             NOT NULL,
+    verifier        CHAR(36)        NOT NULL,
+    accepted_old    TINYINT(1)      NOT NULL,
+    accepted_new    TINYINT(1)      NOT NULL,
+    PRIMARY_KEY(id),
+    CONSTRAINT fk_plot_verification_1 FOREIGN KEY(review_id) REFERENCES plot_review(id)
+);
+
+CREATE TABLE IF NOT EXISTS plot_verification_category
+(
+    verification_id     INT                         NOT NULL,
+    category            VARCHAR(64)                 NOT NULL,
+    selection_old       ENUM('GOOD','OK','POOR')    NOT NULL,
+    selection_new       ENUM('GOOD','OK','POOR')    NOT NULL,
+    book_id_old         INT                         NOT NULL DEFAULT 0,
+    book_id_new         INT                         NOT NULL DEFAULT 0,
+    PRIMARY KEY(verification_id,category),
+    CONSTRAINT fk_plot_verification_category_1 FOREIGN KEY(verification_id) REFERENCES plot_verification(id)
 );
 
 CREATE TABLE IF NOT EXISTS book_data

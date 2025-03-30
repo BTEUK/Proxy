@@ -88,7 +88,7 @@ public class PlotSQL extends AbstractSQL {
         List<Integer> plots_awaiting_verification = new ArrayList<>();
 
         for (PlotDifficulties difficulty : difficulties) {
-            plots_awaiting_verification.addAll(getIntList("SELECT pd.id FROM plot_data AS pd INNER JOIN plot_submission AS ps ON pd.id=ps.id WHERE ps.status='awaiting verification' AND pd.difficulty=" + difficulty.getValue() + " ORDER BY ps.submit_time ASC;"));
+            plots_awaiting_verification.addAll(getIntList("SELECT pd.id FROM plot_data AS pd INNER JOIN plot_submission AS ps ON pd.id=ps.plot_id WHERE ps.status='awaiting verification' AND pd.difficulty=" + difficulty.getValue() + " ORDER BY ps.submit_time ASC;"));
         }
 
         // Get all plots that the user is the owner or a member of, don't use those in the count.

@@ -280,9 +280,6 @@ public class UserManager {
                 // Send connect message.
                 joinMessage = JOIN_MESSAGE;
             }
-
-            // If the user is a reviewer send messages for the number of submitted plots, region request and navigation requests.
-            sendReviewerMessages(request);
         }
 
         // Make sure the username is correct.
@@ -304,6 +301,9 @@ public class UserManager {
 
             // Add the user to tab for other players.
             Proxy.getInstance().getTabManager().addPlayer(request.getTabPlayer());
+
+            // If the user is a reviewer send messages for the number of submitted plots, region request and navigation requests.
+            sendReviewerMessages(request);
         }
 
         // Log the player count.
@@ -399,10 +399,15 @@ public class UserManager {
     public void sendPlotMessageToAll(PlotMessage plotMessage) {
         Proxy.getInstance().getServerManager().getServers().forEach(server ->
                 server.getRegisteredServer().getPlayersConnected().forEach(player -> {
+                            // Get the user.
+                            User user = getUserByUuid(player.getUniqueId().toString());
+                            if (user == null) {
+                                return;
+                            }
                             if (plotMessage.isVerify()) {
-                                sendPlotVerifyMessage(player.hasPermission("group.reviewer"), player.getUniqueId().toString(), plotMessage.getMessageTemplate());
+                                sendPlotVerifyMessage(user, player.hasPermission("group.reviewer"), player.getUniqueId().toString(), plotMessage.getMessageTemplate(), true);
                             } else {
-                                sendPlotReviewMessage(player.hasPermission("group.architect"), player.hasPermission("group.reviewer"), player.getUniqueId().toString(), plotMessage.getMessageTemplate());
+                                sendPlotReviewMessage(user, player.hasPermission("group.architect"), player.hasPermission("group.reviewer"), player.getUniqueId().toString(), plotMessage.getMessageTemplate(), true);
                             }
                         }
                 )
@@ -445,7 +450,13 @@ public class UserManager {
     private void sendReviewerMessages(UserConnectRequest request) {
         //Show the number of submitted plots.
         String uuid = request.getUuid();
-        sendPlotReviewMessage(request.isArchitect(), request.isReviewer(), uuid, "There %s %s %s to review.");
+        // Get the user.
+        User user = getUserByUuid(uuid);
+        if (user == null) {
+            return;
+        }
+        sendPlotReviewMessage(user, request.isArchitect(), request.isReviewer(), uuid, "There %s %s %s to review.", false);
+        sendPlotVerifyMessage(user, request.isReviewer(), uuid, "There %s %s %s to verify.", false);
 
         //Show the number of submitted regions requests.
         if (request.isReviewer()) {
@@ -466,23 +477,25 @@ public class UserManager {
         }
     }
 
-    private void sendPlotReviewMessage(boolean isArchitect, boolean isReviewer, String uuid, String
-            messageTemplate) {
+    private void sendPlotReviewMessage(User user, boolean isArchitect, boolean isReviewer, String uuid, String
+            messageTemplate, boolean includeZero) {
         if (isArchitect || isReviewer) {
             int plots = Proxy.getInstance().getPlotSQL().getReviewablePlotCount(uuid, isArchitect, isReviewer);
-            if (plots != 0) {
-                Component plotMessage = ChatUtils.success(messageTemplate, (plots == 1 ? "is" : "are"), String.valueOf(plots), (plots == 1 ? "plot" : "plots"));
+            if (user.getPreviousPlotSubmissionCount() != plots && (plots != 0 || includeZero)) {
+                user.setPreviousPlotSubmissionCount(plots);
+                Component plotMessage = ChatUtils.success(messageTemplate, ChatUtils.success(plots == 1 ? "is" : "are"), Component.text(String.valueOf(plots), NamedTextColor.DARK_AQUA), ChatUtils.success(plots == 1 ? "plot" : "plots"));
                 DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
                 Proxy.getInstance().getChatHandler().handle(directMessage);
             }
         }
     }
 
-    private void sendPlotVerifyMessage(boolean isReviewer, String uuid, String messageTemplate) {
+    private void sendPlotVerifyMessage(User user, boolean isReviewer, String uuid, String messageTemplate, boolean includeZero) {
         if (isReviewer) {
             int plots = Proxy.getInstance().getPlotSQL().getVerifiablePlotCount(uuid, true);
-            if (plots != 0) {
-                Component plotMessage = ChatUtils.success(messageTemplate, (plots == 1 ? "is" : "are"), String.valueOf(plots), (plots == 1 ? "plot" : "plots"));
+            if (user.getPreviousPlotVerificationCount() != plots && (plots != 0 || includeZero)) {
+                user.setPreviousPlotVerificationCount(plots);
+                Component plotMessage = ChatUtils.success(messageTemplate, ChatUtils.success(plots == 1 ? "is" : "are"), Component.text(String.valueOf(plots), NamedTextColor.DARK_AQUA), ChatUtils.success(plots == 1 ? "plot" : "plots"));
                 DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
                 Proxy.getInstance().getChatHandler().handle(directMessage);
             }
