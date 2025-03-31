@@ -95,7 +95,7 @@ public class PlotSQL extends AbstractSQL {
         List<Integer> member_plots = getIntList("SELECT id FROM plot_members WHERE uuid='" + uuid + "';");
 
         // Get all plots that the user has reviewed, don't use those in the count.
-        List<Integer> reviewed_plots = getIntList("SELECT id FROM plot_review WHERE reviewer='" + uuid + "' AND completed=0;");
+        List<Integer> reviewed_plots = getIntList("SELECT plot_id FROM plot_review WHERE reviewer='" + uuid + "' AND completed=0;");
 
         plots_awaiting_verification.removeAll(member_plots);
         plots_awaiting_verification.removeAll(reviewed_plots);
@@ -150,6 +150,10 @@ public class PlotSQL extends AbstractSQL {
         return denyData;
     }
 
+    /**
+     * Get the plot submissions from the OLD table (plot_submissions)
+     * @return the old plot submissions
+     */
     public List<PlotSubmissions> getPlotSubmissions() {
         List<PlotSubmissions> plotSubmissions = new ArrayList<>();
 

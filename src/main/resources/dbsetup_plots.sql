@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS plot_verification
     verifier        CHAR(36)        NOT NULL,
     accepted_old    TINYINT(1)      NOT NULL,
     accepted_new    TINYINT(1)      NOT NULL,
-    PRIMARY_KEY(id),
+    PRIMARY KEY(id),
     CONSTRAINT fk_plot_verification_1 FOREIGN KEY(review_id) REFERENCES plot_review(id)
 );
 

@@ -79,7 +79,7 @@ public class ReviewStatus {
                     for (int id : plots) {
 
                         //Get time since submission.
-                        long submit_time = plotSQL.getLong("SELECT submit_time FROM plot_submission WHERE id=" + id + ";");
+                        long submit_time = plotSQL.getLong("SELECT submit_time FROM plot_submission WHERE plot_id=" + id + ";");
                         int days = (int) ((time - submit_time) / 1000L / 60L / 60L / 24L);
 
                         String status = plotSQL.getString("SELECT status FROM plot_submission WHERE plot_id=" + id + ";");

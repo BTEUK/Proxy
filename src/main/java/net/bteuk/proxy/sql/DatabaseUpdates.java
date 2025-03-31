@@ -182,7 +182,7 @@ public class DatabaseUpdates {
         // Migrate existing data from plot_submissions to the new plot_submission tabel.
         List<PlotSubmissions> plotSubmissions = plotSQL.getPlotSubmissions();
         for (PlotSubmissions plotSubmission : plotSubmissions) {
-            plotSQL.update("INSERT INTO plot_submission(id,submit_time,status,last_query) " +
+            plotSQL.update("INSERT INTO plot_submission(plot_id,submit_time,status,last_query) " +
                     "VALUES(" + plotSubmission.id() + "," + plotSubmission.submit_time() + ",'submitted'," + plotSubmission.last_query() + ");");
         }
 
