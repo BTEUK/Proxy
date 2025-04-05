@@ -175,7 +175,7 @@ public class PlotSQL extends AbstractSQL {
     }
 
     public void addReviewerIfNotExists(String uuid, boolean isArchitect, boolean isReviewer) {
-        if ((!isArchitect && !isReviewer) || hasRow("SELECT uuid FROM reviewers WHERE uuid='" + uuid + "';")) {
+        if ((!isArchitect && !isReviewer) || hasRow("SELECT 1 FROM reviewers WHERE uuid='" + uuid + "';")) {
             return;
         }
 
