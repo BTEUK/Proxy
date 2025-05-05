@@ -182,4 +182,45 @@ public class PlotSQL extends AbstractSQL {
         double initialValue = isReviewer ? 5 : 0;
         update("INSERT INTO reviewers(uuid,reputation) VALUES('" + uuid + "'," + initialValue + ");");
     }
+
+    public int[][] getOldPlotCorners(int plotID) {
+
+        try (
+                Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT COUNT(corner) FROM" + " old_plot_corners WHERE id=" + plotID + ";");
+                ResultSet results = statement.executeQuery()
+        ) {
+
+            results.next();
+
+            int[][] corners = new int[results.getInt(1)][2];
+
+            getOldPlotCorners(corners, plotID);
+
+            return corners;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private int[][] getOldPlotCorners(int[][] corners, int plotID) {
+
+        try (
+                Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT x,z FROM " + "old_plot_corners WHERE id=" + plotID + ";");
+                ResultSet results = statement.executeQuery()
+        ) {
+
+            for (int i = 0; i < corners.length; i++) {
+
+                results.next();
+                corners[i][0] = results.getInt(1);
+                corners[i][1] = results.getInt(2);
+            }
+
+            return corners;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return corners;
+        }
+    }
 }
