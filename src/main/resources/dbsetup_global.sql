@@ -221,3 +221,13 @@ CREATE TABLE IF NOT EXISTS buildings
     CONSTRAINT fk_buildings_1 FOREIGN KEY(coordinate_id) REFERENCES coordinates(id),
     CONSTRAINT fk_buildings_2 FOREIGN KEY(player_id) REFERENCES player_data(uuid)
 );
+
+CREATE TABLE IF NOT EXISTS last_messages
+
+    (
+        player_from_id CHAR(36) NOT NULL,
+        player_to_id CHAR(36)   NOT NULL,
+    PRIMARY KEY (player_from_id),
+    CONSTRAINT fk_last_messages_1 FOREIGN KEY(player_from_id) REFERENCES player_data(uuid),
+    CONSTRAINT fk_last_messages_2 FOREIGN KEY(player_to_id) REFERENCES player_data(uuid)
+)
