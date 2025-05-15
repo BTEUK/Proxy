@@ -187,7 +187,7 @@ public class DatabaseUpdates {
             int[][] plotCorners = plotSQL.getOldPlotCorners(plot);
             int cornerId = 1;
             for (int[] corner : plotCorners) {
-                plotSQL.update("INSERT INTO plot_corners(id,corner,x,z) VALUES(" + plot + "," + cornerId + "," + corner[0] + xTransform + "," + corner[1] + zTransform + ");");
+                plotSQL.update("INSERT INTO plot_corners(id,corner,x,z) VALUES(" + plot + "," + cornerId + "," + (corner[0] + xTransform) + "," + (corner[1] + zTransform) + ");");
                 cornerId++;
             }
             Proxy.getInstance().getLogger().info("Migrated all plot corners to Earth location.");

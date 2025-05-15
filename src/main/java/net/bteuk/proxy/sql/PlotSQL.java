@@ -206,7 +206,7 @@ public class PlotSQL extends AbstractSQL {
     private int[][] getOldPlotCorners(int[][] corners, int plotID) {
 
         try (
-                Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT x,z FROM " + "old_plot_corners WHERE id=" + plotID + ";");
+                Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT x,z FROM old_plot_corners WHERE id=" + plotID + ";");
                 ResultSet results = statement.executeQuery()
         ) {
 
