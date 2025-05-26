@@ -384,6 +384,17 @@ public class UserManager {
     }
 
     /**
+     * Get a user by name.
+     *
+     * @param name the uuid of the user to get
+     * @return the {@link User} or null if not exists
+     */
+    public User getUserByName(String name) {
+        String lcName = name.toLowerCase();
+        return users.stream().filter(user -> user.getName().toLowerCase().equals(lcName)).findFirst().orElse(null);
+    }
+
+    /**
      * Removes all users from the user list.
      * The removal is run as if they disconnected.
      * This is to be used on Proxy-shutdown.

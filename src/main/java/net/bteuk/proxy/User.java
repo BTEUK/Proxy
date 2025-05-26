@@ -101,6 +101,11 @@ public class User {
     @Setter
     private int previousPlotVerificationCount = 0;
 
+    //used to store the id of the last user a player messaged or was messaged by.
+    @Getter
+    @Setter
+    private String lastMessagedUserID = null;
+
     public User(UserConnectRequest request) {
         this.uuid = request.getUuid();
         this.name = request.getName();
