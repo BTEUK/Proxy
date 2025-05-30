@@ -390,8 +390,7 @@ public class UserManager {
      * @return the {@link User} or null if not exists
      */
     public User getUserByName(String name) {
-        String lcName = name.toLowerCase();
-        return users.stream().filter(user -> user.getName().toLowerCase().equals(lcName)).findFirst().orElse(null);
+        return users.stream().filter(user -> user.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
     }
 
     /**

@@ -78,8 +78,6 @@ public class GlobalSQL extends AbstractSQL {
     }
 
     public boolean checkIfUserExistsByName(String name) {
-        String query = "SELECT uuid FROM users WHERE name = ?";
-
         try (
                 Connection conn = conn();
                 PreparedStatement statement = conn.prepareStatement(
