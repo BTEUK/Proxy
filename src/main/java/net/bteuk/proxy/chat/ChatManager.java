@@ -11,6 +11,7 @@ import net.bteuk.proxy.UserManager;
 import net.bteuk.proxy.utils.Analytics;
 import net.bteuk.proxy.utils.Time;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 import java.util.List;
@@ -18,6 +19,8 @@ import java.util.List;
 import static net.bteuk.network.lib.enums.ChatChannels.GLOBAL;
 import static net.bteuk.proxy.utils.Constants.DISCORD_SENDER;
 import static net.bteuk.proxy.utils.Constants.SERVER_SENDER;
+import static net.bteuk.proxy.utils.Moderation.getMuteDuration;
+import static net.bteuk.proxy.utils.Moderation.getMutedReason;
 
 /**
  * The chat manager keeps track of all the channels, players and statuses.
@@ -112,6 +115,12 @@ public class ChatManager {
         if (!SERVER_USERS.contains(directMessage.getSender())) {
             User sender = userManager.getUserByUuid(directMessage.getSender());
             User receiver = userManager.getUserByUuid(directMessage.getRecipient());
+
+            if (sender.isMuted()) {
+                sendDirectMessage(
+                        new DirectMessage(GLOBAL.getChannelName(), directMessage.getSender(), SERVER_SENDER, getMutedComponent(sender), false));
+                return;
+            }
             if (receiver == null) {
                 sendDirectMessage(
                         new DirectMessage(GLOBAL.getChannelName(), directMessage.getSender(), SERVER_SENDER, ChatUtils.error("Unknown recipient. Unable to send message"), false));
@@ -168,6 +177,19 @@ public class ChatManager {
                 // Send offline message.
                 Proxy.getInstance().getGlobalSQL().insertMessage(directMessage.getRecipient(), GsonComponentSerializer.gson().serialize(directMessage.getComponent()));
             }
+        }
+    }
+
+    public Component getMutedComponent(User user) {
+        if (user.isMuted()) {
+            return ChatUtils.error("You have been muted for ")
+                    .append(Component.text(getMutedReason(user.getUuid()), NamedTextColor.DARK_RED))
+                    .append(ChatUtils.error(" until "))
+                    .append(Component.text(getMuteDuration(user.getUuid()), NamedTextColor.DARK_RED));
+        }
+        else
+        {
+            return  null;
         }
     }
 }
