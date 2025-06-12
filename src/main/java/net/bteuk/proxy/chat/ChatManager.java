@@ -117,8 +117,7 @@ public class ChatManager {
             User receiver = userManager.getUserByUuid(directMessage.getRecipient());
 
             if (sender.isMuted()) {
-                sendDirectMessage(
-                        new DirectMessage(GLOBAL.getChannelName(), directMessage.getSender(), SERVER_SENDER, getMutedComponent(sender), false));
+                sendDirectMessage(new DirectMessage(GLOBAL.getChannelName(), directMessage.getSender(), SERVER_SENDER, getMutedComponent(sender), false));
                 return;
             }
             if (receiver == null) {
@@ -182,14 +181,10 @@ public class ChatManager {
 
     public Component getMutedComponent(User user) {
         if (user.isMuted()) {
-            return ChatUtils.error("You have been muted for ")
-                    .append(Component.text(getMutedReason(user.getUuid()), NamedTextColor.DARK_RED))
-                    .append(ChatUtils.error(" until "))
+            return ChatUtils.error("You have been muted for ").append(Component.text(getMutedReason(user.getUuid()), NamedTextColor.DARK_RED)).append(ChatUtils.error(" until "))
                     .append(Component.text(getMuteDuration(user.getUuid()), NamedTextColor.DARK_RED));
-        }
-        else
-        {
-            return  null;
+        } else {
+            return null;
         }
     }
 }
