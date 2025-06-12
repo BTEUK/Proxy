@@ -479,14 +479,10 @@ public class UserManager {
 
     private void sendPlotReviewMessage(User user, boolean isArchitect, boolean isReviewer, String uuid, String
             messageTemplate, boolean includeZero) {
-        Proxy.getInstance().getLogger().info("Attempting to send plot review message to " + user.getName());
         if (isArchitect || isReviewer) {
-            Proxy.getInstance().getLogger().info("User is a reviewer or architect.");
             int plots = Proxy.getInstance().getPlotSQL().getReviewablePlotCount(uuid, isArchitect, isReviewer);
-            Proxy.getInstance().getLogger().info("There are " + plots + " submitted plots.");
             if (user.getPreviousPlotSubmissionCount() != plots && (plots != 0 || includeZero)) {
                 user.setPreviousPlotSubmissionCount(plots);
-                Proxy.getInstance().getLogger().info("Sending message.");
                 Component plotMessage = ChatUtils.success(messageTemplate, ChatUtils.success(plots == 1 ? "is" : "are"), Component.text(String.valueOf(plots), NamedTextColor.DARK_AQUA), ChatUtils.success(plots == 1 ? "plot" : "plots"));
                 DirectMessage directMessage = new DirectMessage(ChatChannels.GLOBAL.getChannelName(), uuid, "server", plotMessage, false);
                 Proxy.getInstance().getChatHandler().handle(directMessage);
