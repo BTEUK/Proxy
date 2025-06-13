@@ -76,6 +76,27 @@ public class GlobalSQL extends AbstractSQL {
         }
         return messages;
     }
+
+    public boolean checkIfUserExistsByName(String name) {
+        try (
+                Connection conn = conn();
+                PreparedStatement statement = conn.prepareStatement(
+                        "SELECT uuid FROM player_data WHERE name=?;"
+                )
+        ) {
+            statement.setString(1, name);
+            ResultSet results = statement.executeQuery();
+
+            if (results.next()) {
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return false;
+    }
+
 }
 
 /*
