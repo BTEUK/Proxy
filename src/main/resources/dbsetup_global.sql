@@ -211,3 +211,13 @@ CREATE TABLE IF NOT EXISTS progression
     CONSTRAINT fk_progression_1 FOREIGN KEY(season) REFERENCES seasons(id),
     CONSTRAINT fk_progression_2 FOREIGN KEY(uuid) REFERENCES player_data(uuid)
 );
+
+CREATE TABLE IF NOT EXISTS buildings
+(
+    building_id    INT          AUTO_INCREMENT,
+    coordinate_id  INT          NOT NULL,
+    player_id       CHAR(36)      NOT NULL,
+    PRIMARY KEY(building_id),
+    CONSTRAINT fk_buildings_1 FOREIGN KEY(coordinate_id) REFERENCES coordinates(id),
+    CONSTRAINT fk_buildings_2 FOREIGN KEY(player_id) REFERENCES player_data(uuid)
+);

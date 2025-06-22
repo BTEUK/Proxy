@@ -135,12 +135,14 @@ public class PlotListMessage {
             //If the plot is completed, add the builder.
             if (Proxy.getInstance().getPlotSQL().hasRow("SELECT id FROM plot_data WHERE id=" + plots.get(index) + " AND status='completed'")) {
                 plot_message.append(" - completed by: ").append(Discord.escapeDiscordFormatting(Proxy.getInstance().getGlobalSQL().getString("SELECT name FROM player_data WHERE uuid='" +
-                        Proxy.getInstance().getPlotSQL().getString("SELECT uuid FROM accept_data WHERE id=" + plots.get(index) + ";") + "';")));
+                        Proxy.getInstance().getPlotSQL().getString("SELECT uuid FROM plot_review WHERE plot_id=" + plots.get(index) + " AND accepted=1 AND completed=1;") + "';")));
             }
 
             //If the plot is currently being reviewed add that.
-            if (Proxy.getInstance().getPlotSQL().hasRow("SELECT id FROM plot_data WHERE id=" + plots.get(index) + " AND status='reviewing';")) {
-                plot_message.append(" (under review)");
+            if (Proxy.getInstance().getPlotSQL().hasRow("SELECT 1 FROM plot_submission WHERE plot_id=" + plots.get(index) + " AND status<>'submitted';")) {
+                plot_message.append(" (")
+                        .append(Proxy.getInstance().getPlotSQL().getString("SELECT status FROM plot_submission WHERE plot_id=" + plots.get(index) + ";"))
+                        .append(")");
             }
 
             //Increment index.

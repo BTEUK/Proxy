@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS plot_data
 (
 	id          INT         AUTO_INCREMENT,
 	status      ENUM('unclaimed',
-	'claimed','submitted','reviewing',
+	'claimed','submitted',
 	'completed','deleted')  NOT NULL,
 	size        INT         NOT NULL,
 	difficulty  INT         NOT NULL,
@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS plot_members
     uuid        CHAR(36)    NOT NULL,
     is_owner    TINYINT(1)  NULL DEFAULT 0,
     last_enter  BIGINT      NOT NULL,
+    inactivity_notice  TINYINT(1)  NOT NULL DEFAULT 0,
     PRIMARY KEY(id, uuid)
 );
 
@@ -37,35 +38,61 @@ CREATE TABLE IF NOT EXISTS plot_invites
     PRIMARY KEY(id,uuid)
 );
 
-CREATE TABLE IF NOT EXISTS plot_submissions
+CREATE TABLE IF NOT EXISTS plot_submission
 (
-    id          INT         NOT NULL,
+    plot_id     INT         NOT NULL,
     submit_time BIGINT      NOT NULL,
+    status      ENUM('submitted','under review','awaiting verification','under verification') NOT NULL,
     last_query  BIGINT      NULL DEFAULT 0,
-    PRIMARY KEY (id)
+    PRIMARY KEY (plot_id),
+    CONSTRAINT fk_plot_submission_1 FOREIGN KEY(plot_id) REFERENCES plot_data(id)
 );
 
-CREATE TABLE IF NOT EXISTS accept_data
+CREATE TABLE IF NOT EXISTS plot_review
 (
-    id          INT         NOT NULL,
+    id          INT         AUTO_INCREMENT,
+    plot_id     INT         NOT NULL,
     uuid        CHAR(36)    NOT NULL,
     reviewer    CHAR(36)    NOT NULL,
-    book_id     INT         NULL DEFAULT 0,
-    accuracy    INT         NOT NULL,
-    quality     INT         NOT NULL,
-    accept_time BIGINT      NOT NULL,
-    PRIMARY KEY(id)
-);
-
-CREATE TABLE IF NOT EXISTS deny_data
-(
-    id          INT         NOT NULL,
-    uuid        CHAR(36)    NOT NULL,
-    reviewer    CHAR(36)    NOT NULL,
-    book_id     INT         NOT NULL,
     attempt     INT         NOT NULL,
-    deny_time   BIGINT      NOT NULL,
-    PRIMARY KEY(id, uuid, attempt)
+    review_time BIGINT      NOT NULL,
+    accepted    TINYINT(1)  NOT NULL,
+    completed   TINYINT(1)  NOT NULL,
+    PRIMARY KEY(id),
+    CONSTRAINT fk_plot_review_1 FOREIGN KEY(plot_id) REFERENCES plot_data(id)
+);
+
+CREATE TABLE IF NOT EXISTS plot_category_feedback
+(
+    review_id   INT                         NOT NULL,
+    category    VARCHAR(64)                 NOT NULL,
+    selection   ENUM('GOOD','OK','POOR','NONE')    NOT NULL,
+    book_id     INT                         NOT NULL DEFAULT 0,
+    PRIMARY KEY(review_id,category),
+    CONSTRAINT fk_plot_category_feedback_1 FOREIGN KEY(review_id) REFERENCES plot_review(id)
+);
+
+CREATE TABLE IF NOT EXISTS plot_verification
+(
+    id              INT             AUTO_INCREMENT,
+    review_id       INT             NOT NULL,
+    verifier        CHAR(36)        NOT NULL,
+    accepted_old    TINYINT(1)      NOT NULL,
+    accepted_new    TINYINT(1)      NOT NULL,
+    PRIMARY KEY(id),
+    CONSTRAINT fk_plot_verification_1 FOREIGN KEY(review_id) REFERENCES plot_review(id)
+);
+
+CREATE TABLE IF NOT EXISTS plot_verification_category
+(
+    verification_id     INT                         NOT NULL,
+    category            VARCHAR(64)                 NOT NULL,
+    selection_old       ENUM('GOOD','OK','POOR')    NOT NULL,
+    selection_new       ENUM('GOOD','OK','POOR')    NOT NULL,
+    book_id_old         INT                         NOT NULL DEFAULT 0,
+    book_id_new         INT                         NOT NULL DEFAULT 0,
+    PRIMARY KEY(verification_id,category),
+    CONSTRAINT fk_plot_verification_category_1 FOREIGN KEY(verification_id) REFERENCES plot_verification(id)
 );
 
 CREATE TABLE IF NOT EXISTS book_data
@@ -129,4 +156,12 @@ CREATE TABLE IF NOT EXISTS zone_corners
     x           INT         NOT NULL,
     z           INT         NOT NULL,
     PRIMARY KEY(id,corner)
+);
+
+CREATE TABLE IF NOT EXISTS reviewers
+(
+    id          INT         AUTO_INCREMENT,
+    uuid        CHAR(36)    NOT NULL,
+    reputation  DECIMAL(5,2)    NOT NULL DEFAULT 0,
+    PRIMARY KEY(id)
 );

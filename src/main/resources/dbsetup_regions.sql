@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS region_members
     last_enter  BIGINT          NOT NULL,
     tag         VARCHAR(64)     NULL DEFAULT NULL,
     coordinate_id   INT         NOT NULL,
+    pinned      TINYINT(1) NOT NULL DEFAULT 0,
     PRIMARY KEY(region,uuid)
 );
 

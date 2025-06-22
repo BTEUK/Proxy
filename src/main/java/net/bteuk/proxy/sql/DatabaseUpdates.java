@@ -1,17 +1,22 @@
 package net.bteuk.proxy.sql;
 
+import net.bteuk.proxy.sql.migration.AcceptData;
+import net.bteuk.proxy.sql.migration.DenyData;
+import net.bteuk.proxy.sql.migration.PlotSubmissions;
 import org.slf4j.Logger;
 
+import java.util.List;
+
 public class DatabaseUpdates {
-    
+
     private final Logger logger;
-    
+
     private final GlobalSQL globalSQL;
-    
+
     private final PlotSQL plotSQL;
-    
+
     private final RegionSQL regionSQL;
-    
+
     public DatabaseUpdates(Logger logger, GlobalSQL globalSQL, PlotSQL plotSQL, RegionSQL regionSQL) {
         this.logger = logger;
         this.globalSQL = globalSQL;
@@ -28,7 +33,7 @@ public class DatabaseUpdates {
             version = globalSQL.getString("SELECT data_value FROM unique_data WHERE data_key='version';");
         } else {
             //Insert the current database version as version.
-            globalSQL.update("INSERT INTO unique_data(data_key, data_value) VALUES('version','1.6.0')");
+            globalSQL.update("INSERT INTO unique_data(data_key, data_value) VALUES('version','1.7.2')");
         }
 
         //Check for specific table columns that could be missing,
@@ -74,11 +79,31 @@ public class DatabaseUpdates {
         if (oldVersionInt <= 7) {
             update7_8();
         }
+
+        // 1.7.0 -> 1.7.1
+        if (oldVersionInt <= 8) {
+            update8_9();
+        }
+
+        // 1.7.1 -> 1.7.2
+        if (oldVersionInt <= 9) {
+            update9_10();
+        }
     }
 
     private int getVersionInt(String version) {
 
-        switch(version) {
+        switch (version) {
+
+            // 1.7.2 = 10
+            case "1.7.2" -> {
+                return 10;
+            }
+
+            // 1.7.1 = 9
+            case "1.7.1" -> {
+                return 9;
+            }
 
             // 1.7.0 = 8
             case "1.7.0" -> {
@@ -96,7 +121,7 @@ public class DatabaseUpdates {
             }
 
             // 1.4.4 = 5
-            case "1.4.4" ->  {
+            case "1.4.4" -> {
                 return 5;
             }
 
@@ -121,6 +146,64 @@ public class DatabaseUpdates {
             }
 
         }
+
+    }
+
+    private void update9_10() {
+
+        logger.info("Updating database from 1.7.1 to 1.7.2");
+
+        plotSQL.update("ALTER TABLE plot_data MODIFY status ENUM('unclaimed','claimed','submitted','completed','deleted') NOT NULL");
+
+        // Migrate existing data from accept_data and deny_data to the new plot_review table.
+        List<DenyData> denyData = plotSQL.getDenyData();
+        for (DenyData deny : denyData) {
+            int reviewId = plotSQL.insertReturnId("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,completed) " +
+                    "VALUES(" + deny.id() + ",'" + deny.uuid() + "','" + deny.reviewer() + "'," +
+                    deny.attempt() + "," + deny.denyTime() + "," + "0,1);");
+            // Insert the feedback as category feedback for the GENERAL category.
+            plotSQL.update("INSERT INTO plot_category_feedback(review_id,category,selection,book_id) " +
+                    "VALUES(" + reviewId + ",'GENERAL','NONE'," + deny.bookId() + ");");
+        }
+        List<AcceptData> acceptData = plotSQL.getAcceptData();
+        for (AcceptData accept : acceptData) {
+            // Get the highest denied attempt for the user, the accept attempt will be that +1.
+            int attempt = 1 + plotSQL.getInt("SELECT MAX(attempt) FROM deny_data WHERE id=" + accept.id() + " AND uuid='" + accept.uuid() + "';");
+            int reviewId = plotSQL.insertReturnId("INSERT INTO plot_review(plot_id,uuid,reviewer,attempt,review_time,accepted,completed) " +
+                    "VALUES(" + accept.id() + ",'" + accept.uuid() + "','" + accept.reviewer() + "'," +
+                    attempt + "," + accept.acceptTime() + "," + "1,1);");
+            if (accept.bookId() != 0) {
+                // Insert the feedback as category feedback for the GENERAL category.
+                plotSQL.update("INSERT INTO plot_category_feedback(review_id,category,selection,book_id) " +
+                        "VALUES(" + reviewId + ",'GENERAL','NONE'," + accept.bookId() + ");");
+            }
+        }
+
+        // Migrate existing data from plot_submissions to the new plot_submission tabel.
+        List<PlotSubmissions> plotSubmissions = plotSQL.getPlotSubmissions();
+        for (PlotSubmissions plotSubmission : plotSubmissions) {
+            plotSQL.update("INSERT INTO plot_submission(plot_id,submit_time,status,last_query) " +
+                    "VALUES(" + plotSubmission.id() + "," + plotSubmission.submit_time() + ",'submitted'," + plotSubmission.last_query() + ");");
+        }
+
+        // Rename the accept_data, deny_data and plot_submissions tables to indicate they are old.
+        plotSQL.update("RENAME TABLE accept_data TO old_accept_data;");
+        plotSQL.update("RENAME TABLE deny_data TO old_deny_data;");
+        plotSQL.update("RENAME TABLE plot_submissions TO old_plot_submissions");
+
+        // Version 1.7.2
+        globalSQL.update("UPDATE unique_data SET data_value='1.7.2' WHERE data_key='version';");
+    }
+
+    private void update8_9() {
+
+        logger.info("Updating database from 1.7.0 to 1.7.1");
+
+        // Add pinned column in region_members.
+        plotSQL.update("ALTER TABLE plot_members ADD COLUMN inactivity_notice TINYINT(1) NOT NULL DEFAULT 0;");
+
+        // Version 1.7.1
+        globalSQL.update("UPDATE unique_data SET data_value='1.7.1' WHERE data_key='version';");
 
     }
 

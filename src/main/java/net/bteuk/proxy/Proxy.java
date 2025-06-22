@@ -49,7 +49,7 @@ import static java.awt.Color.RED;
 import static net.bteuk.proxy.utils.Analytics.enableAnalytics;
 import static net.bteuk.proxy.utils.Constants.LEAVE_MESSAGE;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.9.0",
+@Plugin(id = "proxy", name = "Proxy", version = "1.9.2",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
 
@@ -124,19 +124,22 @@ public class Proxy {
             String global_database = config.getString("database.global");
             BasicDataSource global_dataSource = init.mysqlSetup(global_database);
             globalSQL = new GlobalSQL(global_dataSource);
+            init.initDb("/dbsetup_global.sql", global_dataSource);
 
             //Region Database
             String region_database = config.getString("database.region");
             BasicDataSource region_dataSource = init.mysqlSetup(region_database);
             regionSQL = new RegionSQL(region_dataSource);
+            init.initDb("/dbsetup_regions.sql", region_dataSource);
 
             //Plot Database
             String plot_database = config.getString("database.plot");
             BasicDataSource plot_dataSource = init.mysqlSetup(plot_database);
             plotSQL = new PlotSQL(plot_dataSource);
+            init.initDb("/dbsetup_plots.sql", plot_dataSource);
 
         } catch (SQLException | RuntimeException | ClassNotFoundException e) {
-            logger.error("Failed to connect to the database, please check that you have set the config values correctly.");
+            logger.error("Failed to connect to the database, please check that you have set the config values correctly.", e);
             logger.error("Disabling Proxy");
             return;
         }
