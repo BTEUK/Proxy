@@ -103,6 +103,14 @@ CREATE TABLE IF NOT EXISTS book_data
     PRIMARY KEY(id, page)
 );
 
+CREATE TABLE IF NOT EXISTS tutorial_recommendations
+(
+    plot_id     INT         NOT NULL,
+    recommendation_id INT         NOT NULL,
+    PRIMARY KEY (plot_id, recommendation_id),
+    CONSTRAINT fk_tutorial_recommendations_1 FOREIGN KEY(plot_id) REFERENCES plot_data(id)
+);
+
 CREATE TABLE IF NOT EXISTS location_data
 (
     name        VARCHAR(64) NOT NULL,
