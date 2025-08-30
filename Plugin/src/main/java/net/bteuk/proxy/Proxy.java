@@ -16,20 +16,20 @@ import net.bteuk.network.lib.socket.SocketHandler;
 import net.bteuk.proxy.chat.ChatHandler;
 import net.bteuk.proxy.chat.ChatManager;
 import net.bteuk.proxy.config.Config;
+import net.bteuk.proxy.database.DatabaseInit;
 import net.bteuk.proxy.eventing.listeners.CommandListener;
 import net.bteuk.proxy.eventing.listeners.ServerConnectListener;
 import net.bteuk.proxy.socket.ProxySocketHandler;
-import net.bteuk.proxy.sql.DatabaseInit;
-import net.bteuk.proxy.sql.DatabaseUpdates;
-import net.bteuk.proxy.sql.GlobalSQL;
-import net.bteuk.proxy.sql.PlotSQL;
-import net.bteuk.proxy.sql.RegionSQL;
+import net.bteuk.proxy.database.sql.GlobalSQL;
+import net.bteuk.proxy.database.sql.PlotSQL;
+import net.bteuk.proxy.database.sql.RegionSQL;
 import net.bteuk.proxy.utils.Analytics;
 import net.bteuk.proxy.utils.Linked;
 import net.bteuk.proxy.utils.ReviewStatus;
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
+import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -49,7 +49,7 @@ import static java.awt.Color.RED;
 import static net.bteuk.proxy.utils.Analytics.enableAnalytics;
 import static net.bteuk.proxy.utils.Constants.LEAVE_MESSAGE;
 
-@Plugin(id = "proxy", name = "Proxy", version = "1.9.2",
+@Plugin(id = "proxy", name = "Proxy", version = "1.9.4",
         url = "https://github.com/BTEUK/Proxy", description = "Proxy plugin, managed chat, discord and server related actions.", authors = {"ELgamer"})
 public class Proxy {
 
@@ -107,45 +107,50 @@ public class Proxy {
         try {
             config = new Config();
         } catch (IOException e) {
-            getLogger().warn("An error occurred while loading the config.");
-            e.printStackTrace();
+            getLogger().warn("An error occurred while loading the config", e);
         }
     }
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+        
+        // Init logging to ensure java util logging works.
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
 
-        //Setup MySQL
+        // Set up MySQL
         try {
 
             DatabaseInit init = new DatabaseInit();
 
-            //Global Database
-            String global_database = config.getString("database.global");
-            BasicDataSource global_dataSource = init.mysqlSetup(global_database);
-            globalSQL = new GlobalSQL(global_dataSource);
-            init.initDb("/dbsetup_global.sql", global_dataSource);
+            String host = Proxy.getInstance().getConfig().getString("host");
+            int port = Proxy.getInstance().getConfig().getInt("port");
+            String username = Proxy.getInstance().getConfig().getString("username");
+            String password = Proxy.getInstance().getConfig().getString("password");
 
-            //Region Database
-            String region_database = config.getString("database.region");
-            BasicDataSource region_dataSource = init.mysqlSetup(region_database);
-            regionSQL = new RegionSQL(region_dataSource);
-            init.initDb("/dbsetup_regions.sql", region_dataSource);
+            // Global Database
+            String globalDatabase = config.getString("database.global");
+            DataSource globalDataSource = init.mysqlSetup(globalDatabase, host, port, username, password);
+            globalSQL = new GlobalSQL(globalDataSource);
 
-            //Plot Database
-            String plot_database = config.getString("database.plot");
-            BasicDataSource plot_dataSource = init.mysqlSetup(plot_database);
-            plotSQL = new PlotSQL(plot_dataSource);
-            init.initDb("/dbsetup_plots.sql", plot_dataSource);
+            // Region Database
+            String regionDatabase = config.getString("database.region");
+            DataSource regionDataSource = init.mysqlSetup(regionDatabase, host, port, username, password);
+            regionSQL = new RegionSQL(regionDataSource);
 
-        } catch (SQLException | RuntimeException | ClassNotFoundException e) {
+            // Plot Database
+            String plotDatabase = config.getString("database.plot");
+            DataSource plotDataSource = init.mysqlSetup(plotDatabase, host, port, username, password);
+            plotSQL = new PlotSQL(plotDataSource);
+
+            // Init schemas and update if necessary.
+            init.initializeSchemas(globalDataSource, plotDataSource, regionDataSource);
+
+        } catch (SQLException | RuntimeException e) {
             logger.error("Failed to connect to the database, please check that you have set the config values correctly.", e);
             logger.error("Disabling Proxy");
             return;
         }
-
-        DatabaseUpdates databaseUpdates = new DatabaseUpdates(getLogger(), globalSQL, plotSQL, regionSQL);
-        databaseUpdates.updateDatabase();
 
         userManager = new UserManager(server);
 

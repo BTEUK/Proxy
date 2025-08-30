@@ -1,16 +1,17 @@
-package net.bteuk.proxy.sql;
+package net.bteuk.proxy.database;
 
-import net.bteuk.proxy.Proxy;
-import net.bteuk.proxy.sql.migration.AcceptData;
-import net.bteuk.proxy.sql.migration.DenyData;
-import net.bteuk.proxy.sql.migration.PlotSubmissions;
-import org.slf4j.Logger;
+import lombok.extern.java.Log;
+import net.bteuk.proxy.database.sql.GlobalSQL;
+import net.bteuk.proxy.database.sql.PlotSQL;
+import net.bteuk.proxy.database.sql.RegionSQL;
+import net.bteuk.proxy.database.sql.migration.AcceptData;
+import net.bteuk.proxy.database.sql.migration.DenyData;
+import net.bteuk.proxy.database.sql.migration.PlotSubmissions;
 
 import java.util.List;
 
+@Log
 public class DatabaseUpdates {
-
-    private final Logger logger;
 
     private final GlobalSQL globalSQL;
 
@@ -18,8 +19,7 @@ public class DatabaseUpdates {
 
     private final RegionSQL regionSQL;
 
-    public DatabaseUpdates(Logger logger, GlobalSQL globalSQL, PlotSQL plotSQL, RegionSQL regionSQL) {
-        this.logger = logger;
+    public DatabaseUpdates(GlobalSQL globalSQL, PlotSQL plotSQL, RegionSQL regionSQL) {
         this.globalSQL = globalSQL;
         this.plotSQL = plotSQL;
         this.regionSQL = regionSQL;
@@ -161,7 +161,7 @@ public class DatabaseUpdates {
     }
 
     private void update10_11() {
-        logger.info("Updating database from 1.7.2 to 1.7.3");
+        log.info("Updating database from 1.7.2 to 1.7.3");
 
         // Create a copy of the plot corners table, so we can migrate the data without effecting functionality.
         // Then clear the existing table.
@@ -190,7 +190,7 @@ public class DatabaseUpdates {
                 plotSQL.update("INSERT INTO plot_corners(id,corner,x,z) VALUES(" + plot + "," + cornerId + "," + (corner[0] + xTransform) + "," + (corner[1] + zTransform) + ");");
                 cornerId++;
             }
-            Proxy.getInstance().getLogger().info("Migrated all plot corners to Earth location.");
+            log.info("Migrated all plot corners to Earth location.");
         }
 
         // Version 1.7.2
@@ -199,7 +199,7 @@ public class DatabaseUpdates {
 
     private void update9_10() {
 
-        logger.info("Updating database from 1.7.1 to 1.7.2");
+        log.info("Updating database from 1.7.1 to 1.7.2");
 
         plotSQL.update("ALTER TABLE plot_data MODIFY status ENUM('unclaimed','claimed','submitted','completed','deleted') NOT NULL");
 
@@ -242,7 +242,7 @@ public class DatabaseUpdates {
 
     private void update8_9() {
 
-        logger.info("Updating database from 1.7.0 to 1.7.1");
+        log.info("Updating database from 1.7.0 to 1.7.1");
 
         // Add pinned column in region_members.
         plotSQL.update("ALTER TABLE plot_members ADD COLUMN inactivity_notice TINYINT(1) NOT NULL DEFAULT 0;");
@@ -254,7 +254,7 @@ public class DatabaseUpdates {
 
     private void update7_8() {
 
-        logger.info("Updating database from 1.6.0 to 1.7.0");
+        log.info("Updating database from 1.6.0 to 1.7.0");
 
         // Add pinned column in region_members.
         regionSQL.update("ALTER TABLE region_members ADD COLUMN pinned TINYINT(1) NOT NULL DEFAULT 0;");
@@ -266,7 +266,7 @@ public class DatabaseUpdates {
 
     private void update6_7() {
 
-        logger.info("Updating database from 1.5.0 to 1.6.0");
+        log.info("Updating database from 1.5.0 to 1.6.0");
 
         // Remove online users table.
         globalSQL.update("DROP TABLE online_users;");
@@ -292,7 +292,7 @@ public class DatabaseUpdates {
 
     private void update5_6() {
 
-        logger.info("Updating database from 1.4.4 to 1.5.0");
+        log.info("Updating database from 1.4.4 to 1.5.0");
 
         // Update column in plot_data to add a coordinate_id with foreign key.
         plotSQL.update("ALTER TABLE plot_data ADD COLUMN coordinate_id INT NOT NULL DEFAULT 0;");
@@ -303,7 +303,7 @@ public class DatabaseUpdates {
 
     private void update4_5() {
 
-        logger.info("Updating database from 1.3.0 to 1.4.4");
+        log.info("Updating database from 1.3.0 to 1.4.4");
 
         // Version 1.4.4
         globalSQL.update("UPDATE unique_data SET data_value='1.4.4' WHERE data_key='version';");
@@ -324,7 +324,7 @@ public class DatabaseUpdates {
 
     private void update3_4() {
 
-        logger.info("Updating database from 1.2.0 to 1.3.0");
+        log.info("Updating database from 1.2.0 to 1.3.0");
 
         // Version 1.3.0.
         globalSQL.update("UPDATE unique_data SET data_value='1.3.0' WHERE data_key='version';");
@@ -336,7 +336,7 @@ public class DatabaseUpdates {
 
     private void update2_3() {
 
-        logger.info("Updating database from 1.1.0 to 1.2.0");
+        log.info("Updating database from 1.1.0 to 1.2.0");
 
         // Version 1.2.0.
         globalSQL.update("UPDATE unique_data SET data_value='1.2.0' WHERE data_key='version';");
@@ -348,7 +348,7 @@ public class DatabaseUpdates {
 
     private void update1_2() {
 
-        logger.info("Updating database from 1.0.0 to 1.1.0");
+        log.info("Updating database from 1.0.0 to 1.1.0");
 
         // Version 1.1.0.
         globalSQL.getString("UPDATE unique_data SET data_value='1.1.0' WHERE data_key='version';");

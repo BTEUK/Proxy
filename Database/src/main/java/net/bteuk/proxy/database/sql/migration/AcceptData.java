@@ -1,3 +1,3 @@
-package net.bteuk.proxy.sql.migration;
+package net.bteuk.proxy.database.sql.migration;
 
 public record AcceptData(int id, String uuid, String reviewer, int bookId, int accuracy, int quality, long acceptTime) { }

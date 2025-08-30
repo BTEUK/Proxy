@@ -2,9 +2,9 @@ package net.bteuk.proxy.utils;
 
 import net.bteuk.proxy.Discord;
 import net.bteuk.proxy.Proxy;
-import net.bteuk.proxy.sql.GlobalSQL;
-import net.bteuk.proxy.sql.PlotSQL;
-import net.bteuk.proxy.sql.RegionSQL;
+import net.bteuk.proxy.database.sql.GlobalSQL;
+import net.bteuk.proxy.database.sql.PlotSQL;
+import net.bteuk.proxy.database.sql.RegionSQL;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;

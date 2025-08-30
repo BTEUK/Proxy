@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import net.bteuk.network.lib.dto.UserConnectReply;
 import net.bteuk.network.lib.dto.UserConnectRequest;
-import net.bteuk.proxy.sql.GlobalSQL;
+import net.bteuk.proxy.database.sql.GlobalSQL;
 import net.bteuk.proxy.utils.Analytics;
 import net.bteuk.proxy.utils.SwitchServer;
 import net.bteuk.proxy.utils.Time;

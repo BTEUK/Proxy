@@ -1,7 +1,6 @@
-package net.bteuk.proxy.sql;
+package net.bteuk.proxy.database.sql;
 
-import org.apache.commons.dbcp2.BasicDataSource;
-
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -10,9 +9,9 @@ import java.util.ArrayList;
 
 public abstract class AbstractSQL {
 
-    private final BasicDataSource dataSource;
+    private final DataSource dataSource;
 
-    public AbstractSQL(BasicDataSource datasource) {
+    public AbstractSQL(DataSource datasource) {
 
         this.dataSource = datasource;
 
@@ -24,11 +23,7 @@ public abstract class AbstractSQL {
 
     public boolean hasRow(String sql) {
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql);
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql); ResultSet results = statement.executeQuery()) {
 
             return results.next();
 
@@ -41,10 +36,7 @@ public abstract class AbstractSQL {
     //Generic update statement, return true if successful.
     public boolean update(String sql) {
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql)
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql)) {
 
             statement.executeUpdate();
 
@@ -58,11 +50,7 @@ public abstract class AbstractSQL {
 
     public boolean getBoolean(String sql) {
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql);
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql); ResultSet results = statement.executeQuery()) {
 
             if (results.next()) {
 
@@ -82,11 +70,7 @@ public abstract class AbstractSQL {
 
     public int getInt(String sql) {
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql);
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql); ResultSet results = statement.executeQuery()) {
 
             if (results.next()) {
 
@@ -106,11 +90,7 @@ public abstract class AbstractSQL {
 
     public double getDouble(String sql) {
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql);
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql); ResultSet results = statement.executeQuery()) {
 
             if (results.next()) {
 
@@ -130,11 +110,7 @@ public abstract class AbstractSQL {
 
     public float getFloat(String sql) {
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql);
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql); ResultSet results = statement.executeQuery()) {
 
             if (results.next()) {
 
@@ -154,11 +130,7 @@ public abstract class AbstractSQL {
 
     public long getLong(String sql) {
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql);
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql); ResultSet results = statement.executeQuery()) {
 
             if (results.next()) {
 
@@ -178,11 +150,7 @@ public abstract class AbstractSQL {
 
     public ResultSet getResultSet(String sql) {
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql);
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql); ResultSet results = statement.executeQuery()) {
 
             return results;
 
@@ -194,11 +162,7 @@ public abstract class AbstractSQL {
 
     public String getString(String sql) {
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql);
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql); ResultSet results = statement.executeQuery()) {
 
             if (results.next()) {
 
@@ -220,11 +184,7 @@ public abstract class AbstractSQL {
 
         ArrayList<String> list = new ArrayList<>();
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql);
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql); ResultSet results = statement.executeQuery()) {
 
             while (results.next()) {
 
@@ -244,11 +204,7 @@ public abstract class AbstractSQL {
 
         ArrayList<Integer> list = new ArrayList<>();
 
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql);
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql); ResultSet results = statement.executeQuery()) {
 
             while (results.next()) {
 

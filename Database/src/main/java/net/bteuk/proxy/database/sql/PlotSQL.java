@@ -1,13 +1,13 @@
-package net.bteuk.proxy.sql;
+package net.bteuk.proxy.database.sql;
 
+import lombok.extern.java.Log;
 import net.bteuk.network.lib.enums.PlotDifficulties;
 import net.bteuk.network.lib.utils.Reviewing;
-import net.bteuk.proxy.Proxy;
-import net.bteuk.proxy.sql.migration.AcceptData;
-import net.bteuk.proxy.sql.migration.DenyData;
-import net.bteuk.proxy.sql.migration.PlotSubmissions;
-import org.apache.commons.dbcp2.BasicDataSource;
+import net.bteuk.proxy.database.sql.migration.AcceptData;
+import net.bteuk.proxy.database.sql.migration.DenyData;
+import net.bteuk.proxy.database.sql.migration.PlotSubmissions;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,17 +16,15 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PlotSQL extends AbstractSQL {
+@Log
+public class PlotSQL extends net.bteuk.proxy.database.sql.AbstractSQL {
 
-    public PlotSQL(BasicDataSource datasource) {
+    public PlotSQL(DataSource datasource) {
         super(datasource);
     }
 
     public int insertReturnId(String sql) {
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             statement.executeUpdate();
             ResultSet result = statement.getGeneratedKeys();
@@ -35,19 +33,14 @@ public class PlotSQL extends AbstractSQL {
             }
 
         } catch (SQLException e) {
-            Proxy.getInstance().getLogger().error("An error occurred while inserting a row in the database", e);
+            log.severe("An error occurred while inserting a row in the database: " + e);
         }
 
         return 0;
     }
 
     public double getReviewerReputation(String uuid) {
-        try (
-                Connection conn = conn();
-                PreparedStatement statement = conn.prepareStatement(
-                        "SELECT reputation FROM reviewers WHERE uuid=?;"
-                )
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT reputation FROM reviewers WHERE uuid=?;")) {
             statement.setString(1, uuid);
             ResultSet results = statement.executeQuery();
 
@@ -110,21 +103,12 @@ public class PlotSQL extends AbstractSQL {
     public List<AcceptData> getAcceptData() {
         List<AcceptData> acceptData = new ArrayList<>();
 
-        try (Connection conn = conn();
-             PreparedStatement statement = conn.prepareStatement("SELECT * FROM accept_data;");
-             ResultSet results = statement.executeQuery()) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT * FROM accept_data;"); ResultSet results = statement.executeQuery()) {
             while (results.next()) {
-                acceptData.add(
-                        new AcceptData(
-                                results.getInt("id"), results.getString("uuid"),
-                                results.getString("reviewer"), results.getInt("book_id"),
-                                results.getInt("accuracy"), results.getInt("quality"),
-                                results.getLong("accept_time")
-                        )
-                );
+                acceptData.add(new AcceptData(results.getInt("id"), results.getString("uuid"), results.getString("reviewer"), results.getInt("book_id"), results.getInt("accuracy"), results.getInt("quality"), results.getLong("accept_time")));
             }
         } catch (SQLException e) {
-            Proxy.getInstance().getLogger().error("An error occurred while fetching accept_data", e);
+            log.severe("An error occurred while fetching accept_data: " + e.getLocalizedMessage());
         }
         return acceptData;
     }
@@ -132,44 +116,30 @@ public class PlotSQL extends AbstractSQL {
     public List<DenyData> getDenyData() {
         List<DenyData> denyData = new ArrayList<>();
 
-        try (Connection conn = conn();
-             PreparedStatement statement = conn.prepareStatement("SELECT * FROM deny_data;");
-             ResultSet results = statement.executeQuery()) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT * FROM deny_data;"); ResultSet results = statement.executeQuery()) {
             while (results.next()) {
-                denyData.add(
-                        new DenyData(
-                                results.getInt("id"), results.getString("uuid"),
-                                results.getString("reviewer"), results.getInt("book_id"),
-                                results.getInt("attempt"), results.getLong("deny_time")
-                        )
-                );
+                denyData.add(new DenyData(results.getInt("id"), results.getString("uuid"), results.getString("reviewer"), results.getInt("book_id"), results.getInt("attempt"), results.getLong("deny_time")));
             }
         } catch (SQLException e) {
-            Proxy.getInstance().getLogger().error("An error occurred while fetching deny_data", e);
+            log.severe("An error occurred while fetching deny_data: " + e.getLocalizedMessage());
         }
         return denyData;
     }
 
     /**
      * Get the plot submissions from the OLD table (plot_submissions)
+     *
      * @return the old plot submissions
      */
     public List<PlotSubmissions> getPlotSubmissions() {
         List<PlotSubmissions> plotSubmissions = new ArrayList<>();
 
-        try (Connection conn = conn();
-             PreparedStatement statement = conn.prepareStatement("SELECT * FROM plot_submissions;");
-             ResultSet results = statement.executeQuery()) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT * FROM plot_submissions;"); ResultSet results = statement.executeQuery()) {
             while (results.next()) {
-                plotSubmissions.add(
-                        new PlotSubmissions(
-                                results.getInt("id"), results.getLong("submit_time"),
-                                results.getLong("last_query")
-                        )
-                );
+                plotSubmissions.add(new PlotSubmissions(results.getInt("id"), results.getLong("submit_time"), results.getLong("last_query")));
             }
         } catch (SQLException e) {
-            Proxy.getInstance().getLogger().error("An error occurred while fetching plot_submissions", e);
+            log.severe("An error occurred while fetching plot_submissions: " + e.getLocalizedMessage());
         }
         return plotSubmissions;
     }
@@ -185,10 +155,7 @@ public class PlotSQL extends AbstractSQL {
 
     public int[][] getOldPlotCorners(int plotID) {
 
-        try (
-                Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT COUNT(corner) FROM" + " old_plot_corners WHERE id=" + plotID + ";");
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT COUNT(corner) FROM" + " old_plot_corners WHERE id=" + plotID + ";"); ResultSet results = statement.executeQuery()) {
 
             results.next();
 
@@ -205,10 +172,7 @@ public class PlotSQL extends AbstractSQL {
 
     private int[][] getOldPlotCorners(int[][] corners, int plotID) {
 
-        try (
-                Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT x,z FROM old_plot_corners WHERE id=" + plotID + ";");
-                ResultSet results = statement.executeQuery()
-        ) {
+        try (Connection conn = conn(); PreparedStatement statement = conn.prepareStatement("SELECT x,z FROM old_plot_corners WHERE id=" + plotID + ";"); ResultSet results = statement.executeQuery()) {
 
             for (int i = 0; i < corners.length; i++) {
 

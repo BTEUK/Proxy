@@ -1,4 +1,4 @@
-package net.bteuk.proxy.sql.migration;
+package net.bteuk.proxy.database.sql.migration;
 
 public record DenyData(int id, String uuid, String reviewer, int bookId, int attempt, long denyTime) { }
 
