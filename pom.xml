@@ -11,8 +11,8 @@
 
     <name>Proxy</name>
     <modules>
-        <module>plugin</module>
         <module>database</module>
+        <module>plugin</module>
     </modules>
 
     <properties>
