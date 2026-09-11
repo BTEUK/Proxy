@@ -7,9 +7,8 @@ import net.kyori.adventure.text.Component;
  * Represent an auto mod flag for a specific user.
  */
 public class AutoModFlag {
-
     @Getter
-    private final AutoModFlagRule rule;
+    private final AutoModRule rule;
 
     @Getter
     private final long timestamp;
@@ -20,7 +19,7 @@ public class AutoModFlag {
     @Getter
     private final AutoModMatch match;
 
-    public AutoModFlag(AutoModFlagRule rule, long timestamp, String message, AutoModMatch match) {
+    public AutoModFlag(AutoModRule rule, long timestamp, String message, AutoModMatch match) {
         this.rule = rule;
         this.timestamp = timestamp;
         this.message = message;

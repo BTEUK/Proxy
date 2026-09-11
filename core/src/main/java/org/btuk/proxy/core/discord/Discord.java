@@ -30,13 +30,16 @@ import org.btuk.network.lib.dto.DiscordLinking;
 import org.btuk.network.lib.dto.DiscordRole;
 import org.btuk.proxy.core.chat.ChatHandler;
 import org.btuk.proxy.core.chat.ChatManager;
+import org.btuk.proxy.core.chat.automod.AutoModFlag;
 import org.btuk.proxy.core.chat.automod.AutoModMatch;
+import org.btuk.proxy.core.chat.automod.AutoModSpamRule;
 import org.btuk.proxy.core.config.Config;
 import org.btuk.proxy.core.discord.command.CommandManager;
 import org.btuk.proxy.core.scheduler.Scheduler;
 import org.btuk.proxy.core.tab.TabManager;
 import org.btuk.proxy.core.user.CoreUserManager;
 import org.btuk.proxy.core.user.User;
+import org.btuk.proxy.core.utils.Time;
 import org.btuk.proxy.database.sql.GlobalSQL;
 import org.btuk.proxy.database.sql.PlotSQL;
 
@@ -47,6 +50,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -426,16 +430,26 @@ public class Discord {
         return String.valueOf(getRoleID("reviewer"));
     }
 
-    public void notifyModeratorsOfAutoMute(User mutedUser, List<AutoModMatch> matches, List<String> messages, Duration duration) {
+    public void notifyModeratorsOfAutoMute(User mutedUser, List<AutoModFlag> flags, Duration duration) {
 
         String durationMessage = DurationFormatUtils.formatDurationWords(duration.toMillis(), true, true);
         String message = String.format("User %s has been muted by the auto-moderator for %s, please evaluate this decision and update the punishment if necessary. You can update the punishment by running the /mute command again.", mutedUser.getName(), durationMessage);
         message += String.format("\n\nUser uuid: %s", mutedUser.getUuid());
-        message += "\n\nFlagged words:\n";
-        message += String.join(", ", matches.stream().map(AutoModMatch::messageWord).toList());
+
+        List<AutoModMatch> wordMatches = flags.stream().map(AutoModFlag::getMatch).filter(Objects::nonNull).toList();
+        if (!wordMatches.isEmpty()) {
+            message += "\n\nFlagged words:\n";
+            message += String.join(", ", wordMatches.stream().map(AutoModMatch::messageWord).distinct().toList());
+        }
+
+        long spamFlags = flags.stream().filter(f -> f.getRule() instanceof AutoModSpamRule).count();
+        if (spamFlags > 0) {
+            message += String.format("\n\nDetected spam flags: %d", spamFlags);
+        }
+
         message = messageLimit(message);
 
-        String attachmentContent = buildAutoMuteAttachment(matches, messages);
+        String attachmentContent = buildAutoMuteAttachment(flags);
 
         moderatorChat.sendMessage(message)
             .addFiles(FileUpload.fromData(
@@ -445,14 +459,28 @@ public class Discord {
             .queue();
     }
 
-    private String buildAutoMuteAttachment(List<AutoModMatch> matches, List<String> messages) {
-        return "Flagged Words:\n" +
-            matches.stream()
-                .map(match -> match.messageWord() + " - " + match.flaggedWord())
-                .reduce((a, b) -> a + "\n" + b)
-                .orElse("") +
-            "\n\nMessages:\n" +
-            String.join("\n", messages);
+    private String buildAutoMuteAttachment(List<AutoModFlag> flags) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("AutoMod Report\n");
+        sb.append("==============\n\n");
+
+        for (AutoModFlag flag : flags) {
+            sb.append(String.format("[%s] Rule: %s (%s)\n",
+                Time.getDate(flag.getTimestamp()),
+                flag.getRule().getId(),
+                flag.getRule().getClass().getSimpleName()));
+            
+            if (flag.getMatch() != null) {
+                sb.append(String.format("Match: %s (flagged: %s)\n", 
+                    flag.getMatch().messageWord(), 
+                    flag.getMatch().flaggedWord()));
+            }
+            
+            sb.append(String.format("Message: %s\n", flag.getMessage()));
+            sb.append("------------------------------\n");
+        }
+
+        return sb.toString();
     }
 
     private void enableRoleSyncing() {

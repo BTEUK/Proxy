@@ -262,8 +262,8 @@ CREATE TABLE IF NOT EXISTS automod_flags
     rule_id         VARCHAR(64)     NOT NULL,
     flag_timestamp  BIGINT          NOT NULL,
     message         TEXT            NOT NULL,
-    message_word    VARCHAR(256)    NOT NULL,
-    flagged_word    VARCHAR(256)    NOT NULL,
+    message_word    VARCHAR(256)    NULL,
+    flagged_word    VARCHAR(256)    NULL,
     PRIMARY KEY(id),
     CONSTRAINT fk_automod_flags_1 FOREIGN KEY(uuid) REFERENCES player_data(uuid),
     INDEX idx_automod_flags_1 (uuid)

@@ -78,8 +78,14 @@ public class DatabaseUpdates {
             new MigrationStep(Version.of(1, 7, 3), this::update1_7_3),
             new MigrationStep(Version.of(1, 9, 4), this::update1_9_4),
             new MigrationStep(Version.of(1, 9, 5), this::update1_9_5),
-            new MigrationStep(Version.of(1, 12, 0), this::update1_12_0)
+            new MigrationStep(Version.of(1, 12, 0), this::update1_12_0),
+            new MigrationStep(Version.of(1, 13, 0), this::update1_13_0)
         );
+    }
+
+    private void update1_13_0() {
+        globalSQL.update("ALTER TABLE automod_flags MODIFY message_word VARCHAR(256);");
+        globalSQL.update("ALTER TABLE automod_flags MODIFY flagged_word VARCHAR(256);");
     }
 
     private void update1_12_0() {

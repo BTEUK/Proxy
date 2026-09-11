@@ -24,6 +24,8 @@ import org.btuk.proxy.core.chat.automod.AutoModFlag;
 import org.btuk.proxy.core.chat.automod.AutoModFlagRule;
 import org.btuk.proxy.core.chat.automod.AutoModMatch;
 import org.btuk.proxy.core.chat.automod.AutoModRule;
+import org.btuk.proxy.core.chat.automod.AutoModWordRule;
+import org.btuk.proxy.core.chat.automod.Message;
 import org.btuk.proxy.core.exceptions.ServerNotFoundException;
 import org.btuk.proxy.core.player.Player;
 import org.btuk.proxy.core.scheduler.ScheduledTask;
@@ -151,6 +153,8 @@ public class User {
 
     @Getter
     private final List<AutoModFlag> autoModFlags = new ArrayList<>();
+
+    private final List<Message> chatMessages = new ArrayList<>();
 
     private List<TeleportRequest> teleportRequests = new ArrayList<>();
 
@@ -518,13 +522,14 @@ public class User {
         List<AutoModFlagDTO> dtos = globalSQL.getAutoModFlags(uuid);
         for (AutoModFlagDTO dto : dtos) {
             AutoModRule rule = rules.stream().filter(r -> Objects.equals(r.getId(), dto.ruleId())).findFirst().orElse(null);
-            if (rule instanceof AutoModFlagRule flagRule) {
-                AutoModFlag flag = new AutoModFlag(flagRule, dto.timestamp(), dto.message(), new AutoModMatch(dto.messageWord(), dto.flaggedWord()));
+            if (rule != null) {
+                AutoModMatch match = (dto.messageWord() == null && dto.flaggedWord() == null) ? null : new AutoModMatch(dto.messageWord(), dto.flaggedWord());
+                AutoModFlag flag = new AutoModFlag(rule, dto.timestamp(), dto.message(), match);
                 if (!flag.isExpired()) {
                     autoModFlags.add(flag);
                 }
             } else {
-                log.warning("AutoModFlagRule not found for id: " + dto.ruleId());
+                log.warning("AutoModRule not found for id: " + dto.ruleId());
             }
         }
         // After loading, we can clear the database entries for this user as they are now in-memory.
@@ -544,11 +549,17 @@ public class User {
                     flag.getRule().getId(),
                     flag.getTimestamp(),
                     flag.getMessage(),
-                    flag.getMatch().messageWord(),
-                    flag.getMatch().flaggedWord()
+                    flag.getMatch() != null ? flag.getMatch().messageWord() : null,
+                    flag.getMatch() != null ? flag.getMatch().flaggedWord() : null
             ));
         }
         globalSQL.saveAutoModFlags(uuid, flags);
+    }
+
+    public boolean addMessage(String message, long timestamp, long window, int maxMessages) {
+        chatMessages.removeIf(msg -> msg.timestamp() < (timestamp - window));
+        chatMessages.add(new Message(timestamp, message));
+        return chatMessages.size() > maxMessages;
     }
 
     public void updatePlayerSkin() {

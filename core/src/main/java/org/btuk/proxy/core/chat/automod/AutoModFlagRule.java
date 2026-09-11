@@ -7,7 +7,7 @@ import java.time.Duration;
 import java.util.List;
 
 @Log
-public class AutoModFlagRule extends AutoModRule {
+public class AutoModFlagRule extends AutoModWordRule {
 
     @Getter
     private final int points;
@@ -18,7 +18,7 @@ public class AutoModFlagRule extends AutoModRule {
         super(id, flaggedWords, duration);
         this.points = points;
         this.deleteMessage = deleteMessage;
-        log.info(String.format("Loaded flag rule, id: %s, flagged words: %s, delete message: %s", id, flaggedWords, deleteMessage));
+        log.info(String.format("Loaded flag rule, id: %s, flagged words: %d, delete message: %s", id, flaggedWords.size(), deleteMessage));
     }
 
     @Override

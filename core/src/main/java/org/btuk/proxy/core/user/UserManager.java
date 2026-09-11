@@ -495,7 +495,7 @@ public class UserManager {
                 long time = Time.currentTime();
                 if (time - user.getLastPing() > 5 * 60 * 1000L && user.isOnline()) {
                     log.warning("Player " + user.getName() + " has not been pinged for 5 minutes, removing them from the proxy.");
-                    removeUser(user, false);
+                    removeUser(user, true);
                 }
             });
         }, 0L, 1L, TimeUnit.MINUTES);

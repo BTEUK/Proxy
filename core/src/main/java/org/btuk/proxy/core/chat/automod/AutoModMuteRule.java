@@ -6,7 +6,7 @@ import java.time.Duration;
 import java.util.List;
 
 @Log
-public class AutoModMuteRule extends AutoModRule {
+public class AutoModMuteRule extends AutoModWordRule {
 
     public AutoModMuteRule(String id, List<String> flaggedWords, Duration duration) {
         super(id, flaggedWords, duration);

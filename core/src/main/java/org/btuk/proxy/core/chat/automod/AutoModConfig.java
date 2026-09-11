@@ -38,6 +38,14 @@ public class AutoModConfig {
 
     private static final String FLAG_DELETE_MESSAGES_PATH = "flag_mute_duration_unit";
 
+    private static final String PUNISHMENT_FILTER_PATH = "filter";
+
+    private static final String FILTER_MESSAGES_PATH = "messages";
+
+    private static final String FILTER_DURATION_PATH = "duration";
+
+    private static final String FILTER_DURATION_UNIT_PATH = "duration_unit";
+
     private final Config config;
 
     @Getter
@@ -98,7 +106,7 @@ public class AutoModConfig {
         int durationTime = Integer.parseInt(punishmentMap.get(PUNISHMENT_DURATION_PATH).toString());
         String durationUnit = punishmentMap.get(PUNISHMENT_DURATION_UNIT_PATH).toString();
 
-        AutoModFlagRuleType type = AutoModFlagRuleType.valueOf(punishmentType.toUpperCase());
+        AutoModRuleType type = AutoModRuleType.valueOf(punishmentType.toUpperCase());
         ChronoUnit timeUnit = ChronoUnit.valueOf(durationUnit.toUpperCase());
         Duration duration = Duration.of(durationTime, timeUnit);
 
@@ -108,6 +116,9 @@ public class AutoModConfig {
             }
             case FLAG -> {
                 return loadFlagRule(id, flaggedWords, duration, punishmentMap);
+            }
+            case SPAM -> {
+                return loadSpamRule(id, duration, punishmentMap);
             }
             default -> {
                 log.warning(String.format("Unknown punishment type: %s", punishmentType));
@@ -121,5 +132,21 @@ public class AutoModConfig {
         boolean deleteMessage = Boolean.parseBoolean(punishmentMap.get(PUNISHMENT_DELETE_MESSAGES_PATH).toString());
 
         return new AutoModFlagRule(id, flaggedWords, points, duration, deleteMessage);
+    }
+
+    private static AutoModSpamRule loadSpamRule(String id, Duration duration, Map<String, Object> punishmentMap) {
+        int points = Integer.parseInt(punishmentMap.get(PUNISHMENT_POINTS_PATH).toString());
+        boolean deleteMessage = Boolean.parseBoolean(punishmentMap.get(PUNISHMENT_DELETE_MESSAGES_PATH).toString());
+
+        Object filter = punishmentMap.get(PUNISHMENT_FILTER_PATH);
+        Map<String, Object> filterMap = YamlConfigurationFile.getMap(filter);
+
+        int maxMessages = Integer.parseInt(filterMap.get(FILTER_MESSAGES_PATH).toString());
+        int durationTime = Integer.parseInt(filterMap.get(FILTER_DURATION_PATH).toString());
+        String durationUnit = filterMap.get(FILTER_DURATION_UNIT_PATH).toString();
+        ChronoUnit timeUnit = ChronoUnit.valueOf(durationUnit.toUpperCase());
+        Duration filterDuration = Duration.of(durationTime, timeUnit);
+
+        return new AutoModSpamRule(id, duration, maxMessages, filterDuration, points, deleteMessage);
     }
 }

@@ -91,7 +91,7 @@ public class AutoMod {
      * @return true if the message should be blocked
      */
     private boolean checkMessage(User user, String message) {
-        List<CandidateWord> candidateWords = AutoModRule.getCandidateWords(message);
+        List<CandidateWord> candidateWords = AutoModWordRule.getCandidateWords(message);
         boolean blockMessage = false;
         for (AutoModRule rule : autoModConfig.getRules()) {
             blockMessage |= checkRule(rule, candidateWords, user, message);
@@ -108,41 +108,47 @@ public class AutoMod {
     private void checkUser(User user) {
         if (user.getAutoModFlagPoints() > autoModConfig.getPointsThreshold()) {
             List<AutoModFlag> flags = user.getAutoModFlags();
-            muteUser(user, autoModConfig.getFlagMuteDuration(), flags.stream().map(AutoModFlag::getMatch).toList(), flags.stream()
-                .collect(java.util.stream.Collectors.toMap(
-                    AutoModFlag::getTimestamp,
-                    AutoModFlag::getMessage,
-                    (first, second) -> first,
-                    java.util.LinkedHashMap::new
-                ))
-                .values()
-                .stream()
-                .toList());
+            muteUser(user, autoModConfig.getFlagMuteDuration(), flags);
         }
     }
 
     private boolean checkRule(AutoModRule rule, List<CandidateWord> candidateWords, User user, String message) {
-        List<AutoModMatch> matches = rule.getMatches(candidateWords);
-        if (matches.isEmpty()) {
-            return false;
-        }
-        log.info(String.format("Message flagged by rule %s: %s", rule.getId(), message));
         long timestamp = System.currentTimeMillis();
         switch (rule) {
-            case AutoModMuteRule muteRule ->
-                muteUser(user, muteRule.getDuration(), matches, Collections.singletonList(message));
-            case AutoModFlagRule flagRule ->
-                matches.forEach(match -> user.addAutoModFlag(new AutoModFlag(flagRule, timestamp, message, match)));
+            case AutoModWordRule wordRule ->  {
+                List<AutoModMatch> matches = wordRule.getMatches(candidateWords);
+                if (matches.isEmpty()) {
+                    return false;
+                }
+                log.info(String.format("Message flagged by rule %s: %s", rule.getId(), message));
+                switch (wordRule) {
+                    case AutoModMuteRule muteRule -> {
+                        List<AutoModFlag> muteFlags = matches.stream()
+                                .map(match -> new AutoModFlag(muteRule, timestamp, message, match))
+                                .toList();
+                        muteUser(user, muteRule.getDuration(), muteFlags);
+                    }
+                    case AutoModFlagRule flagRule ->
+                        matches.forEach(match -> user.addAutoModFlag(new AutoModFlag(flagRule, timestamp, message, match)));
+                    default -> log.warning(String.format("Unknown word rule type: %s", rule.getClass().getSimpleName()));
+                }
+            }
+            case AutoModSpamRule spamRule -> {
+                if (!spamRule.checkSpam(user, message, timestamp)) {
+                    return false;
+                }
+                user.addAutoModFlag(new AutoModFlag(spamRule, timestamp, message, null));
+            }
             default -> log.warning(String.format("Unknown rule type: %s", rule.getClass().getSimpleName()));
         }
         return rule.blockMessage();
     }
 
-    private void muteUser(User user, Duration duration, List<AutoModMatch> matches, List<String> messages) {
+    private void muteUser(User user, Duration duration, List<AutoModFlag> flags) {
         long endTime = Time.currentTime() + duration.toMillis();
         moderation.mute(user.getUuid(), endTime, AUTOMOD_REASON);
         chatHandler.handle(new DirectMessage(GLOBAL.getChannelName(), user.getUuid(), SERVER_SENDER, AUTOMOD_REASON_COMPONENT, false));
         tabManager.updatePlayerByUuid(user.getUuid());
-        discord.notifyModeratorsOfAutoMute(user, matches, messages, duration);
+        discord.notifyModeratorsOfAutoMute(user, flags, duration);
     }
 }

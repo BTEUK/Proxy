@@ -28,8 +28,12 @@ rules:
   - id: rule4
     flagged_words: []
     punishment:
-      type: FLAG
-      duration: 6
-      duration_unit: HOURS
+      type: SPAM
+      duration: 5
+      duration_unit: SECOND
       points: 10
       delete_message: true
+      filter:
+        messages: 5
+        duration: 5
+        duration_unit: SECOND
