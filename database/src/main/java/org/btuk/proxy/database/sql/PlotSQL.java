@@ -210,3 +210,6 @@ public class PlotSQL extends AbstractSQL {
         return 0;
     }
 }
+    public String getRegionServer(String regionName) {
+        return getString("SELECT server FROM regions WHERE region='" + regionName + "';");
+    }}
